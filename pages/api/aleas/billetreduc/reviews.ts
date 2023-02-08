@@ -1,7 +1,7 @@
-import { BilletReducData, getBilletReducReviews } from "@/services/billetreduc";
+import { getBilletReducReviews, ReviewsData } from "@/services/billetreduc";
 import { NextApiRequest, NextApiResponse } from "next";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<BilletReducData|Error>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse<ReviewsData>) {
 	
     if(req.method !== 'GET') {
         res.status(405).end();
