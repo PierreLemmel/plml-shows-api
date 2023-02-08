@@ -126,6 +126,7 @@ export async function regenerateBilletReducData(fullyRegenerate: boolean): Promi
                 await backOff(async () => {
 
                     const completionResult = await openai.createCompletion({
+                        prompt,
                         model,
                         temperature: randomRange(0.65, 0.95),
                         max_tokens: 1000,
