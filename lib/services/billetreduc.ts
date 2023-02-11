@@ -3,7 +3,7 @@ import { backOff } from "exponential-backoff";
 import { Timestamp } from "firebase/firestore";
 import { Configuration, OpenAIApi } from "openai";
 import { getDocument, setDocument } from "./firebase";
-import { flattenArray, randomInt, randomRange } from "./helpers";
+import { flattenArray, randomRange } from "./helpers";
 
 const reviewsDocPath = "billetreduc/reviews";
 const staticReviewsDocPath = "billetreduc/static-reviews";

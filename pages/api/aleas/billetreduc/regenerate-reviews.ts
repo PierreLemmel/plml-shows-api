@@ -1,4 +1,5 @@
-import { regenerateBilletReducData, ReviewsData } from '@/services/billetreduc';
+import { withAuth } from '@/lib/middlewares/withauth';
+import { regenerateBilletReducData, ReviewsData } from '@/lib/services/billetreduc';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse<ReviewsData>) => {
@@ -13,4 +14,4 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<ReviewsData>) =
 	res.status(200).json(reviews);
 }
 
-export default handler;
+export default withAuth(handler);

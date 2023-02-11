@@ -1,7 +1,8 @@
 import { InferGetStaticPropsType } from 'next';
-import { getBilletReducReviews, ReviewsData } from "@/services/billetreduc";
+import { getBilletReducReviews, ReviewsData } from "@/lib/services/billetreduc";
 import { useEffect, useState } from "react";
-import { randomInt } from '@/services/helpers';
+import { randomInt } from 'crypto';
+
 
 export const getStaticProps = async () => {
 
@@ -22,7 +23,7 @@ export default function BilletReduc({ reviews }: InferGetStaticPropsType<typeof 
         
         let newIndex = index;
         while (newIndex === index) {
-            newIndex = randomInt(0, reviews.length - 1);
+            newIndex = randomInt(reviews.length - 1);
         }
 
         setIndex(newIndex);
