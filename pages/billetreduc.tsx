@@ -1,21 +1,24 @@
 import { InferGetStaticPropsType } from 'next';
-import { getBilletReducReviews, ReviewsData } from "@/lib/services/billetreduc";
+import { getBilletReducReviews, getBilletReducSettings, ReviewsData } from "@/lib/services/billetreduc";
 import { useEffect, useState } from "react";
-import { randomInt } from 'crypto';
-
+import { randomInt } from '@/lib/services/helpers';
 
 export const getStaticProps = async () => {
 
-    const reviewsData: ReviewsData = await getBilletReducReviews();
+    const { reviews } = await getBilletReducReviews();
+    const { billetReducUrl } = await getBilletReducSettings();
 
     return {
         props: {
-            reviews: reviewsData.reviews
+            reviews,
+            billetReducUrl
         }
     }
 }
 
-export default function BilletReduc({ reviews }: InferGetStaticPropsType<typeof getStaticProps>) {
+export default function BilletReduc(props: InferGetStaticPropsType<typeof getStaticProps>) {
+
+    const { reviews, billetReducUrl } = props;
 
     const [index, setIndex] = useState<number>(0);
 
@@ -23,7 +26,7 @@ export default function BilletReduc({ reviews }: InferGetStaticPropsType<typeof 
         
         let newIndex = index;
         while (newIndex === index) {
-            newIndex = randomInt(reviews.length - 1);
+            newIndex = randomInt(0, reviews.length - 1);
         }
 
         setIndex(newIndex);
@@ -35,8 +38,15 @@ export default function BilletReduc({ reviews }: InferGetStaticPropsType<typeof 
         console.log("Copied")
     }
 
-    return <div className="fullscreen bg-gray-900 center-child text-gray-200 font-mono font-bold">
-        <div className="flex flex-col items-center justify-between w-3/4 h-3/4 bg-slate-700/50 p-16 rounded-2xl">
+    const onAddToBR = () => {
+        console.log(billetReducUrl)
+    }
+
+    return <div className={`fullscreen center-child
+        bg-gradient-to-r from-gray-900 to-gray-800
+        text-gray-200 font-mono
+    `}>
+        <div className="flex flex-col items-center justify-between w-3/4 h-3/4 bg-slate-700/50 p-12 rounded-2xl">
             <div className="w-full h-2/3 center-child text-2xl text-center leading-relaxed">{reviews[index]}</div>
             <div className="w-full flex flex-row items-center justify-around">
                 <Button onClick={onRegenerate}>
@@ -45,6 +55,11 @@ export default function BilletReduc({ reviews }: InferGetStaticPropsType<typeof 
                 <Button onClick={onCopied}>
                     Copier
                 </Button>
+                <a target="_blank" href={billetReducUrl} rel="noopener noreferrer">
+                    <Button onClick={onAddToBR}>
+                        Sur BilletReduc
+                    </Button>
+                </a>
             </div>
         </div>
     </div>
@@ -52,7 +67,13 @@ export default function BilletReduc({ reviews }: InferGetStaticPropsType<typeof 
 
 
 const Button = (props: { children: string, onClick: () => void }) => <div
-    className="text-center text-xl py-2 px-4 bg-gray-500 hover:brightness-125 hover:cursor-pointer transition duration-300 rounded-md min-w-[8em]"
+    className={`
+        text-center text-xl font-bold
+        py-3 px-6 min-w-[8em]
+        bg-gradient-to-r from-cyan-500 to-blue-500
+        hover:hue-rotate-30 hover:cursor-pointer
+        transition duration-300 rounded-md
+    `}
     onClick={props.onClick}
 >
     {props.children}

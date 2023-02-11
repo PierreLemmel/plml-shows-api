@@ -6,7 +6,7 @@ module.exports = {
     "./components/**/*.{ts,tsx}",
   ],
   theme: {
-    extend: {},
+    
   },
   plugins: [],
 }

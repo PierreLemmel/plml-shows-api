@@ -7,6 +7,8 @@ import { flattenArray, randomRange } from "./helpers";
 
 const reviewsDocPath = "billetreduc/reviews";
 const staticReviewsDocPath = "billetreduc/static-reviews";
+const completionsDocPath = "billetreduc/completions";
+const billetReducSettingsPath = "billetreduc/settings";
 
 export type ReviewsData = {
     reviews: string[];
@@ -20,6 +22,10 @@ export type StaticReviewsData = {
     lastGenerationMaxIndex: number;
 }
 
+type BilletReducSettings = {
+    billetReducUrl: string;
+}
+
 export async function getBilletReducReviews(): Promise<ReviewsData> {
     const result  = await getDocument<ReviewsData>(reviewsDocPath);
     return result;
@@ -27,6 +33,11 @@ export async function getBilletReducReviews(): Promise<ReviewsData> {
 
 export async function getStaticBilletReducReviews(): Promise<StaticReviewsData> {
     const result  = await getDocument<ReviewsData>(staticReviewsDocPath);
+    return result;
+}
+
+export async function getBilletReducSettings(): Promise<BilletReducSettings> {
+    const result  = await getDocument<BilletReducSettings>(billetReducSettingsPath);
     return result;
 }
 
@@ -54,7 +65,7 @@ type CompletionData = {
     repetitions?: number
 }
 
-const completionsDocPath = "billetreduc/completions";
+
 
 export async function getCompletionData(): Promise<CompletionsData> {
     return await getDocument<CompletionsData>(completionsDocPath);
