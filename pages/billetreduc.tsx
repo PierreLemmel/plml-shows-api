@@ -67,19 +67,26 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
             text-gray-200 font-mono
         ">
             <div className="flex flex-col items-center justify-between
-                rounded-2xl w-3/4 h-3/4 bg-slate-700/50
+                rounded-2xl  bg-slate-700/50
+                w-[85%] h-[92%]
+                md:w-4/5 md:h-[90%]
+                lg:w-3/4 lg:h-3/4
                 px-12 py-6 gap-8
             ">
                 <div className="
                     w-full text-center my-4
-                    text-6xl font-extrabold
+                    font-extrabold
+                    2xl:text-6xl
+                    lg:text-4xl
                 ">
                     Générateur de critiques aléatoires
                 </div>
                 <div className="
                     w-full center-child italic text-center overflow-y-auto overflow-x-visible
                     max-h-[66%]
-                    text-2xl leading-relaxed
+                    text-xl leading-normal
+                    lg:text-xl
+                    2xl:text-2xl 2xl:leading-relaxed
                 ">
                     {review}
                 </div>
