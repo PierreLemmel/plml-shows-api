@@ -59,10 +59,11 @@ export type CompletionsData = {
     completions: CompletionData[];
 }
   
-type CompletionData = {
+export type CompletionData = {
     prompt: string,
     n?: number,
-    repetitions?: number
+    repetitions?: number,
+    enabled: boolean
 }
 
 
@@ -120,13 +121,18 @@ export async function regenerateBilletReducData(fullyRegenerate: boolean): Promi
         
         const data = completions[i];
 
-        const { prompt, repetitions, n } = {
+        const { prompt, repetitions, n, enabled } = {
             repetitions: 1,
             n: 1,
             ...data
         };
         
-        log(`Generating reviews for prompt: ${prompt}'`);
+        if (!enabled) {
+            log(`Skipping prompt: '${prompt}'`)
+            continue;
+        }
+
+        log(`Generating reviews for prompt: '${prompt}'`);
 
         for (let j = 0; j < repetitions; j++) {
 
