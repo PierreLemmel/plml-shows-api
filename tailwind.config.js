@@ -6,7 +6,11 @@ module.exports = {
     "./components/**/*.{ts,tsx}",
   ],
   theme: {
-    
+    extend: {
+      fontFamily: {
+        consolas: ['consolas', 'ui-monospace']
+      }
+    }
   },
   plugins: [],
 }

@@ -13,3 +13,7 @@ export function randomElement<T>(input: T[]) {
 export function flattenArray<T>(input: T[][]) {
     return input.reduce((acc, arr) => acc.concat(arr), []);
 }
+
+export function sequence(count: number) {
+    return Array(count).fill(0).map((_, i) => i);
+}
