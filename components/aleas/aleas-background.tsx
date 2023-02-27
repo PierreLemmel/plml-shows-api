@@ -27,8 +27,8 @@ const AleasBackground = () => {
 
     const { windowWidth, windowHeight } = useWindowSize();
 
-    const pixelsPerDigitX = 40;
-    const pixelsPerDigitY = 50;
+    const pixelsPerDigitX = 33;
+    const pixelsPerDigitY = 44;
 
     const rows = Math.floor((windowHeight ?? 0) / pixelsPerDigitY);
     const cols = Math.floor((windowWidth ?? 0) / pixelsPerDigitX);
