@@ -42,17 +42,6 @@ export async function getBilletReducSettings(): Promise<BilletReducSettings> {
 }
 
 
-export async function clearBilletReducReviews(): Promise<ReviewsData> {
-    const result = {
-        reviews: [],
-        lastGeneration: Timestamp.now(),
-        lastGenerationMaxIndex: 0,
-    };
-    
-    await setDocument<ReviewsData>(reviewsDocPath, result);
-    return result;
-}
-
 export async function trimBilletReducReviews(): Promise<ReviewsData> {
     const oldReviews = await getDocument<ReviewsData>(reviewsDocPath);
 
