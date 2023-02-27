@@ -49,7 +49,7 @@ export async function trimBilletReducReviews(): Promise<ReviewsData> {
 
         let result = input;
 
-        if (result.startsWith('"')) {
+        if (result.startsWith('"') && !result.startsWith('"Aléas"')) {
             result = result.substring(1);
         }
 

@@ -7,6 +7,7 @@ import AleasBackground from '@/components/aleas/aleas-background';
 import AleasButton, { AleasRoundButton } from '@/components/aleas/aleas-buttons';
 import AleasHead from '@/components/aleas/aleas-head';
 import { AleasMainContainer, AleasTitle } from '@/components/aleas/aleas-layout';
+import { ToastContainer, toast } from 'react-toastify';
 
 export const getStaticProps: GetStaticProps = async () => {
 
@@ -55,11 +56,14 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
 
     const onCopied = () => {
         navigator.clipboard.writeText(review)
+        toast('Ajouté au presse-papier')
     }
 
     return <>
         <AleasHead />
+        
         <main className="fullscreen relative overflow-hidden">
+            
             <AleasBackground />
             <motion.div
                 className="absolute top-0 left-0 full center-child"
@@ -112,7 +116,10 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                         </div>
                     </motion.div>
                     <div className="
-                        w-full flex flex-row items-center justify-around
+                        w-full flex items-center
+                        flex-row justify-around gap-4
+                        sm:flex-col sm:items-stretch
+                        sm:mt-4
                     ">
                         <AleasButton onClick={onRegenerate}>
                             Une autre !
@@ -121,7 +128,7 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                             Copier
                         </AleasButton>
                         <a target="_blank" href={billetReducUrl} rel="noopener noreferrer">
-                            <AleasButton>
+                            <AleasButton className="sm:w-full">
                                 BilletReduc
                             </AleasButton>
                         </a>
@@ -130,7 +137,7 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
             </motion.div>
             <div className="
                 absolute
-                sm:bottom-3 sm:right-3
+                sm:top-3 sm:right-3
                 md:bottom-4 md:right-4
                 xl:bottom-8 xl:right-8
             ">
@@ -186,6 +193,16 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                     </AleasButton>
                 </AleasMainContainer>
             </motion.div>
+            <ToastContainer
+                position="bottom-center"
+                theme='dark'
+                autoClose={2000}
+                hideProgressBar={true}
+                pauseOnFocusLoss={false}
+                pauseOnHover={false}
+            />
+            
         </main>
+        
     </>
 }

@@ -8,6 +8,7 @@ interface ButtonProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export const AleasButton = (props: ButtonProps) => <div
+    {...props}
     className={`
         ${sharedClasses}
         hover:scale-105
@@ -18,10 +19,10 @@ export const AleasButton = (props: ButtonProps) => <div
         rounded-md
         ${props.className ?? ""}
     `}
-    {...props}
 />
 
 export const AleasRoundButton = (props: ButtonProps) => <div
+    {...props}
     className={`
         ${sharedClasses}
         hover:scale-110
@@ -31,7 +32,6 @@ export const AleasRoundButton = (props: ButtonProps) => <div
         rounded-full
         ${props.className ?? ""}
     `}
-    {...props}
 />
 
 

@@ -16,13 +16,13 @@ const AleasBackground = () => {
     }
 
     const durationRange = {
-        min: 4.0,
-        max: 11.0
+        min: 1.7,
+        max: 4.9
     }
 
     const pulsationRange = {
-        min: 2.0,
-        max: 5.0
+        min: 1.0,
+        max: 3.5
     }
 
     const { windowWidth, windowHeight } = useWindowSize();
