@@ -29,6 +29,7 @@ export const AleasTitle = (props: AleasTitleProps) => {
         font-extrabold
         2xl:text-6xl
         lg:text-4xl
+        text-xl
     ">
         {children}
     </div>

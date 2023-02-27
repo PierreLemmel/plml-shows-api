@@ -158,10 +158,10 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                         text-base leading-normal
                         2xl:text-xl 2xl:leading-relaxed
                     ">
-                        <p>Ces critiques ont été générées aléatoirement par une intelligence artificielle. Vous pouvez vous en inspirer librement pour rédiger vos propres critiques.Le but de ce générateur est de proposer au spectateur une expérience ludique sur la thématique du hasard et des arts numériques génératifs, et ainsi de prolonger l'expérience du spectacle.</p>
+                        <p>Ces critiques ont été générées aléatoirement par une intelligence artificielle. Vous pouvez vous en inspirer librement pour rédiger vos propres critiques. Le but de ce générateur est de proposer au spectateur une expérience ludique sur la thématique du hasard et des arts numériques génératifs, et ainsi de prolonger l&apos;expérience du spectacle.</p>
                         <p>Malgré nos meilleurs efforts, les critiques étant soumises aux dures lois du hasard, nous ne pouvons pas garantir que les contenus générés respectent les conditions de service de BilletReduc. Aussi, assurez-vous de ne pas publier de contenu qui ne soit pas en accord avec les conditions de service de la plateforme.</p>
-                        <p className="underline text-gray-400"><a href="https://github.com/PierreLemmel/plml-shows-api" target="_blank">Retrouver le projet sur GitHub</a></p>
-                        <div>Réalisation technique : <a className="text-gray-400 underline" href="https://linktr.ee/plemmel">Pierre Lemmel</a></div>
+                        <p className="underline text-gray-400"><a href="https://github.com/PierreLemmel/plml-shows-api" target="_blank" rel="noreferrer">Retrouver le projet sur GitHub</a></p>
+                        <div>Réalisation technique : <a className="text-gray-400 underline" target="_blank" rel="noreferrer" href="https://linktr.ee/plemmel">Pierre Lemmel</a></div>
                     </div>
                     <AleasButton onClick={() => setShowHelp(false)}>
                         Ok

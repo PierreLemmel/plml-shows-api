@@ -102,7 +102,7 @@ const BackgroundCell = (props: BackgroundCellProps) => {
                 clearInterval(interval);
             }
         }
-    }, []);
+    }, [duration]);
 
     const initialDirection = Math.random() > 0.5;
 
