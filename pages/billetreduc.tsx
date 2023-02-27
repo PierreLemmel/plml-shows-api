@@ -1,9 +1,11 @@
 import { InferGetStaticPropsType } from 'next';
 import { getBilletReducReviews, getBilletReducSettings } from "@/lib/services/billetreduc";
-import { Fragment, useEffect, useState } from "react";
-import { randomInt, randomRange, sequence } from '@/lib/services/helpers';
-import { useWindowSize } from '@/lib/services/hooks';
+import { useEffect, useRef, useState } from "react";
+import { randomInt, } from '@/lib/services/helpers';
 import { motion } from 'framer-motion';
+import AleasBackground from '@/components/aleas/aleas-background';
+import AleasButton, { AleasRoundButton } from '@/components/aleas/aleas-buttons';
+import Link from 'next/link';
 
 export const getStaticProps = async () => {
 
@@ -23,16 +25,28 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
     const { reviews, billetReducUrl } = props;
 
     const [index, setIndex] = useState<number>(0);
+    const [fadeIn, setFadeIn] = useState<boolean>(true);
+    const fadeTimeout = useRef<NodeJS.Timeout|undefined>(undefined);
+
+    const [showHelp, setShowHelp] = useState<boolean>(false);
+
+    const fadeDuration = 0.4;
+
     const review = reviews[index];
 
     const onRegenerate = () => {
         
-        let newIndex = index;
-        while (newIndex === index) {
-            newIndex = randomInt(0, reviews.length - 1);
-        }
+        setFadeIn(false);
+        fadeTimeout.current = setTimeout(() => {
+            let newIndex = index;
+            while (newIndex === index) {
+                newIndex = randomInt(0, reviews.length - 1);
+            }
 
-        setIndex(newIndex);
+            setIndex(newIndex);
+            setFadeIn(true);
+        }, fadeDuration * 1000)
+        
     }
 
     useEffect(onRegenerate, []);
@@ -41,13 +55,13 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
         navigator.clipboard.writeText(review)
     }
 
-    return <div className="fullscreen relative">
-        <Background />
+    return <div className="fullscreen relative overflow-hidden">
+        <AleasBackground />
         <div className="full absolute top-0 center-child
             text-gray-200 font-mono
         ">
             <div className="flex flex-col items-center justify-between
-                rounded-2xl  bg-slate-800/90
+                rounded-2xl  bg-slate-800/80
                 w-[85%] h-[92%]
                 md:w-4/5 md:h-[90%]
                 lg:w-3/4 lg:h-3/4
@@ -61,165 +75,102 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                 ">
                     Générateur de critiques aléatoires
                 </div>
-                <div className="
-                    w-full center-child italic text-center overflow-y-auto overflow-x-visible
-                    max-h-[66%]
-                    text-xl leading-normal
-                    lg:text-xl
-                    2xl:text-2xl 2xl:leading-relaxed
-                ">
+                <motion.div
+                    className="
+                        w-full center-child italic text-center overflow-y-auto overflow-x-visible
+                        max-h-[66%]
+                        text-xl leading-normal
+                        lg:text-xl
+                        2xl:text-2xl 2xl:leading-relaxed
+                    "
+                    animate={{
+                        opacity: fadeIn ? 1 : 0
+                    }}
+                    initial={{
+                        opacity: 0
+                    }}
+                    transition={{
+                        duration: fadeDuration,
+                        type: "spring"
+                    }}
+                >
                     {review}
-                </div>
+                </motion.div>
                 <div className="
                     w-full flex flex-row items-center justify-around
                 ">
-                    <Button onClick={onRegenerate}>
+                    <AleasButton onClick={onRegenerate}>
                         Une autre !
-                    </Button>
-                    <Button onClick={onCopied}>
+                    </AleasButton>
+                    <AleasButton onClick={onCopied}>
                         Copier
-                    </Button>
+                    </AleasButton>
                     <a target="_blank" href={billetReducUrl} rel="noopener noreferrer">
-                        <Button>
+                        <AleasButton>
                             BilletReduc
-                        </Button>
+                        </AleasButton>
                     </a>
                 </div>
             </div>
         </div>
-    </div>
-}
-
-const Background = () => {
-
-    const opacityMinRange = {
-        min: 0,
-        max: 0.3
-    }
-
-    const opacityMaxRange = {
-        min: 0.7,
-        max: 1.0
-    }
-
-    const durationRange = {
-        min: 4.0,
-        max: 11.0
-    }
-
-    const pulsationRange = {
-        min: 2.0,
-        max: 5.0
-    }
-
-    const { windowWidth, windowHeight } = useWindowSize();
-
-    const pixelsPerDigitX = 40;
-    const pixelsPerDigitY = 50;
-
-    const rows = Math.floor((windowHeight ?? 0) / pixelsPerDigitY);
-    const cols = Math.floor((windowWidth ?? 0) / pixelsPerDigitX);
-
-    return <div className="
-        full absolute top-0  center-child
-        bg-gradient-to-r from-gray-900 to-gray-800
-    ">
-        <div
-            className="
-                full grid grid-items-center
-                opacity-60
-                text-xl font-consolas
-            "
-            style={{
-                gridTemplateRows: `repeat(${rows}, 1fr)`,
-                gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                color: '#08dd08'
-            }}
-        >
-            {sequence(rows).map(row => <Fragment key={`row-${row}`}>
-                {sequence(cols).map(col => {
-                    
-                    const opacityMin = randomRange(opacityMinRange.min, opacityMinRange.max);
-                    const opacityMax = randomRange(opacityMaxRange.min, opacityMaxRange.max);
-                    const duration = randomRange(durationRange.min, durationRange.max);
-                    const pulsation = randomRange(pulsationRange.min, pulsationRange.max);
-
-                    return <BackgroundCell
-                        {...{ opacityMin, opacityMax, duration, pulsation }}
-                        key={`cell-${row}-${col}`}
-                    />
-                })}
-            </Fragment>)}
+        <div className="absolute bottom-8 right-8">
+            <AleasRoundButton onClick={() => setShowHelp(true)}>
+                ?
+            </AleasRoundButton>
         </div>
+        <motion.div
+            className="absolute top-0 left-0 full center-child"
+            variants={{
+                show: {
+                    scale: 1,
+                    opacity: 1
+                },
+                hide: {
+                    scale: 0,
+                    opacity: .2
+                }
+            }}
+            animate={showHelp ? "show" : "hide"}
+            initial="hide"
+            transition={{
+                duration: showHelp ? 0.8 : 1.1,
+                type: 'spring'
+            }}
+            onClick={() => setShowHelp(false)}
+        >
+            <div className="flex flex-col items-center justify-between
+                text-gray-200 font-mono
+                rounded-2xl  bg-slate-800
+                w-[85%] h-[92%]
+                md:w-4/5 md:h-[90%]
+                lg:w-3/4 lg:h-3/4
+                px-[4rem] py-6 gap-8
+            "
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="
+                    w-full text-center my-4
+                    font-extrabold
+                    2xl:text-6xl
+                    lg:text-4xl
+                ">
+                    Générateur de critiques aléatoires
+                </div>
+                <div className="
+                        w-full flex flex-col items-center justify-around
+                        italic text-center overflow-y-auto overflow-x-visible
+                        h-3/5
+                        text-base leading-normal
+                        2xl:text-xl 2xl:leading-relaxed
+                ">
+                    <p>Ces critiques ont été générées aléatoirement par une intelligence artificielle. Vous pouvez vous en inspirer librement pour rédiger vos propres critiques.Le but de ce générateur est de proposer au spectateur une expérience ludique sur la thématique du hasard et des arts numériques génératifs, et ainsi de prolonger l'expérience du spectacle.</p>
+                    <p>Malgré nos meilleurs efforts, les critiques étant soumises aux dures lois du hasard, nous ne pouvons pas garantir que les contenus générés respectent les conditions de service de BilletReduc. Aussi, assurez-vous de ne pas publier de contenu qui ne soit pas en accord avec les conditions de service de la plateforme.</p>
+                    <p className="underline text-gray-400"><a href="https://github.com/PierreLemmel/plml-shows-api" target="_blank">Retrouver le projet sur GitHub</a></p>
+                </div>
+                <AleasButton onClick={() => setShowHelp(false)}>
+                    Ok
+                </AleasButton>
+            </div>
+        </motion.div>
     </div>
 }
-
-type BackgroundCellProps = {
-    opacityMin: number;
-    opacityMax: number;
-    duration: number;
-    pulsation: number;
-}
-
-const randomBit = () => Math.random() > 0.5 ? 1 : 0;
-const BackgroundCell = (props: BackgroundCellProps) => {
-
-    const { opacityMin, opacityMax, duration, pulsation } = props;
-
-    const [value, setValue] = useState<0|1>(randomBit());
-
-    useEffect(() => {
-
-        let interval: NodeJS.Timer|undefined = undefined;
-        let timeout: NodeJS.Timeout|undefined = undefined;
-
-        const durationMs = duration * 1000;
-
-        timeout = setTimeout(() => {
-            setValue(randomBit());
-            interval = setInterval(() => setValue(randomBit()), durationMs);
-        }, durationMs * Math.random())
-
-        return () => {
-            if (timeout) {
-                clearTimeout(timeout);
-            }
-
-            if (interval) {
-                clearInterval(interval);
-            }
-        }
-    }, []);
-
-    const initialDirection = Math.random() > 0.5;
-
-    return <motion.div
-        className="text-center center-child"
-        transition={{
-            repeat: Infinity,
-            repeatType: 'reverse',
-            duration: pulsation,
-        }}
-        initial={{
-            opacity: initialDirection ? opacityMin : opacityMax
-        }}
-        animate={{
-            opacity: initialDirection ? opacityMax : opacityMin
-        }}
-    >
-        {value}
-    </motion.div>
-}
-
-const Button = (props: { children: string, onClick?: () => void }) => <div
-    className={`
-        text-center text-xl font-bold
-        py-3 px-6 min-w-[8em]
-        bg-gradient-to-r from-cyan-500 to-blue-500
-        hover:hue-rotate-30 hover:cursor-pointer hover:scale-105
-        transition duration-300 rounded-md
-    `}
-    onClick={props.onClick}
->
-    {props.children}
-</div>

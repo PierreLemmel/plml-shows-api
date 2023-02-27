@@ -53,6 +53,35 @@ export async function clearBilletReducReviews(): Promise<ReviewsData> {
     return result;
 }
 
+export async function trimBilletReducReviews(): Promise<ReviewsData> {
+    const oldReviews = await getDocument<ReviewsData>(reviewsDocPath);
+
+    const cleanReview = (input: string) => {
+
+        let result = input;
+
+        if (result.startsWith('"')) {
+            result = result.substring(1);
+        }
+
+        if (result.endsWith('"')) {
+            result = result.substring(0, result.length - 1);
+        }
+
+        return result.trim();
+    }
+
+    const result: ReviewsData = {
+        ...oldReviews,
+        reviews: oldReviews.reviews.map(cleanReview)
+    }
+
+    await setDocument<ReviewsData>(reviewsDocPath, result);
+
+    return result;
+}
+
+
   
 export type CompletionsData = {
     model: string;
