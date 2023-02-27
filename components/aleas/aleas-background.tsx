@@ -1,5 +1,5 @@
 import { sequence, randomRange } from "@/lib/services/helpers"
-import { useWindowSize } from "@/lib/services/hooks"
+import { useWindowSize } from "@/lib/services/responsive"
 import { motion } from "framer-motion"
 import { Fragment, useState, useEffect } from "react"
 

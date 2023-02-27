@@ -9,7 +9,7 @@ const Home = () => <>
 	<AleasHead />
 	<main className="fullscreen relative overflow-hidden">
 		<AleasBackground />
-		<div className="full absolute top-0 center-child">
+		<div className="full absolute top-0 center-child text-center">
 			<AleasMainContainer>
 				<AleasTitle>
 					Aléas, Improvisation aléatoire

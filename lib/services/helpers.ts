@@ -17,3 +17,7 @@ export function flattenArray<T>(input: T[][]) {
 export function sequence(count: number) {
     return Array(count).fill(0).map((_, i) => i);
 }
+
+export function isOneOf<T>(input: T, ...values: T[]): boolean {
+    return values.find(elt => elt === input) !== undefined;
+}

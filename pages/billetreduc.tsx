@@ -86,9 +86,13 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                     </AleasTitle>
                     <motion.div
                         className="
-                            w-full center-child italic text-center overflow-y-auto overflow-x-visible
-                            max-h-[66%]
-                            text-xl leading-normal
+                            text-center overflow-y-auto overflow-x-hidden
+                            sm:max-h-4/5
+                            md:max-h-3/4
+                            lg:max-h-[66%]
+                            leading-normal
+                            sm:text-lg
+                            md:text-xl 
                             lg:text-xl
                             2xl:text-2xl 2xl:leading-relaxed
                         "
@@ -103,7 +107,9 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                             type: "spring"
                         }}
                     >
-                        {review}
+                        <div className="w-full min-h-full center-child">
+                            {review}
+                        </div>
                     </motion.div>
                     <div className="
                         w-full flex flex-row items-center justify-around
@@ -122,7 +128,12 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                     </div>
                 </AleasMainContainer>
             </motion.div>
-            <div className="absolute bottom-8 right-8">
+            <div className="
+                absolute
+                sm:bottom-3 sm:right-3
+                md:bottom-4 md:right-4
+                xl:bottom-8 xl:right-8
+            ">
                 <AleasRoundButton onClick={() => setShowHelp(true)}>
                     ?
                 </AleasRoundButton>
@@ -152,16 +163,23 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                         Générateur de critiques aléatoires
                     </AleasTitle>
                     <div className="
-                        w-full flex flex-col items-center justify-around
+                        w-full 
                         italic text-center overflow-y-auto overflow-x-visible
-                        h-3/5
+                        sm:h-4/5 md:h-3/5
+                        sm:pb-2
                         text-base leading-normal
                         2xl:text-xl 2xl:leading-relaxed
                     ">
-                        <p>Ces critiques ont été générées aléatoirement par une intelligence artificielle. Vous pouvez vous en inspirer librement pour rédiger vos propres critiques. Le but de ce générateur est de proposer au spectateur une expérience ludique sur la thématique du hasard et des arts numériques génératifs, et ainsi de prolonger l&apos;expérience du spectacle.</p>
-                        <p>Malgré nos meilleurs efforts, les critiques étant soumises aux dures lois du hasard, nous ne pouvons pas garantir que les contenus générés respectent les conditions de service de BilletReduc. Aussi, assurez-vous de ne pas publier de contenu qui ne soit pas en accord avec les conditions de service de la plateforme.</p>
-                        <p className="underline text-gray-400"><a href="https://github.com/PierreLemmel/plml-shows-api" target="_blank" rel="noreferrer">Retrouver le projet sur GitHub</a></p>
-                        <div>Réalisation technique : <a className="text-gray-400 underline" target="_blank" rel="noreferrer" href="https://linktr.ee/plemmel">Pierre Lemmel</a></div>
+                        <div className="
+                            w-full min-h-full
+                            flex flex-col items-center justify-around
+                            gap-3
+                        ">
+                            <p>Ces critiques ont été générées aléatoirement par une intelligence artificielle. Vous pouvez vous en inspirer librement pour rédiger vos propres critiques. Le but de ce générateur est de proposer au spectateur une expérience ludique sur la thématique du hasard et des arts numériques génératifs, et ainsi de prolonger l&apos;expérience du spectacle.</p>
+                            <p>Malgré nos meilleurs efforts, les critiques étant soumises aux dures lois du hasard, nous ne pouvons pas garantir que les contenus générés respectent les conditions de service de BilletReduc. Aussi, assurez-vous de ne pas publier de contenu qui ne soit pas en accord avec les conditions de service de la plateforme.</p>
+                            <p className="underline text-gray-400"><a href="https://github.com/PierreLemmel/plml-shows-api" target="_blank" rel="noreferrer">Retrouver le projet sur GitHub</a></p>
+                            <div>Réalisation technique : <a className="text-gray-400 underline" target="_blank" rel="noreferrer" href="https://linktr.ee/plemmel">Pierre Lemmel</a></div>
+                        </div>
                     </div>
                     <AleasButton onClick={() => setShowHelp(false)}>
                         Ok
