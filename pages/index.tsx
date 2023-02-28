@@ -23,11 +23,6 @@ const Home = () => <>
 						</AleasButton>
 					</Link>
 
-					<Link href="/sumup">
-						<AleasButton>
-							Chapeau spectacle
-						</AleasButton>
-					</Link>
 				</div>
 				
 				<div>Réalisation technique : <a className="text-gray-400 underline" href="https://linktr.ee/plemmel" target="_blank" rel="noreferrer">Pierre Lemmel</a></div>
