@@ -23,11 +23,11 @@ export async function getDocument<T>(path: string) {
     return <T> firedoc.data();
 }
 
-export async function setDocument<T extends WithFieldValue<DocumentData>>(path: string, data: Partial<T>) {
+export async function setDocument<T extends WithFieldValue<DocumentData>>(path: string, data: Partial<T>, merge: boolean = true) {
     await setDoc(
         doc(db, path),
         data,
-        { merge: true }
+        { merge }
     );
 }
 

@@ -2,12 +2,14 @@ import { Timestamp } from "firebase/firestore";
 import { getDocument, setDocument } from "./firebase";
 import addEnabledToCompletions from "./migrations/001 - addEnabledToCompletions";
 import seedCompletions from "./migrations/002 - seedCompletions";
+import multipleReviewsDataSet from "./migrations/003 - multipleReviewsDataset";
 
 
 
 const migrationHandlers: MigrationHandler[] = [
     addEnabledToCompletions,
-    seedCompletions
+    seedCompletions,
+    multipleReviewsDataSet,
 ];
 
 
