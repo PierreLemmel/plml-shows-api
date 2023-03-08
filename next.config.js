@@ -1,6 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+	reactStrictMode: true,
+
+	exportPathMap: () => {
+		return {
+			'/photos': { page: '/photo-gallery' },
+		}
+	},
+
+	images: {
+		domains: [
+			"firebasestorage.googleapis.com"
+		]
+	}
 }
 
 module.exports = nextConfig
