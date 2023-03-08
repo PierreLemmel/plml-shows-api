@@ -1,9 +1,9 @@
 export interface AleasMainContainerProps extends React.HTMLAttributes<HTMLDivElement> {
-    
+    overflow?: boolean;
 }
 
 export const AleasMainContainer = (props: AleasMainContainerProps) => {
-    const { children } = props;
+    const { children, overflow } = props;
 
     return <div className={`flex flex-col items-center justify-between
         bg-slate-800/80    
@@ -16,7 +16,8 @@ export const AleasMainContainer = (props: AleasMainContainerProps) => {
         sm:px-5 sm:py-3 sm:gap-4
         md:px-12 md:py-6 md:gap-8 
         lg:px-12 lg:py-6 lg:gap-8 
-    ` + (props.className ?? "")} {...props}>
+    ` + (props.className ?? "")
+    + (overflow ? "overflow-y-auto" : "")} {...props}>
         {children}
     </div>
 }

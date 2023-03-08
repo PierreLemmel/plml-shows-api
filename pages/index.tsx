@@ -23,6 +23,12 @@ const Home = () => <>
 						</AleasButton>
 					</Link>
 
+					<Link href="/photos">
+						<AleasButton>
+							Galerie photos
+						</AleasButton>
+					</Link>
+
 				</div>
 				
 				<div>Réalisation technique : <a className="text-gray-400 underline" href="https://linktr.ee/plemmel" target="_blank" rel="noreferrer">Pierre Lemmel</a></div>

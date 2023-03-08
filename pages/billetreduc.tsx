@@ -9,7 +9,12 @@ import AleasHead from '@/components/aleas/aleas-head';
 import { AleasMainContainer, AleasTitle } from '@/components/aleas/aleas-layout';
 import { ToastContainer, toast } from 'react-toastify';
 
-export const getStaticProps: GetStaticProps = async () => {
+interface BilletReducProps {
+    reviews: string[],
+    billetReducUrl: string
+}
+
+export const getStaticProps: GetStaticProps<BilletReducProps> = async () => {
 
     const { reviews } = await getBilletReducReviews();
     const { billetReducUrl } = await getBilletReducSettings();
