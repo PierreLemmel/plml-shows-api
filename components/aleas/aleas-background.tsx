@@ -30,8 +30,11 @@ const AleasBackground = () => {
     const pixelsPerDigitX = 33;
     const pixelsPerDigitY = 44;
 
-    const rows = Math.floor((windowHeight ?? 0) / pixelsPerDigitY);
-    const cols = Math.floor((windowWidth ?? 0) / pixelsPerDigitX);
+    const maxRows = 15;
+    const maxCols = 20;
+
+    const rows = Math.min(Math.floor((windowHeight ?? 0) / pixelsPerDigitY), maxRows);
+    const cols = Math.min(Math.floor((windowWidth ?? 0) / pixelsPerDigitX), maxCols);
 
     return <div className="
         full absolute top-0  center-child
@@ -41,7 +44,8 @@ const AleasBackground = () => {
             className="
                 full grid grid-items-center
                 opacity-60
-                text-xl font-consolas
+                text-xl
+                lg:text-2xl font-consolas
             "
             style={{
                 gridTemplateRows: `repeat(${rows}, 1fr)`,

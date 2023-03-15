@@ -21,3 +21,14 @@ export function sequence(count: number) {
 export function isOneOf<T>(input: T, ...values: T[]): boolean {
     return values.find(elt => elt === input) !== undefined;
 }
+
+export function padNumber(n: number, totalLength: number) {
+    
+    let result = n.toString();
+
+    if (result.length < totalLength) {
+        result = "0".repeat(totalLength - result.length) + result;
+    }
+
+    return result;
+}
