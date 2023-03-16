@@ -10,29 +10,36 @@ const staticReviewsDocPath = "billetreduc/static-reviews";
 const completionsDocPath = "billetreduc/completions";
 const billetReducSettingsPath = "billetreduc/settings";
 
-export type ReviewsData = {
-    reviews: string[];
-    lastGeneration: Timestamp;
-    lastGenerationMaxIndex: number;
+const pathToReviewCollection = (collection: string) => `${reviewsDocPath}/generated/${collection}`
+
+interface ReviewsDocData {
+    currentReview: string;
 }
 
-export type StaticReviewsData = {
+export interface ReviewsData {
+    generated: Timestamp;
+    model: string;
     reviews: string[];
-    lastGeneration: Timestamp;
-    lastGenerationMaxIndex: number;
 }
 
-type BilletReducSettings = {
+export interface StaticReviewsData {
+    reviews: string[];
+}
+
+interface BilletReducSettings {
     billetReducUrl: string;
 }
 
 export async function getBilletReducReviews(): Promise<ReviewsData> {
-    const result  = await getDocument<ReviewsData>(reviewsDocPath);
+    const { currentReview }  = await getDocument<ReviewsDocData>(reviewsDocPath);
+
+    const result = await getDocument<ReviewsData>(pathToReviewCollection(currentReview));
     return result;
 }
 
 export async function getStaticBilletReducReviews(): Promise<StaticReviewsData> {
-    const result  = await getDocument<ReviewsData>(staticReviewsDocPath);
+    const result  = await getDocument<StaticReviewsData>(staticReviewsDocPath);
+
     return result;
 }
 
@@ -42,8 +49,7 @@ export async function getBilletReducSettings(): Promise<BilletReducSettings> {
 }
 
 
-export async function trimBilletReducReviews(): Promise<ReviewsData> {
-    const oldReviews = await getDocument<ReviewsData>(reviewsDocPath);
+function trimBilletReducReviews(reviews: string[]) {
 
     const cleanReview = (input: string) => {
 
@@ -60,14 +66,7 @@ export async function trimBilletReducReviews(): Promise<ReviewsData> {
         return result.trim();
     }
 
-    const result: ReviewsData = {
-        ...oldReviews,
-        reviews: oldReviews.reviews.map(cleanReview)
-    }
-
-    await setDocument<ReviewsData>(reviewsDocPath, result);
-
-    return result;
+    return reviews.map(cleanReview)
 }
 
 
@@ -92,7 +91,7 @@ export async function getCompletionData(): Promise<CompletionsData> {
 
 const addStaticReviews = process.env.ADD_STATIC_REVIEWS === "true";
 
-export async function regenerateBilletReducData(fullyRegenerate: boolean): Promise<ReviewsData> {
+export async function regenerateBilletReducData(collectionName: string): Promise<ReviewsData> {
     
     const startTime = Date.now();
 
@@ -110,7 +109,6 @@ export async function regenerateBilletReducData(fullyRegenerate: boolean): Promi
     const maxAttempts = 8;
 
     const completionData = await getCompletionData();
-    const { lastGenerationMaxIndex } = await getBilletReducReviews();
     const { model, completions } = completionData;
 
     const configuration = new Configuration({
@@ -122,20 +120,14 @@ export async function regenerateBilletReducData(fullyRegenerate: boolean): Promi
 
     const results: string[][] = [];
 
-    if (!fullyRegenerate) {
-        const oldBrData = await getBilletReducReviews();
-        results.push(oldBrData.reviews);
-    }
-
     let attempts = 0;
     let failures = 0;
 
-    let startIndex = fullyRegenerate ? 0 : lastGenerationMaxIndex;
-    log(`Generating reviews, starting at index ${startIndex}`);
+    log(`Generating reviews`);
 
     const user = `plml-${randomUUID()}`
 
-    for (let i=startIndex; i < completions.length; i++) {
+    for (let i=0; i < completions.length; i++) {
         
         const data = completions[i];
 
@@ -213,14 +205,20 @@ export async function regenerateBilletReducData(fullyRegenerate: boolean): Promi
         finalReviews = finalReviews.concat(staticReviews.reviews);
     }
 
+    finalReviews = trimBilletReducReviews(finalReviews)
 
-	const reviews = {
-        reviews: finalReviews,
-        lastGeneration: Timestamp.now(),
-        lastGenerationMaxIndex: completions.length
+	const reviews: ReviewsDocData = {
+        currentReview: collectionName
     };
 	
-    await setDocument<ReviewsData>(reviewsDocPath, reviews)
+    const result: ReviewsData = {
+        generated: Timestamp.now(),
+        reviews: finalReviews,
+        model
+    }
 
-    return reviews;
+    await setDocument<ReviewsDocData>(reviewsDocPath, reviews);
+    await setDocument<ReviewsData>(pathToReviewCollection(collectionName), result);
+
+    return result;
 }

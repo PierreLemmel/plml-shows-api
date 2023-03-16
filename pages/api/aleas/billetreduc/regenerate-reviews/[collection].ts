@@ -7,10 +7,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<ReviewsData>) =
 	if(req.method !== 'POST' && !process.env.DEV) {
         res.status(405);
     }
+    
+	const collection = <string> req.query["collection"];
 
-	const regenerate = req.query.regenerate === "true"
-
-	const reviews = await regenerateBilletReducData(regenerate);
+	const reviews = await regenerateBilletReducData(collection);
 	res.status(200).json(reviews);
 }
 

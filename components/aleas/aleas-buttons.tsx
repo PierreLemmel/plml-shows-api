@@ -33,6 +33,3 @@ export const AleasRoundButton = (props: ButtonProps) => <div
         ${props.className ?? ""}
     `}
 />
-
-
-export default AleasButton;

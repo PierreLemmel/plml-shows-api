@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { doc, DocumentData, getDoc, getFirestore, setDoc, WithFieldValue } from "firebase/firestore";
+import { collection, doc, DocumentData, getDoc, getDocs, getFirestore, setDoc, WithFieldValue } from "firebase/firestore";
+import { getStorage, list, ref, getDownloadURL, getMetadata } from "firebase/storage";
 
 
 const firebaseConfig = {
@@ -14,6 +15,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 export async function getDocument<T>(path: string) {
     const firedoc = await getDoc(doc(db, path));
@@ -21,10 +23,29 @@ export async function getDocument<T>(path: string) {
     return <T> firedoc.data();
 }
 
-export async function setDocument<T extends WithFieldValue<DocumentData>>(path: string, data: Partial<T>) {
+export async function setDocument<T extends WithFieldValue<DocumentData>>(path: string, data: Partial<T>, merge: boolean = true) {
     await setDoc(
         doc(db, path),
         data,
-        { merge: true }
+        { merge }
     );
+}
+
+
+export async function listDocuments(path: string) {
+    const col = collection(db, path);
+    const docRefs = await getDocs(col);
+
+    const ids = docRefs.docs.map(doc => doc.id);
+
+    return ids;
+}
+
+
+export async function listFiles(folder: string) {
+    
+    const folderRef = ref(storage, folder);
+    const result = await list(folderRef);
+
+    return result.items;
 }
