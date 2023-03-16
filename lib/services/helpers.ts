@@ -10,6 +10,10 @@ export function randomElement<T>(input: T[]) {
     return input[randomInt(0, input.length)];
 }
 
+export function randomBool() {
+    return Math.random() > 0.5;
+} 
+
 export function flattenArray<T>(input: T[][]) {
     return input.reduce((acc, arr) => acc.concat(arr), []);
 }

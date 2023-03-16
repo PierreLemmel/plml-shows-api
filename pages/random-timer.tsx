@@ -119,7 +119,7 @@ export default function RandomTimer(props: InferGetStaticPropsType<typeof getSta
                             <div className={bigTextClass}>
                                 {formatTime(time)}
                             </div>
-                            <div className="mt-2 text-lg">
+                            <div className="mt-2 text-lg text-center">
                                 (Generated duration: {formatTime(duration)})
                             </div>
                         </>}
