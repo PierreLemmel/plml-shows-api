@@ -14,6 +14,10 @@ export function clamp(value: number, min: number, max: number) {
     return value > min ? (value < max ? value : max) : min;
 }
 
+export function clampByte(value: number) {
+    return clamp(value, 0x00, 0xff);
+} 
+
 export function smoothDamp(
     current: number, target: number, currentVelocity: Velocity,
     smoothTime: number, maxSpeed: number, deltaTime: number): number {
