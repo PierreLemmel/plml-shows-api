@@ -161,15 +161,25 @@ const AleasBackground = () => {
         }))
     }, []);
 
+
+    const intervalRef = useRef<NodeJS.Timer>();
+    const clearCurrentInterval = () => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+        }
+    }
+
     useEffect(() => {
 
-        const interval = setInterval(() => {
+        clearCurrentInterval();
+
+        intervalRef.current = setInterval(() => {
             updateData();
             repaintCanvas();
         }, 1000 * deltaTime);
 
-        return () => clearInterval(interval);
-    },[])
+        return clearCurrentInterval;
+    }, [])
 
     return <div className="full absolute top-0">
         <canvas className="full" width={windowWidth} height={windowHeight} ref={canvasRef} />

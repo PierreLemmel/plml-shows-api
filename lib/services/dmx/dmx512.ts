@@ -1,3 +1,4 @@
+import { clampByte } from "../mathf";
 
 
 export class Color {
@@ -8,9 +9,9 @@ export class Color {
 
 
     private constructor(r: number, g: number, b: number) {
-        this.r = clampnumber(r);
-        this.g = clampnumber(g);
-        this.b = clampnumber(b);
+        this.r = clampByte(r);
+        this.g = clampByte(g);
+        this.b = clampByte(b);
     }
 
 
@@ -38,7 +39,7 @@ export class Color {
         return new Color(r, g, b);
     }
 
-    public static hsl(h: number01, s: number01, l: number01): Color {
+    public static hsl(h: number, s: number, l: number): Color {
 
         // Stolen from: https://stackoverflow.com/questions/2353211/hsl-to-rgb-color-conversion
 
@@ -47,7 +48,7 @@ export class Color {
         if(s === 0){
             r = g = b = l; // achromatic
         }else{
-            const hue2rgb = function hue2rgb(p: number01, q: number01, t: number01){
+            const hue2rgb = function hue2rgb(p: number, q: number, t: number){
                 if(t < 0) t += 1;
                 if(t > 1) t -= 1;
                 if(t < 1/6) return p + (q - p) * 6 * t;
@@ -93,19 +94,31 @@ export module Chans {
         "Warm",
         "Amber",
         "Pan",
-        "Tilt"
+        "Pan Fine",
+        "Tilt",
+        "Tilt Fine"
     ] as const;
-    export type numberChannelType = typeof numberChannelTypes[number];
+    export type NumberChannelType = typeof numberChannelTypes[number];
 
     const colorChannelTypes = [
         "Color"
     ] as const;
     export type ColorChannelType = typeof colorChannelTypes[number];
 
-    export type ChannelType = numberChannelType | ColorChannelType;
+    export type ChannelType = NumberChannelType | ColorChannelType | ColorArray | ValueArray | "UNUSED";
 
-    export function isnumberChannel(chan: ChannelType): chan is numberChannelType {
-        return numberChannelTypes.includes(chan as numberChannelType);
+    export interface ColorArray {
+        readonly type: "ColorArray";
+        readonly size: number;
+    }
+
+    export interface ValueArray {
+        readonly type: "ValueArray";
+        readonly size: number;
+    }
+
+    export function isnumberChannel(chan: ChannelType): chan is NumberChannelType {
+        return numberChannelTypes.includes(chan as NumberChannelType);
     }
 
     export function isColorChannel(chan: ChannelType): chan is ColorChannelType {
@@ -115,48 +128,60 @@ export module Chans {
 
 
 
+interface Named {
+    readonly name: string;
+}
 
-export module Fixtures {
+export module Fixtures {   
 
-    export interface FixtureModeDefinition extends Model {
+    export type LedFixtureType = "Par LED" | "Barre LED" | "Générique LED" | "Lyre";
+    export type TradFixtureType = "Par Trad" | "PC Trad" | "Découpe Trad" | "Générique Trad"
 
+    export type FixtureType = LedFixtureType|TradFixtureType;
+
+    export interface FixtureModeDefinition extends Named {
+
+        readonly chanCount: number;
         readonly channels: {
             readonly [position: number]: Chans.ChannelType;
         }
     }
     
     
-    export interface FixtureModelDefinition extends Model {
+    export interface LedFixtureModelDefinition extends Named {
     
-        readonly manufacturer: string;
-        readonly type: string;
+        readonly manufacturer?: string;
+        readonly type: LedFixtureType;
 
-        readonly channels: ChannelDefinition[];
         readonly modes: FixtureModeDefinition[];
     }
 
+    export interface TradFixtureModelDefinition extends Named {
 
-    export interface ChannelDefinition extends Model {
+        readonly manufacturer?: string;
+        readonly type: TradFixtureType;
+        readonly power?: number;
+    }
+
+    export type FixtureModelDefinition = LedFixtureModelDefinition|TradFixtureModelDefinition;
+
+    export interface ChannelDefinition extends Named {
         readonly type: Chans.ChannelType;
     }
     
     
-    export interface FixtureModelCollection extends Model {
+    export interface FixtureModelCollection extends Named {
     
         readonly fixtureModels: FixtureModelDefinition[];
     }
     
 
-    export interface Fixture extends Model {
+    export interface Fixture extends Named {
     
         readonly address: number;
-        readonly model: FixtureModelDefinition;
-        readonly chanNumber: number;
+        readonly model: string;
+        readonly mode: number;
         readonly remarks?: string;
-    }
-
-    export function extractMode({ model, chanNumber }: Fixture): FixtureModeDefinition {
-        return model.modes[chanNumber];
     }
 
     export function getModeReverseMap(mode: FixtureModeDefinition): Map<Chans.ChannelType, number> {
@@ -177,7 +202,8 @@ export module Fixtures {
 }
 
 
-export interface StageLightingPlan extends Model {
+export interface StageLightingPlan extends Named {
 
+    readonly fixtureCollection: string;
     readonly fixtures: Fixtures.Fixture[];
 }

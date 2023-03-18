@@ -4,6 +4,8 @@ import addEnabledToCompletions from "./migrations/001 - addEnabledToCompletions"
 import seedCompletions from "./migrations/002 - seedCompletions";
 import multipleReviewsDataSet from "./migrations/003 - multipleReviewsDataset";
 import seedRandomTimerDurations from "./migrations/004 - seedTimerDurations";
+import seedFixtureDefinitions from "./migrations/005 - seedFixtureDefinitions";
+import seedLightingPlans from "./migrations/006 - seedLightingPlans";
 
 
 const migrationHandlers: MigrationHandler[] = [
@@ -11,6 +13,8 @@ const migrationHandlers: MigrationHandler[] = [
     seedCompletions,
     multipleReviewsDataSet,
     seedRandomTimerDurations,
+    seedFixtureDefinitions,
+    seedLightingPlans,
 ];
 
 
