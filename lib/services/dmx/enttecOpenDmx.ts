@@ -1,3 +1,5 @@
+import { DmxWriter, DmxWriterState } from "./dmx512";
+
 export class Enttec {
     static vendorId = 0x403; //1027
     static openDmxProductId = 0x6001; //24577
@@ -19,12 +21,29 @@ export class OpenDmxDevice {
         this._buffer = Buffer.alloc(513);
     }
 
-    private _opened: boolean = false;
     public get opened(): boolean {
-        return this._opened;
+        return this._state === "Opened"
     }
 
-    public async open(): Promise<void> {
+    private _state: DmxWriterState = "Closed";
+    public get state(): DmxWriterState {
+        return this._state;
+    }
+    
+
+    public get canOpen(): boolean {
+        return this._state === "Closed";
+    }
+
+    public get canClose(): boolean {
+        return this._state === "Opened";
+    }
+
+
+    public open = async () => {
+        if (!this.canOpen) {
+            throw "Can't open Enttec Dmx Pro for the moment"
+        }
 
         const openOptions: OpenPortOptions = {
             baudRate: 250000,
@@ -35,8 +54,9 @@ export class OpenDmxDevice {
         };
 
         try {
+            this._state = "Opening";
             await this._port.open(openOptions);
-            this._opened = true;
+            this._state = "Opened";
         }
         catch (e: unknown) {
             console.warn(e);
@@ -44,11 +64,16 @@ export class OpenDmxDevice {
     }
 
 
-    public async close(): Promise<void> {
+    public close = async () => {
+
+        if (!this.canClose) {
+            throw "Can't close Enttec Dmx Pro for the moment"
+        }
 
         try {
+            this._state = "Closing";
             await this._port.close();
-            this._opened = false;
+            this._state = "Closed";
         }
         catch (e: unknown) {
             console.warn(e);
@@ -56,7 +81,7 @@ export class OpenDmxDevice {
     }
 
 
-    public write(source: Buffer, offset: number) {
+    public write = async (source: Buffer, offset: number) => {
         
         try {
             source.copy(this._buffer, offset);
@@ -67,7 +92,7 @@ export class OpenDmxDevice {
     }
 
     
-    public async sendFrame(): Promise<void> {
+    public sendFrame = async () => {
         if (!this._port.writable || this._port.writable.locked) {
             return;
         }

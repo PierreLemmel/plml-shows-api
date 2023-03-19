@@ -1,4 +1,4 @@
-import { randomRange, randomBool } from "@/lib/services/helpers"
+import { randomRange, randomBool } from "@/lib/services/utils"
 import { smoothDamp, Velocity } from "@/lib/services/mathf";
 import { useWindowSize } from "@/lib/services/responsive"
 import { useEffect, useRef, useCallback, useMemo } from "react"

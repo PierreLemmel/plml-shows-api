@@ -2,20 +2,26 @@ import AleasBackground from '@/components/aleas/aleas-background';
 import { AleasButton, AleasRoundButton } from '@/components/aleas/aleas-buttons';
 import AleasHead from '@/components/aleas/aleas-head';
 import { AleasMainContainer, AleasTitle } from '@/components/aleas/aleas-layout';
+import { useEnttecOpenDmx } from '@/lib/services/dmx/hooks';
 
-export default function BilletReduc() {
+const TestOpenDmx = () => {
 
+    const openDmx = useEnttecOpenDmx();
 
-    const canPlay = true;
-    const canStop = true;
+    const hasOpenDmx = openDmx !== null;
+    const state = openDmx?.state;
 
-    const onPlayClicked = () => {
-        console.log("Play")
+    const canOpen = hasOpenDmx && openDmx.canOpen;
+    const canClose = hasOpenDmx && openDmx.canClose;
+
+    const onOpenClicked = async () => {
+        openDmx?.open();
     }
 
-    const onStopClicked = () => {
-        console.log("Stop")
+    const onCloseClicked = async () => {
+        openDmx?.close();
     }
+
 
     return <>
         <AleasHead />
@@ -30,18 +36,22 @@ export default function BilletReduc() {
                     <AleasTitle>
                         Test Enttec
                     </AleasTitle>
+                    <div>{openDmx ? "Device found" : "No device"}</div>
+                    <div>{openDmx?.state ?? "Not found"}</div>
                     <div className="centered-row gap-6">
                         <AleasButton
-                            onClick={onPlayClicked}
-                            disabled={!canPlay}
+                            onClick={onOpenClicked}
+                            spinning={state === "Opening"}
+                            disabled={!canOpen}
                         >
-                            Play
+                            Open
                         </AleasButton>
                         <AleasButton
-                            onClick={onStopClicked}
-                            disabled={!canStop}
+                            onClick={onCloseClicked}
+                            spinning={state === "Closing"}
+                            disabled={!canClose}
                         >
-                            Stop
+                            Close
                         </AleasButton>
                     </div>
                 </AleasMainContainer>
@@ -49,3 +59,5 @@ export default function BilletReduc() {
         </main>
     </>
 }
+
+export default TestOpenDmx;

@@ -1,3 +1,5 @@
+import { DependencyList, useEffect } from "react";
+
 export function randomInt(min: number, max: number) {
     return Math.floor(randomRange(min, max));
 }
@@ -35,4 +37,23 @@ export function padNumber(n: number, totalLength: number) {
     }
 
     return result;
+}
+
+export type ValueProvider<T> = T|(() => T);
+
+export function getValue<T>(provider: ValueProvider<T>): T {
+    if (provider instanceof Function) {
+        return provider();
+    }
+    else {
+        return provider;
+    }
+}
+
+export const useEffectAsync = (effect: () => Promise<void>, deps?: DependencyList): void => {
+    useEffect(() => {
+        (async () => {
+            await effect();
+        })();
+    }, deps);
 }

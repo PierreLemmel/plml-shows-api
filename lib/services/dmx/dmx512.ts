@@ -139,21 +139,17 @@ export module Fixtures {
 
     export type FixtureType = LedFixtureType|TradFixtureType;
 
-    export interface FixtureModeDefinition extends Named {
-
-        readonly chanCount: number;
-        readonly channels: {
-            readonly [position: number]: Chans.ChannelType;
-        }
-    }
-    
     
     export interface LedFixtureModelDefinition extends Named {
     
         readonly manufacturer?: string;
         readonly type: LedFixtureType;
 
-        readonly modes: FixtureModeDefinition[];
+        readonly modes: {
+            readonly [chanCount: number]: {
+                readonly [position: number]: Chans.ChannelType;
+            };
+        }
     }
 
     export interface TradFixtureModelDefinition extends Named {
@@ -172,7 +168,9 @@ export module Fixtures {
     
     export interface FixtureModelCollection extends Named {
     
-        readonly fixtureModels: FixtureModelDefinition[];
+        readonly fixtureModels: {
+            readonly [shortName: string]: FixtureModelDefinition;
+        }
     }
     
 
@@ -180,24 +178,8 @@ export module Fixtures {
     
         readonly address: number;
         readonly model: string;
-        readonly mode: number;
+        readonly mode?: number;
         readonly remarks?: string;
-    }
-
-    export function getModeReverseMap(mode: FixtureModeDefinition): Map<Chans.ChannelType, number> {
-
-        const chans = mode.channels;
-
-        const result = new Map<Chans.ChannelType, number>(
-            Object.keys(chans).map((key) => {
-                const position: number = Number.parseInt(key);
-                const chanType = chans[position];
-
-                return [chanType, position];
-            })
-        );
-
-        return result;
     }
 }
 
@@ -205,5 +187,22 @@ export module Fixtures {
 export interface StageLightingPlan extends Named {
 
     readonly fixtureCollection: string;
-    readonly fixtures: Fixtures.Fixture[];
+    readonly fixtures: {
+        [shortName: string]: Fixtures.Fixture;
+    }
+}
+
+export type DmxWriterState = "Closed"|"Opening"|"Opened"|"Closing"
+
+export interface DmxWriter {
+    open(): void;
+    close(): void;
+
+    opened: boolean;
+    state: DmxWriterState;
+    canOpen: boolean;
+    canClose: boolean;
+    
+    // write(source: Buffer, offset: number): Promise<void>;
+    // sendFrame(): Promise<void>;
 }

@@ -1,13 +1,18 @@
+/// <reference types="react-scripts" />
+
 interface Navigator {
     serial?: Serial;
 }
 
-interface Serial {
+interface Serial extends EventTarget {
     getPorts(): Promise<SerialPort[]>;
     requestPort(): Promise<SerialPort>;
+
+    onconnect: EventHandler;
+    ondisconnect: EventHandler;
 }
 
-interface SerialPort {
+interface SerialPort extends EventTarget {
     open(options: OpenPortOptions): Promise;
     close(): Promise;
     

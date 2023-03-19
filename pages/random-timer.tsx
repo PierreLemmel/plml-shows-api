@@ -4,7 +4,7 @@ import AleasHead from "@/components/aleas/aleas-head";
 import { AleasMainContainer, AleasTitle } from "@/components/aleas/aleas-layout";
 import { createDurationCollection, DurationProviderCollectionProps } from "@/lib/aleas/providers/duration";
 import { getRandomTimerDurationProviderCollection } from "@/lib/services/aleas";
-import { padNumber } from "@/lib/services/helpers";
+import { padNumber } from "@/lib/services/utils";
 import { GetStaticProps, InferGetStaticPropsType } from "next";
 import { useMemo, useRef, useState } from "react";
 
