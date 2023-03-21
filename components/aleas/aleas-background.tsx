@@ -1,6 +1,6 @@
-import { randomRange, randomBool } from "@/lib/services/utils"
-import { smoothDamp, Velocity } from "@/lib/services/mathf";
-import { useWindowSize } from "@/lib/services/responsive"
+import { randomRange, randomBool } from "@/lib/services/core/utils"
+import { smoothDamp, Velocity } from "@/lib/services/core/mathf";
+import { useWindowSize } from "@/lib/services/layout/responsive"
 import { useEffect, useRef, useCallback, useMemo } from "react"
 
 
@@ -128,7 +128,7 @@ const AleasBackground = () => {
 
     const startTime = useMemo<number>(() => {
         return new Date().getTime();
-    }, []);
+    }, [rows, cols]);
 
     const updateData = useCallback(() => {
 
@@ -156,7 +156,7 @@ const AleasBackground = () => {
 
             if (ellapsed > nextSwap) {
                 cell.value = value === 0 ? 1 : 0;
-                cell.nextSwap = nextSwap + duration;
+                cell.nextSwap += duration;
             }
         }))
     }, []);

@@ -1,4 +1,4 @@
-import { StageLightingPlan } from "../dmx/dmx512";
+import { StageLightingPlan } from "../../dmx/dmx512";
 import { setDocument } from "../firebase";
 
 

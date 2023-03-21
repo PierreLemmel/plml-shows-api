@@ -1,4 +1,4 @@
-import { randomRange } from "@/lib/services/utils";
+import { randomRange } from "@/lib/services/core/utils";
 import { AleasProvider, AleasProviderCollection, AleasProviderCollectionProps, AleasProviderConstructorProps, AleasProviderProps } from "./providers";
 
 export interface DurationProviderProps extends AleasProviderProps {

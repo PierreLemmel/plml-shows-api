@@ -1,5 +1,5 @@
 import { withAuth } from '@/lib/middlewares/withauth';
-import runPendingMigrations, { MigrationResult } from '@/lib/services/migrations';
+import runPendingMigrations, { MigrationResult } from '@/lib/services/api/migrations';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse<MigrationResult>) => {

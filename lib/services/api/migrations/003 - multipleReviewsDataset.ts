@@ -1,5 +1,5 @@
 import { Timestamp } from "@firebase/firestore";
-import { getCompletionData } from "../billetreduc";
+import { getCompletionData } from "../../billetreduc";
 import { getDocument, setDocument } from "../firebase";
 
 interface OldReviewsData {

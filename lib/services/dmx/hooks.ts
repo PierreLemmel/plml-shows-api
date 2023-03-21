@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useEffectAsync } from "../utils";
+import { useEffectAsync } from "../core/utils";
 import { DmxWriter, DmxWriterState } from "./dmx512";
 import { Enttec, OpenDmxDevice } from "./enttecOpenDmx";
 

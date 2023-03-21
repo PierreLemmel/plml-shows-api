@@ -1,4 +1,4 @@
-import { clampByte } from "../mathf";
+import { clampByte } from "../core/mathf";
 
 
 export class Color {

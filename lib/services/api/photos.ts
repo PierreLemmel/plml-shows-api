@@ -1,6 +1,6 @@
 import { getBytes, getDownloadURL, getMetadata } from "firebase/storage";
 import imageSize from "image-size";
-import { getDocument, listDocuments, listFiles, setDocument } from "./firebase";
+import { getDocument, listDocuments, listFiles, setDocument } from "./api/firebase";
 
 
 

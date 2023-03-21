@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { isDev, isValidAdminToken } from "../services/api";
+import { isDev, isValidAdminToken } from "../services/api/api";
 
 export function withAuth(handler: (req: NextApiRequest, res: NextApiResponse) => Promise<void>) {
 

@@ -1,5 +1,5 @@
-import { DurationProviderCollectionProps } from "../aleas/providers/duration";
-import { getDocument } from "./firebase";
+import { DurationProviderCollectionProps } from "../../aleas/providers/duration";
+import { getDocument } from "../api/firebase";
 
 export async function getRandomTimerDurationProviderCollection(): Promise<DurationProviderCollectionProps> {
 

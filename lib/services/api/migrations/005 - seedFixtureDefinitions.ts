@@ -1,4 +1,4 @@
-import { Fixtures } from "../dmx/dmx512";
+import { Fixtures } from "../../dmx/dmx512";
 import { setDocument } from "../firebase";
 
 
