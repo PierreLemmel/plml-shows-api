@@ -37,7 +37,7 @@ const TestOpenDmx = () => {
                         Test Enttec
                     </AleasTitle>
                     <div className="centered-row w-full">
-                        {sequence(512).map(i => <DmxSlider
+                        {sequence(16).map(i => <DmxSlider
                             key={`dmx-slider-${i + 1}`}
                             value={slider}
                             setValue={setSlider}
