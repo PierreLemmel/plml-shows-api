@@ -2,26 +2,21 @@ import AleasBackground from '@/components/aleas/aleas-background';
 import { AleasButton, AleasRoundButton } from '@/components/aleas/aleas-buttons';
 import AleasHead from '@/components/aleas/aleas-head';
 import { AleasMainContainer, AleasTitle } from '@/components/aleas/aleas-layout';
-import DmxSlider from '@/components/dmx/dmx-slider';
-import { sequence } from '@/lib/services/core/utils';
-import { useEnttecOpenDmx } from '@/lib/services/dmx/hooks';
-import { useState } from 'react';
-import ReactSlider from 'react-slider';
+import StandardConsole from '@/components/dmx/standard-console';
+import { useDmxWriter } from '@/lib/services/dmx/hooks';
 
 const TestOpenDmx = () => {
 
-    const openDmx = useEnttecOpenDmx();
+    const dmxWriter = useDmxWriter();
 
-    const hasOpenDmx = openDmx !== null;
-    const state = openDmx?.state;
+    const hasOpenDmx = dmxWriter !== null;
+    const state = dmxWriter?.state;
 
-    const canOpen = hasOpenDmx && openDmx.canOpen;
-    const canClose = hasOpenDmx && openDmx.canClose;
+    const canOpen = hasOpenDmx && dmxWriter.canOpen;
+    const canClose = hasOpenDmx && dmxWriter.canClose;
 
-    const onOpenClicked = () => openDmx?.open();
-    const onCloseClicked = () => openDmx?.close();
-
-    const [slider, setSlider] = useState<number>(100);
+    const onOpenClicked = () => dmxWriter?.open();
+    const onCloseClicked = () => dmxWriter?.close();
 
     return <>
         <AleasHead />
@@ -36,16 +31,9 @@ const TestOpenDmx = () => {
                     <AleasTitle>
                         Test Enttec
                     </AleasTitle>
-                    <div className="centered-row w-full">
-                        {sequence(16).map(i => <DmxSlider
-                            key={`dmx-slider-${i + 1}`}
-                            value={slider}
-                            setValue={setSlider}
-                            label={(i + 1).toString()}
-                        />)}
-                        <DmxSlider value={slider} setValue={setSlider} />
-                    </div>
-                    <div>{openDmx?.state ?? "Not found"}</div>
+                    <StandardConsole width={16} />
+                    <div>{dmxWriter?.state ?? "Not found"}</div>
+                    <div>{dmxWriter?.lastChangeTime ?? "No time"}</div>
                     <div className="centered-row gap-6">
                         <AleasButton
                             onClick={onOpenClicked}

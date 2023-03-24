@@ -20,8 +20,9 @@ export function flattenArray<T>(input: T[][]) {
     return input.reduce((acc, arr) => acc.concat(arr), []);
 }
 
-export function sequence(count: number) {
-    return Array(count).fill(0).map((_, i) => i);
+export function sequence(count: number, start?: number) {
+    const startIndex = start ?? 0;
+    return Array(count).fill(0).map((_, i) => startIndex + i);
 }
 
 export function isOneOf<T>(input: T, ...values: T[]): boolean {

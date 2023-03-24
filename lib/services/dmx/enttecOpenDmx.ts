@@ -12,6 +12,8 @@ export class Enttec {
 
 export class OpenDmxDevice {
     
+    public static refreshRate = 30.0;
+
     private readonly _port: SerialPort;
     private readonly _buffer: Buffer;
     
@@ -84,7 +86,8 @@ export class OpenDmxDevice {
     public write = async (source: Buffer, offset: number) => {
         
         try {
-            source.copy(this._buffer, offset);
+            console.log(source.copy(this._buffer, offset));
+            console.log(source)
         }
         catch (e: unknown) {
             console.warn(e);
@@ -102,6 +105,7 @@ export class OpenDmxDevice {
         await this._port.setSignals({break: true, requestToSend: false});
         await this._port.setSignals({break: false, requestToSend: false});
         await writer.write(this._buffer);
+        console.log(this._buffer)
 
         writer.releaseLock();
     }

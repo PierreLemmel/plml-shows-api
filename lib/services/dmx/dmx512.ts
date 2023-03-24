@@ -198,11 +198,13 @@ export interface DmxWriter {
     open(): void;
     close(): void;
 
+    lastChangeTime: number;
+
     opened: boolean;
     state: DmxWriterState;
     canOpen: boolean;
     canClose: boolean;
     
-    // write(source: Buffer, offset: number): Promise<void>;
-    // sendFrame(): Promise<void>;
+    getValue: (i: number) => number;
+    setValue: (i: number, val: number) => void;
 }

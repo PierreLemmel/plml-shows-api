@@ -32,8 +32,8 @@ const AleasBackground = () => {
     }
 
     const durationRange = {
-        min: 3.5,
-        max: 13.2
+        min: 7.2,
+        max: 19.2
     }
 
     const pulsationRange = {
@@ -126,14 +126,14 @@ const AleasBackground = () => {
     const deltaTime = 1 / 30;
     const threshold = 0.01;
 
-    const startTime = useMemo<number>(() => {
-        return new Date().getTime();
+    const startTimeMs = useMemo<number>(() => {
+        return new Date().getTime() / 1000;
     }, [rows, cols]);
 
     const updateData = useCallback(() => {
 
-        const time = new Date().getTime();
-        const ellapsed = (time - startTime) / 1000;
+        const timeMs = new Date().getTime() / 1000;
+        const ellapsed = timeMs - startTimeMs;
 
         cellsDataRef.current?.forEach(row => row.forEach(cell => {
             const {
@@ -156,7 +156,7 @@ const AleasBackground = () => {
 
             if (ellapsed > nextSwap) {
                 cell.value = value === 0 ? 1 : 0;
-                cell.nextSwap += duration;
+                cell.nextSwap = ellapsed + duration;
             }
         }))
     }, []);
