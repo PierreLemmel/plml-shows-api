@@ -58,3 +58,5 @@ export const useEffectAsync = (effect: () => Promise<void>, deps?: DependencyLis
         })();
     }, deps);
 }
+
+export const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));

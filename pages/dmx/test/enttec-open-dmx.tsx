@@ -3,7 +3,7 @@ import { AleasButton, AleasRoundButton } from '@/components/aleas/aleas-buttons'
 import AleasHead from '@/components/aleas/aleas-head';
 import { AleasMainContainer, AleasTitle } from '@/components/aleas/aleas-layout';
 import StandardConsole from '@/components/dmx/standard-console';
-import { useDmxWriter } from '@/lib/services/dmx/hooks';
+import { DmxWriterContext, useDmxWriter } from '@/lib/services/dmx/dmx-hooks';
 
 const TestOpenDmx = () => {
 
@@ -18,7 +18,7 @@ const TestOpenDmx = () => {
     const onOpenClicked = () => dmxWriter?.open();
     const onCloseClicked = () => dmxWriter?.close();
 
-    return <>
+    return <DmxWriterContext.Provider value={dmxWriter}>
         <AleasHead />
         
         <main className="fullscreen relative overflow-hidden">
@@ -33,7 +33,6 @@ const TestOpenDmx = () => {
                     </AleasTitle>
                     <StandardConsole width={16} />
                     <div>{dmxWriter?.state ?? "Not found"}</div>
-                    <div>{dmxWriter?.lastChangeTime ?? "No time"}</div>
                     <div className="centered-row gap-6">
                         <AleasButton
                             onClick={onOpenClicked}
@@ -53,7 +52,7 @@ const TestOpenDmx = () => {
                 </AleasMainContainer>
             </div>            
         </main>
-    </>
+    </DmxWriterContext.Provider>
 }
 
 export default TestOpenDmx;

@@ -1,4 +1,5 @@
-import { DmxWriter, DmxWriterState } from "./dmx512";
+import { delay } from "../core/utils";
+import { DmxWriterState } from "./dmx512";
 
 export class Enttec {
     static vendorId = 0x403; //1027
@@ -12,7 +13,7 @@ export class Enttec {
 
 export class OpenDmxDevice {
     
-    public static refreshRate = 30.0;
+    public static refreshRate = 10.0;
 
     private readonly _port: SerialPort;
     private readonly _buffer: Buffer;
@@ -74,6 +75,10 @@ export class OpenDmxDevice {
 
         try {
             this._state = "Closing";
+            
+            while (this._port.writable.locked) {
+                await delay(10);
+            }
             await this._port.close();
             this._state = "Closed";
         }
@@ -86,8 +91,7 @@ export class OpenDmxDevice {
     public write = async (source: Buffer, offset: number) => {
         
         try {
-            console.log(source.copy(this._buffer, offset));
-            console.log(source)
+            source.copy(this._buffer, offset);
         }
         catch (e: unknown) {
             console.warn(e);
@@ -105,7 +109,6 @@ export class OpenDmxDevice {
         await this._port.setSignals({break: true, requestToSend: false});
         await this._port.setSignals({break: false, requestToSend: false});
         await writer.write(this._buffer);
-        console.log(this._buffer)
 
         writer.releaseLock();
     }

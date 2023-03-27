@@ -1,5 +1,5 @@
 import { sequence } from "@/lib/services/core/utils";
-import { useDmxWriter } from "@/lib/services/dmx/hooks";
+import { useDmxWriter, useDmxWriterContext } from "@/lib/services/dmx/dmx-hooks";
 import { ReactNode, useState } from "react";
 import DmxButton from "./dmx-button";
 import DmxSlider from "./dmx-slider";
@@ -8,12 +8,12 @@ export interface StandardConsoleProps {
     width: number;
 }
 
-const buttonsClass = "w-14 h-14 p-3 fill-slate-300/80"
+const buttonsClass = "w-14 h-14 p-2 fill-slate-300/80"
 
 const StandardConsole = (props: StandardConsoleProps) => {
     const { width } = props;
 
-    const dmxWriter = useDmxWriter();
+    const dmxWriter = useDmxWriterContext();
 
     const [startIndex, setStartIndex] = useState(0);
 

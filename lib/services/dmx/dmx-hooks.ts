@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useEffectAsync } from "../core/utils";
 import { DmxWriter } from "./dmx512";
 import { Enttec, OpenDmxDevice } from "./enttecOpenDmx";
@@ -8,22 +8,23 @@ export function useDmxWriter(): DmxWriter|null {
     return useEnttecOpenDmx();
 }
 
-export function useEnttecOpenDmx(): DmxWriter|null {
+
+function useEnttecOpenDmx(): DmxWriter|null {
     
-    const [found, setFound] = useState<boolean>(false);
+    const [, setFound] = useState<boolean>(false);
     const [opened, setOpened] = useState<boolean>(false);
-    const [opening, setOpening] = useState<boolean>(false);
-    const [closing, setClosing] = useState<boolean>(false);
+    const [, setOpening] = useState<boolean>(false);
+    const [, setClosing] = useState<boolean>(false);
     
-    const deviceRef = useRef<OpenDmxDevice>();
-    const buffer = useMemo<Buffer>(() => Buffer.alloc(513),[]);
+    const [device, setDevice] = useState<OpenDmxDevice>();
+    const buffer = useMemo(() => Buffer.alloc(513), []);
 
     const startTime = useMemo(() => new Date().getTime(), []);
     const [lastChangeTime, setLastChangeTime] = useState<number>(0);
 
     const scanForDevice = async () => {
 
-        if (deviceRef.current) {
+        if (device) {
             return;
         }
 
@@ -34,12 +35,12 @@ export function useEnttecOpenDmx(): DmxWriter|null {
 
                 enttecPort.ondisconnect = () => {
                     
-                    deviceRef.current = undefined;
+                    setDevice(undefined);
                     setFound(false);
                 }
 
                 const newDevice = new OpenDmxDevice(enttecPort);
-                deviceRef.current = newDevice;
+                setDevice(newDevice);
                 setFound(true);
             }
         }
@@ -57,13 +58,11 @@ export function useEnttecOpenDmx(): DmxWriter|null {
 
     const changedRef = useRef<boolean>(false);
     useEffect(() => {
-
+        
         const updateInterval = setInterval(() => {
             
-            const device = deviceRef.current;
             if (device?.state === "Opened") {
                 (async () => {
-                    console.log(buffer)
                     await device.write(buffer, 0);
                     await device.sendFrame();
                 })();
@@ -77,9 +76,8 @@ export function useEnttecOpenDmx(): DmxWriter|null {
 
         return () => clearInterval(updateInterval);
 
-    }, [])
+    }, [device, buffer])
 
-    const device = deviceRef.current;
     if (device) {
 
         const { open, close, canOpen, canClose, state } = device;
@@ -97,11 +95,10 @@ export function useEnttecOpenDmx(): DmxWriter|null {
                 setClosing(false);
                 setOpened(false);
             },
-            getValue: i => buffer.readUInt8(i + 1),
+            getValue: i => buffer.readUInt8(i),
             setValue: (i, val) => {
                 changedRef.current = true;
-                buffer.writeUInt8(val, i + 1);
-                console.log(val)
+                buffer.writeUInt8(val, i);
             },
             lastChangeTime,
             opened,
@@ -113,4 +110,10 @@ export function useEnttecOpenDmx(): DmxWriter|null {
     else {
         return null;
     }
+}
+
+export const DmxWriterContext = createContext<DmxWriter|null>(null);
+
+export function useDmxWriterContext() {
+    return useContext<DmxWriter|null>(DmxWriterContext);
 }
