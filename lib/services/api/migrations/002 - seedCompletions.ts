@@ -1,4 +1,4 @@
-import { CompletionsData } from "../../billetreduc";
+import { CompletionsData } from "../billetreduc";
 import { getDocument, setDocument } from "../firebase";
 
 type Completions = {

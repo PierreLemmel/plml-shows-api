@@ -1,5 +1,5 @@
 import { Timestamp } from "@firebase/firestore";
-import { getCompletionData } from "../../billetreduc";
+import { getCompletionData } from "../billetreduc";
 import { getDocument, setDocument } from "../firebase";
 
 interface OldReviewsData {
@@ -23,7 +23,7 @@ const reviewsPath = "billetreduc/reviews";
 
 
 async function multipleReviewsDataSet() {
-    const { lastGeneration, lastGenerationMaxIndex, reviews } = await getDocument<OldReviewsData>(reviewsPath);
+    const { lastGeneration, reviews } = await getDocument<OldReviewsData>(reviewsPath);
 
     const { model } = await getCompletionData();
 

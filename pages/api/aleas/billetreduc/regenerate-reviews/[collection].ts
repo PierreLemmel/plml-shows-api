@@ -1,5 +1,5 @@
 import { withAuth } from '@/lib/middlewares/withauth';
-import { regenerateBilletReducData, ReviewsData } from '@/lib/services/billetreduc';
+import { regenerateBilletReducData, ReviewsData } from '@/lib/services/api/billetreduc';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse<ReviewsData>) => {

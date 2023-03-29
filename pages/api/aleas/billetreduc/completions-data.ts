@@ -1,4 +1,4 @@
-import { CompletionsData, getCompletionData } from "@/lib/services/billetreduc";
+import { CompletionsData, getCompletionData } from "@/lib/services/api/billetreduc";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<CompletionsData>) {

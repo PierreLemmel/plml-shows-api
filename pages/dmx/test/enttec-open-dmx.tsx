@@ -1,5 +1,5 @@
 import AleasBackground from '@/components/aleas/aleas-background';
-import { AleasButton, AleasRoundButton } from '@/components/aleas/aleas-buttons';
+import { AleasButton } from '@/components/aleas/aleas-buttons';
 import AleasHead from '@/components/aleas/aleas-head';
 import { AleasMainContainer, AleasTitle } from '@/components/aleas/aleas-layout';
 import StandardConsole from '@/components/dmx/standard-console';
