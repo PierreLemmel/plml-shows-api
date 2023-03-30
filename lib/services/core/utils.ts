@@ -60,3 +60,15 @@ export const useEffectAsync = (effect: () => Promise<void>, deps?: DependencyLis
 }
 
 export const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+export const createArray = <T>(length: number, val: T|((i: number) => T))  => {
+
+    if(typeof val === "function") {
+        const predicate = <(i: number) => T> val;
+        return new Array(length).fill(undefined).map(predicate)
+    }
+    else {
+        return new Array<T>(length).fill(val)
+    }
+
+}

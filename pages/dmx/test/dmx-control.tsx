@@ -1,9 +1,7 @@
 import AleasBackground from '@/components/aleas/aleas-background';
-import { AleasButton } from '@/components/aleas/aleas-buttons';
 import AleasHead from '@/components/aleas/aleas-head';
 import { AleasMainContainer, AleasTitle } from '@/components/aleas/aleas-layout';
 import DmxSlider from '@/components/dmx/dmx-slider';
-import StandardConsole from '@/components/dmx/standard-console';
 import { DmxControlContext, useDmxControler } from '@/lib/services/dmx/dmxControl';
 
 const TestDmxControl = () => {
