@@ -43,14 +43,14 @@ const DmxSlider = (props: DmxSliderProps) => {
             invert
             value={sliderVal}
             onChange={val => setSliderVal(val)}
-            className="w-2 h-full min-h-[12rem] bg-slate-500 rounded-md"
+            className="w-2 h-full min-h-[12rem] bg-slate-500 rounded-md cursor-pointer"
             thumbClassName="w-4 h-4 -left-1 bg-blue-600
                 rounded-full hover:scale-200 outline-none cursor-pointer
                 active:bg-blue-700 active:scale-105
                 hover:scale-105
                 transition-colors duration-300
             "
-            trackClassName="bg-blue-600"
+            trackClassName="bg-blue-600 cursor-pointer"
         />
         {label && <div className="mt-1">{label}</div>}
         <DmxButton

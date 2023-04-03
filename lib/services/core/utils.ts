@@ -1,5 +1,3 @@
-import { DependencyList, useEffect } from "react";
-
 export function randomInt(min: number, max: number) {
     return Math.floor(randomRange(min, max));
 }
@@ -51,14 +49,6 @@ export function getValue<T>(provider: ValueProvider<T>): T {
     }
 }
 
-export const useEffectAsync = (effect: () => Promise<void>, deps?: DependencyList): void => {
-    useEffect(() => {
-        (async () => {
-            await effect();
-        })();
-    }, deps);
-}
-
 export const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export const createArray = <T>(length: number, val: T|((i: number) => T))  => {
@@ -72,3 +62,5 @@ export const createArray = <T>(length: number, val: T|((i: number) => T))  => {
     }
 
 }
+
+export const currentTime = () => new Date().getTime();

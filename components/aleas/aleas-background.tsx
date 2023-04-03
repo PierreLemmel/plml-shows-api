@@ -1,7 +1,8 @@
-import { randomRange, randomBool } from "@/lib/services/core/utils"
+import { randomRange, randomBool, currentTime } from "@/lib/services/core/utils"
 import { smoothDamp, Velocity } from "@/lib/services/core/mathf";
 import { useWindowSize } from "@/lib/services/layout/responsive"
 import { useEffect, useRef, useCallback, useMemo } from "react"
+import { IntervalCallback, useInterval } from "@/lib/services/core/hooks";
 
 
 interface BackgroundCellData {
@@ -102,7 +103,6 @@ const AleasBackground = () => {
         ctx.fillStyle = bgGradient;
         ctx.fillRect(0, 0, width, height);
 
-
         const fontSize = 25;
         ctx.font = `${fontSize}px consolas`;
 
@@ -123,17 +123,11 @@ const AleasBackground = () => {
         })
     }, [rows, cols]);
 
-    const deltaTime = 1 / 30;
     const threshold = 0.01;
 
-    const startTimeMs = useMemo<number>(() => {
-        return new Date().getTime() / 1000;
-    }, [rows, cols]);
+    const updateData = useCallback<IntervalCallback>(({ ellapsed, deltaTime }) => {
 
-    const updateData = useCallback(() => {
-
-        const timeMs = new Date().getTime() / 1000;
-        const ellapsed = timeMs - startTimeMs;
+        const ellapsedMs = ellapsed / 1000;
 
         cellsDataRef.current?.forEach(row => row.forEach(cell => {
             const {
@@ -142,10 +136,9 @@ const AleasBackground = () => {
                 value, nextSwap
             } = cell;
 
-            const newOpacity = smoothDamp(opacity, goingUp ? opacityMax : opacityMin, velocity, pulsation, Number.MAX_VALUE, deltaTime);
+            const newOpacity = smoothDamp(opacity, goingUp ? opacityMax : opacityMin, velocity, pulsation, Number.MAX_VALUE, deltaTime / 1000);
             cell.opacity = newOpacity;
 
-            
             if (
                 (goingUp && Math.abs(opacityMax - newOpacity) < threshold) ||
                 (!goingUp && Math.abs(newOpacity - opacityMin) < threshold)
@@ -154,32 +147,19 @@ const AleasBackground = () => {
             }
 
 
-            if (ellapsed > nextSwap) {
+            if (ellapsedMs > nextSwap) {
                 cell.value = value === 0 ? 1 : 0;
-                cell.nextSwap = ellapsed + duration;
+                cell.nextSwap = ellapsedMs + duration;
             }
         }))
     }, []);
 
+    useInterval((props) => {
+        
+        updateData(props);
+        repaintCanvas();
 
-    const intervalRef = useRef<NodeJS.Timer>();
-    const clearCurrentInterval = () => {
-        if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-        }
-    }
-
-    useEffect(() => {
-
-        clearCurrentInterval();
-
-        intervalRef.current = setInterval(() => {
-            updateData();
-            repaintCanvas();
-        }, 1000 * deltaTime);
-
-        return clearCurrentInterval;
-    }, [])
+    }, 1000 / 30, [])
 
     return <div className="full absolute top-0">
         <canvas className="full" width={windowWidth} height={windowHeight} ref={canvasRef} />

@@ -192,19 +192,28 @@ export interface StageLightingPlan extends Named {
     }
 }
 
-export type DmxWriterState = "Closed"|"Opening"|"Opened"|"Closing"
+export type DmxWriteInterfaceState = "Undetected"|"Closed"|"Opening"|"Opened"|"Closing"
 
-export interface DmxWriter {
-    open(): void;
-    close(): void;
-
-    lastChangeTime: number;
-
-    opened: boolean;
-    state: DmxWriterState;
-    canOpen: boolean;
-    canClose: boolean;
-    
-    getValue: (i: number) => number;
-    setValue: (i: number, val: number) => void;
+interface WriteInterfaceBase<T extends DmxWriteInterfaceState> {
+    state: T;
 }
+
+export interface UndetectedInterface extends WriteInterfaceBase<"Undetected"> { }
+
+export interface ClosedInterface extends WriteInterfaceBase<"Closed"> {
+    open(): Promise<void>;
+}
+
+export interface OpeningInterface extends WriteInterfaceBase<"Opening"> { }
+
+export interface OpenedInterface extends WriteInterfaceBase<"Opened"> {
+    refreshRate: number;
+    sendFrame(frame: Buffer): Promise<void>;
+    close(): Promise<void>;
+}
+
+export interface ClosingInterface extends WriteInterfaceBase<"Closing"> { }
+
+export type DmxWriteInterface = UndetectedInterface|ClosedInterface|OpeningInterface|OpenedInterface|ClosingInterface;
+
+export type WriteInterfaceType = "None"|"EnttecOpenDmx";

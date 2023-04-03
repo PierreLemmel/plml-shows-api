@@ -1,115 +1,128 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffectAsync } from "../core/hooks";
 import { delay } from "../core/utils";
-import { DmxWriterState } from "./dmx512";
+import { DmxWriteInterface, DmxWriteInterfaceState } from "./dmx512";
 
-export class Enttec {
-    static vendorId = 0x403; //1027
-    static openDmxProductId = 0x6001; //24577
 
-    static async isEnttecOpenDmx(sp: SerialPort): Promise<boolean> {
-        const info = await sp.getInfo();
-        return info.usbVendorId === Enttec.vendorId && info.usbProductId === Enttec.openDmxProductId;
-    }
+const vendorId = 0x403; //1027
+const openDmxProductId = 0x6001; //24577
+
+async function isEnttecOpenDmx(sp: SerialPort): Promise<boolean> {
+    const info = await sp.getInfo();
+    return info.usbVendorId === vendorId && info.usbProductId === openDmxProductId;
 }
 
-export class OpenDmxDevice {
+
+export function useEnttecOpenDmx(): DmxWriteInterface {
     
-    public static refreshRate = 10.0;
+    const refreshRate = 15.0;
+    const [port, setPort] = useState<SerialPort>();
+    const [state, setState] = useState<DmxWriteInterfaceState>("Undetected");
 
-    private readonly _port: SerialPort;
-    private readonly _buffer: Buffer;
-    
+    const findPort = useCallback(async () => {
 
-    public constructor(port: SerialPort) {
-        this._port = port;
-        this._buffer = Buffer.alloc(513);
-    }
-
-    public get opened(): boolean {
-        return this._state === "Opened"
-    }
-
-    private _state: DmxWriterState = "Closed";
-    public get state(): DmxWriterState {
-        return this._state;
-    }
-    
-
-    public get canOpen(): boolean {
-        return this._state === "Closed";
-    }
-
-    public get canClose(): boolean {
-        return this._state === "Opened";
-    }
-
-
-    public open = async () => {
-        if (!this.canOpen) {
-            throw "Can't open Enttec Dmx Pro for the moment"
-        }
-
-        const openOptions: OpenPortOptions = {
-            baudRate: 250000,
-            dataBits: 8,
-            stopBits: 2,
-            parity: "none",
-            flowControl: "none"
-        };
-
-        try {
-            this._state = "Opening";
-            await this._port.open(openOptions);
-            this._state = "Opened";
-        }
-        catch (e: unknown) {
-            console.warn(e);
-        }
-    }
-
-
-    public close = async () => {
-
-        if (!this.canClose) {
-            throw "Can't close Enttec Dmx Pro for the moment"
-        }
-
-        try {
-            this._state = "Closing";
-            
-            while (this._port.writable.locked) {
-                await delay(10);
-            }
-            await this._port.close();
-            this._state = "Closed";
-        }
-        catch (e: unknown) {
-            console.warn(e);
-        }
-    }
-
-
-    public write = async (source: Buffer, offset: number) => {
-        
-        try {
-            source.copy(this._buffer, offset);
-        }
-        catch (e: unknown) {
-            console.warn(e);
-        }
-    }
-
-    
-    public sendFrame = async () => {
-        if (!this._port.writable || this._port.writable.locked) {
+        if (port) {
             return;
         }
 
-        const writer = this._port.writable.getWriter();
+        const ports = await navigator.serial?.getPorts();
+        if (ports) {
+            const enttecPort = ports.find(isEnttecOpenDmx);
+            if (enttecPort) {
 
-        await this._port.setSignals({break: true, requestToSend: false});
-        await this._port.setSignals({break: false, requestToSend: false});
-        await writer.write(this._buffer);
+                enttecPort.ondisconnect = () => {
+                    
+                    setPort(undefined);
+                    setState("Undetected");
+                }
 
-        writer.releaseLock();
+                setPort(enttecPort);
+                setState("Closed");
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        const { serial } = navigator;
+        
+        serial?.addEventListener("connect", findPort)
+
+        return () => serial?.removeEventListener("connect", findPort);
+    }, []);
+
+    useEffectAsync(findPort, []);
+
+    switch (state) {
+        case "Closed":
+            return {
+                state,
+                open: async () => {
+                    if (!port) {
+                        throw "Can't open Enttec Dmx Pro for the moment";
+                    }
+
+                    try {
+                        const openOptions: OpenPortOptions = {
+                            baudRate: 250000,
+                            dataBits: 8,
+                            stopBits: 2,
+                            parity: "none",
+                            flowControl: "none"
+                        };
+    
+                        setState("Opening");
+    
+                        await port.open(openOptions);
+    
+                        setState("Opened");
+                    }
+                    catch (e: unknown) {
+                        console.warn(e);
+                    }
+                }
+            }
+        case "Opened":
+            return {
+                state,
+                refreshRate,
+                sendFrame: async (frame: Buffer) => {
+                    if (!port) {
+                        throw "Can't send frame from Enttec Dmx Pro for the moment";
+                    }
+
+                    if (!port.writable || port.writable.locked) {
+                        return;
+                    }
+
+                    const writer = port.writable.getWriter();
+            
+                    await port.setSignals({break: true, requestToSend: false});
+                    await port.setSignals({break: false, requestToSend: false});
+                    await writer.write(frame);
+            
+                    writer.releaseLock();
+                },
+                close: async () => {
+                    if (!port) {
+                        throw "Can't close Enttec Dmx Pro for the moment";
+                    }
+
+                    try {
+                        setState("Closing");
+                        
+                        while (port.writable.locked) {
+                            await delay(10);
+                        }
+                        await port.close();
+                        
+                        setState("Closed");
+                    }
+                    catch (e: unknown) {
+                        console.warn(e);
+                    }
+                }
+            }
+        default:
+            return { state };
     }
 }
