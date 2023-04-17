@@ -1,5 +1,6 @@
 //@see: https://dev.to/patopitaluga/ascii-art-pixel-art-in-js-2oij
 
+import { useEffectAsync } from "@/lib/services/core/hooks";
 import { useWindowSize } from "@/lib/services/layout/responsive";
 import { useEffect, useRef, useState } from "react";
 
@@ -8,6 +9,7 @@ export interface AsciiArtProps extends React.HTMLAttributes<HTMLDivElement> {
     backgroundColor?: string;
     imgFit?: ImageFit;
     src: string;
+    size?: number;
 }
 
 export type ImageFit = "Stretch"|"Fit"|"Cover";
@@ -24,7 +26,8 @@ const AsciiArt = (props: AsciiArtProps) => {
         className,
         backgroundColor,
         imgFit,
-        src
+        src,
+        size
     } = {
         charset: "default",
         backgroundColor: 'black',
@@ -40,6 +43,35 @@ const AsciiArt = (props: AsciiArtProps) => {
 
     const { clientWidth: containerWidth, clientHeight: containerHeight } = divRef.current
         || { clientWidth:0, clientHeight: 0 };
+
+    const [bitmap, setBitmap] = useState<ImageBitmap>();
+
+    useEffectAsync(async () => {
+
+        const img = imgRef.current;
+        if (img) {
+
+            const bmpOptions: ImageBitmapOptions = { }
+
+            if (size) {
+                
+                const ratio = img.width / img.height;
+
+                if (ratio >= 1) {
+                    bmpOptions.resizeWidth = size;
+                    bmpOptions.resizeHeight = size / ratio;
+                }
+                else {
+                    bmpOptions.resizeWidth = size * ratio;
+                    bmpOptions.resizeHeight = size;
+                }
+            }
+
+            const bmp = await createImageBitmap(img, bmpOptions);
+            setBitmap(bmp);
+        }
+
+    }, [src, size])
 
     useEffect(() => {
         
@@ -105,6 +137,7 @@ const AsciiArt = (props: AsciiArtProps) => {
         }
 
     }, [containerWidth, containerHeight, backgroundColor, imgFit])
+
 
     return <div className={"full" + " " + (className ?? "")}>
         <div className="full relative" ref={divRef}>
