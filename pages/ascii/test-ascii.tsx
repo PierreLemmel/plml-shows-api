@@ -7,9 +7,8 @@ const TestAscii = () => <>
 		<AsciiArt
 			charset="default"
 			className='p-0'
-			imgFit='Fit'
 			src='/test/sysex.jpg'
-			charSize={12}
+			charSize={15}
 		/>
 	</main>
 </>

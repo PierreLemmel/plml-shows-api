@@ -12,4 +12,9 @@ export class RgbColor {
     public toRgbString() {
         return `rgb(${this.r}, ${this.g}, ${this.b})`;
     }
+
+    public toGrayLevel(): RgbColor {
+        const lvl = Math.round((this.r, this.g, this.b) / 3);
+        return new RgbColor(lvl, lvl, lvl);
+    }
 }

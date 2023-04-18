@@ -1,15 +1,13 @@
 //@see: https://dev.to/patopitaluga/ascii-art-pixel-art-in-js-2oij
 
-import { useEffectAsync } from "@/lib/services/core/hooks";
 import { RgbColor } from "@/lib/services/core/types";
-import { mergeClasses } from "@/lib/services/core/utils";
+import { createArray, mergeClasses } from "@/lib/services/core/utils";
 import { useWindowSize } from "@/lib/services/layout/responsive";
 import { useEffect, useRef, useState } from "react";
 
 export interface AsciiArtProps extends React.HTMLAttributes<HTMLDivElement> {
     charset?: keyof typeof brightnessCharMap;
     backgroundColor?: string;
-    imgFit?: ImageFit;
     src: string;
     charSize?: number;
 }
@@ -19,8 +17,6 @@ interface AsciiBitmap {
     heightInChars: number;
     pixels: RgbColor[][];
 }
-
-export type ImageFit = "Stretch"|"Fit"|"Cover";
 
 const brightnessCharMap = {
     default: ' .:;+=xX$',
@@ -33,13 +29,11 @@ const AsciiArt = (props: AsciiArtProps) => {
         charset,
         className,
         backgroundColor,
-        imgFit,
         src,
         charSize
     } = {
         charset: "default",
         backgroundColor: 'black',
-        imgFit: "Fit",
         charSize: 12,
         ...props,
     }
@@ -53,6 +47,30 @@ const AsciiArt = (props: AsciiArtProps) => {
 
     const [bitmap, setBitmap] = useState<AsciiBitmap>();
 
+    const {
+        clientWidth: containerWidth,
+        clientHeight: containerHeight
+    } = divRef.current ?? { clientWidth: 0, clientHeight: 0 };
+
+    const {
+        width: imgWidth,
+        height: imgHeight
+    } = imgRef.current ?? { width: 100, height: 100 };
+
+    const imgRatio = imgWidth / imgHeight;
+    const containerRatio = containerWidth / containerHeight;
+
+    const { canvasWidth, canvasHeight } = imgRatio > containerRatio ? 
+        { 
+            canvasWidth: containerWidth,
+            canvasHeight: containerWidth / imgRatio
+        } :
+        { 
+            canvasWidth: containerHeight * imgRatio,
+            canvasHeight: containerHeight
+        }
+
+
     useEffect(() => {
 
         const img = imgRef.current;
@@ -62,23 +80,20 @@ const AsciiArt = (props: AsciiArtProps) => {
 
         if (img && imgCanvas && ctx && container) {
 
-            const { clientWidth: containerWidth, clientHeight: containerHeight } = container;
-
-            const widthInChars = Math.floor(img.width / charSize);
-            const heightInChars = Math.floor(img.height / charSize);
+            const widthInChars = Math.floor(canvasWidth / charSize);
+            const heightInChars = Math.floor(canvasHeight / charSize);
 
             ctx.clearRect(0, 0, imgCanvas.width, imgCanvas.height);
 
             ctx.drawImage(img, 0, 0, widthInChars, heightInChars);
 
-            const pixels = new Array<RgbColor[]>(heightInChars)
-            for (let i = 0; i < heightInChars; i++) {
+            const pixels = createArray<RgbColor[]>(widthInChars, () => new Array<RgbColor>(heightInChars));
+            for (let row = 0; row < heightInChars; row++) {
                 
-                pixels[i] = new Array<RgbColor>(widthInChars);
-                for (let j = 0; j < widthInChars; j++) {
+                for (let col = 0; col < widthInChars; col++) {
 
-                    const { data } = ctx.getImageData(i, j, 1, 1);
-                    pixels[i][j] = new RgbColor(data[0], data[1], data[2]);
+                    const { data } = ctx.getImageData(col, row, 1, 1);
+                    pixels[col][row] = new RgbColor(data[0], data[1], data[2]);
                 }
             }
 
@@ -94,82 +109,39 @@ const AsciiArt = (props: AsciiArtProps) => {
         
         if (canvas && img && bitmap) {
 
+            canvas.clearRect(0, 0, containerWidth, containerHeight);
+
             canvas.fillStyle = backgroundColor;
             canvas.fillRect(0, 0, containerWidth, containerHeight);
 
-            const {
-                width: imgWidth,
-                height: imgHeight
-            } = img;
-
-            let srcX0 = 0;
-            let srcY0 = 0;
-            let srcW = imgWidth;
-            let srcH = imgHeight;
-
-            let x0 = 0;
-            let y0 = 0;
-            let w = containerWidth;
-            let h = containerHeight;
-
-            const imgRatio = imgWidth / imgHeight;
-            const canvasRatio = containerWidth / containerHeight;
-
-            switch (imgFit) {
-                case "Fit":
-
-                    if (imgRatio > canvasRatio) {
-                        h = containerWidth / imgRatio;
-                        w = containerWidth;
-
-                        y0 = (containerHeight - h) / 2;
-                    }
-                    else {
-                        w = containerHeight * imgRatio;
-                        h = containerHeight;
-
-                        x0 = (containerWidth - w) / 2;
-                    }
-                    
-                    break;
-
-                case "Cover":
-
-                    if (imgRatio > canvasRatio) {
-                        srcW = imgWidth * canvasRatio;
-                        srcX0 = (imgWidth - srcW) / 2;
-                    }
-                    else {
-                        srcH = imgHeight / canvasRatio;
-                        srcY0 = (imgHeight - srcH) / 2;
-                    }
-                    
-                    break;
-            }
-
-            // canvas.drawImage(img, srcX0, srcY0, srcW, srcH, x0, y0, w, h);
-
             const { widthInChars, heightInChars, pixels } = bitmap;
 
-            console.log({ widthInChars, heightInChars })
+            const charW = canvasWidth / widthInChars;
+            const charH = canvasHeight / heightInChars;
 
-            for (let i = 0, y = 0; i < heightInChars; i++, y += charSize) {
+            for (let row = 0, y = 0; row < heightInChars; row++, y += charH) {
                 
-                for (let j = 0, x = 0; j < widthInChars; j++, x += charSize) {
+                for (let col = 0, x = 0; col < widthInChars; col++, x += charW) {
 
-                    const color = pixels[i][j];
+                    const color = pixels[col][row];
                     canvas.fillStyle = color.toRgbString();
-                    canvas.fillRect(x, y, charSize, charSize);
+                    // canvas.fillRect(x, y, charSize, charSize);
+
+                    // canvas.strokeStyle = color.toGrayLevel().toRgbString();
+                    canvas.strokeStyle = color.toRgbString();
+                    canvas.strokeText("@", x, y)
                 }
             }
         }
 
-    }, [bitmap, containerWidth, containerHeight, backgroundColor, imgFit])
+    }, [bitmap, containerWidth, containerHeight, backgroundColor])
 
 
     return <div className={mergeClasses("full", className)}>
         <div className="full relative" ref={divRef}>
-            <canvas className="absolute top-0 left-0 full" width={containerWidth} height={containerHeight} ref={canvasRef} />
+            <div className="absolute top-0 left-0 full center-child">
+                <canvas className="" width={canvasWidth} height={canvasHeight} ref={canvasRef} />
+            </div>
             <canvas className="absolute top-0 left-0 full hidden" width={containerWidth} height={containerHeight} ref={imgCanvasRef} />
             <img className="absolute top-0 left-0 hidden" src={src} ref={imgRef} />
         </div>
