@@ -64,3 +64,14 @@ export const createArray = <T>(length: number, val: T|((i: number) => T))  => {
 }
 
 export const currentTime = () => new Date().getTime();
+
+export const mergeClasses = (...classes: (string|undefined)[]) => {
+    return classes.reduce((prev, curr) => {
+        if (curr) {
+            return prev + " " + curr;
+        }
+        else {
+            return prev;
+        }
+    }, "");
+}
