@@ -14,7 +14,23 @@ export class RgbColor {
     }
 
     public toGrayLevel(): RgbColor {
-        const lvl = Math.round((this.r, this.g, this.b) / 3);
-        return new RgbColor(lvl, lvl, lvl);
+        return RgbColor.grayLevel((this.r, this.g, this.b) / 3);
+    }
+
+    public redComponent(): RgbColor {
+        return new RgbColor(this.r, 0, 0);
+    }
+
+    public greenComponent(): RgbColor {
+        return new RgbColor(0, this.g, 0);
+    }
+
+    public blueComponent(): RgbColor {
+        return new RgbColor(0, 0, this.b);
+    }
+
+    public static grayLevel(val: number): RgbColor {
+        const rgb = Math.round(val);
+        return new RgbColor(rgb, rgb, rgb);
     }
 }

@@ -14,6 +14,10 @@ export function clamp(value: number, min: number, max: number) {
     return value > min ? (value < max ? value : max) : min;
 }
 
+export function clamp01(value: number) {
+    return clamp(value, 0, 1);
+}
+
 export function clampByte(value: number) {
     return clamp(value, 0x00, 0xff);
 } 
@@ -39,4 +43,12 @@ export function smoothDamp(
         currentVelocity.value = (num8 - num5) / deltaTime;
     }
     return num8;
+}
+
+export function lerp(min: number, max: number, a: number): number {
+    return min + (max - min) * clamp01(a);
+}
+
+export function inverseLerp(val: number, min: number, max: number): number {
+    return clamp01((val - min) / (max - min));
 }
