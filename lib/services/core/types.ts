@@ -33,4 +33,20 @@ export class RgbColor {
         const rgb = Math.round(val);
         return new RgbColor(rgb, rgb, rgb);
     }
+
+    public static white(): RgbColor {
+        return new RgbColor(255, 255, 255);
+    }
+
+    public static red(): RgbColor {
+        return new RgbColor(255, 0, 0);
+    }
+
+    public static green(): RgbColor {
+        return new RgbColor(0, 255, 0);
+    }
+
+    public static blue(): RgbColor {
+        return new RgbColor(0, 0, 255);
+    }
 }

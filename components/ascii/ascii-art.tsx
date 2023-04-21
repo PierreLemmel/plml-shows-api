@@ -8,8 +8,12 @@ import { useWindowSize } from "@/lib/services/layout/responsive";
 import { useEffect, useRef, useState } from "react";
 
 export interface AsciiArtProps extends React.HTMLAttributes<HTMLDivElement> {
-    charset?: keyof typeof brightnessCharMap;
-    colorTransformation?: (keyof typeof colorTransformationsMap) | ColorTransformation;
+    opacityCharset?: keyof typeof opacityCharMaps;
+    textMode?: TextMode;
+    text?: string;
+    pixelColorTransformation?: (keyof typeof pixelColorTransformationMap) | ColorTransformation;
+    textColorTransformation?: (keyof typeof textColorTransformationMap) | ColorTransformation;
+    letterTransformation?: (keyof typeof letterTransformationsMap) | LetterTransformation;
     backgroundColor?: string;
     src: string;
     pixelSize?: number;
@@ -22,9 +26,11 @@ export interface AsciiArtProps extends React.HTMLAttributes<HTMLDivElement> {
     textOpacity?: number;
 }
 
+export type TextMode = "OpacityLetters"|"RawText"
+
 export type ColorTransformation = (color: RgbColor, stats: AsciiBitmapStats) => RgbColor
 
-const colorTransformationsMap = {
+const pixelColorTransformationMap = {
     'none': (color: RgbColor) => color,
     'red': (color: RgbColor) => color.redComponent(),
     'red-framed': (color: RgbColor, stats: AsciiBitmapStats) => {
@@ -62,6 +68,36 @@ const colorTransformationsMap = {
     },
 }
 
+const textColorTransformationMap = {
+    ...pixelColorTransformationMap,
+    "fixed-white": () => RgbColor.white(),
+    "fixed-red": () => RgbColor.red(),
+    "fixed-green": () => RgbColor.green(),
+    "fixed-blue": () => RgbColor.blue(),
+}
+
+const defaultText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+
+export type LetterTransformation = (color: RgbColor, stats: AsciiBitmapStats) => number;
+
+const letterTransformationsMap = {
+    "none": (color: RgbColor) => {
+        const { r, g, b }= color;
+        const gray = mean(r, g, b);
+
+        return gray / 255;
+    },
+    "framed": (color: RgbColor, stats: AsciiBitmapStats) => {
+        const { r, g, b } = color;
+
+        const gray = mean(r, g, b);
+
+        const { gray: { min, max }} = stats;
+
+        return inverseLerp(gray, min, max);
+    },
+}
+
 interface AsciiBitmap {
     widthInChars: number;
     heightInChars: number;
@@ -76,18 +112,22 @@ interface AsciiBitmapStats {
     blue: Stats;
 }
 
-const brightnessCharMap = {
+const opacityCharMaps = {
     default: ' .:;+=xX$',
     complex: ' .`^",:;Il!i><~+_-?][}{1)(|tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$',
-    squares: ' ░▒▓█',
+    squares: ' ░▒▓',
 }
 
 const AsciiArt = (props: AsciiArtProps) => {
     const {
-        charset,
+        opacityCharset,
         className,
+        textMode,
+        text,
         backgroundColor,
-        colorTransformation,
+        pixelColorTransformation,
+        textColorTransformation,
+        letterTransformation,
         src,
         pixelSize,
         charSize,
@@ -98,9 +138,13 @@ const AsciiArt = (props: AsciiArtProps) => {
         pixelsOpacity,
         textOpacity,
     } = {
-        charset: "default",
+        opacityCharset: "default",
         backgroundColor: 'black',
-        colorTransformation: colorTransformationsMap['none'],
+        textMode: "OpacityLetter" as TextMode,
+        text: defaultText,
+        pixelColorTransformation: pixelColorTransformationMap['none'],
+        textColorTransformation: pixelColorTransformationMap['none'],
+        letterTransformation: letterTransformationsMap['framed'],
         pixelSize: 15,
         charSize: 12,
         fontFamily: 'Consolas',
@@ -197,14 +241,15 @@ const AsciiArt = (props: AsciiArtProps) => {
         
         if (canvas && img && bitmap) {
 
-            canvas.clearRect(0, 0, containerWidth, containerHeight);
+            canvas.clearRect(0, 0, canvasWidth, canvasHeight);
 
             canvas.fillStyle = backgroundColor;
-            canvas.fillRect(0, 0, containerWidth, containerHeight);
+            canvas.fillRect(0, 0, canvasWidth, canvasHeight);
 
             if (baseImageOpacity > 0) {
-                
-                canvas.drawImage(img, 0, 0, containerWidth, containerHeight);
+                canvas.globalAlpha = baseImageOpacity;
+                canvas.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+                canvas.globalAlpha = 1;
             }
 
             const { widthInChars, heightInChars, pixels, stats } = bitmap;
@@ -212,28 +257,49 @@ const AsciiArt = (props: AsciiArtProps) => {
             const pixelW = canvasWidth / widthInChars;
             const pixelH = canvasHeight / heightInChars;
 
-            canvas.font = `${bold ? 'bold' : ''} ${italic ? 'italic' : ''} ${fontFamily} ${charSize}px`;
+            canvas.font = `${charSize}px ${bold ? 'bold ' : ''}${italic ? 'italic ' : ''}${fontFamily}`;
             const charH = charSize;
 
-            const transormer: ColorTransformation = typeof colorTransformation === 'function' ? colorTransformation : colorTransformationsMap[colorTransformation];
+            const textColorTransformer: ColorTransformation = typeof textColorTransformation === 'function' ? textColorTransformation : textColorTransformationMap[textColorTransformation];
 
-            for (let row = 0, y = 0; row < heightInChars; row++, y += pixelH) {
+            const pixelColorTransformer: ColorTransformation = typeof pixelColorTransformation === 'function' ? pixelColorTransformation : pixelColorTransformationMap[pixelColorTransformation];
+
+            const letterTransformer: LetterTransformation = typeof letterTransformation === 'function' ? letterTransformation : letterTransformationsMap[letterTransformation];
+
+
+            const letters = opacityCharMaps[opacityCharset as keyof typeof opacityCharMaps];
+
+            const unspacedText = text.replace(/\s+/g, '');
+
+            for (let row = 0, y = 0, textIndex=0; row < heightInChars; row++, y += pixelH) {
                 
-                for (let col = 0, x = 0; col < widthInChars; col++, x += pixelW) {
+                for (let col = 0, x = 0; col < widthInChars; col++, x += pixelW, textIndex++) {
 
-                    const color = transormer(pixels[col][row], stats);
-
-                    const { r, g, b } = color;
-
+                    const rawColor = pixels[col][row];
+                    
                     if (pixelsOpacity > 0) {
+                        const { r, g, b } = pixelColorTransformer(rawColor, stats);
+
                         canvas.fillStyle = `rgb(${r}, ${g}, ${b}, ${pixelsOpacity})`;
                         canvas.fillRect(x, y, pixelW, pixelH);
                     }
-
+                    
                     if (textOpacity > 0) {
+                        const { r, g, b } = textColorTransformer(rawColor, stats);
 
                         canvas.strokeStyle = `rgb(${r}, ${g}, ${b}, ${textOpacity})`;
-                        const letter = "$";
+
+                        let letter;
+                        if (textMode === "OpacityLetters") {
+                            const letterIndex = Math.round(letterTransformer(rawColor, stats) * (letters.length - 1));
+                            letter = letters[letterIndex];
+                        }
+                        else {
+                            if (textIndex >= unspacedText.length) {
+                                textIndex = 0;
+                            }
+                            letter = unspacedText[textIndex];
+                        }
 
                         const { width: charW } = canvas.measureText(letter);
                     
@@ -243,8 +309,7 @@ const AsciiArt = (props: AsciiArtProps) => {
             }
         }
 
-    }, [bitmap, containerWidth, containerHeight, backgroundColor, bold, italic, fontFamily, charSize, baseImageOpacity, pixelsOpacity, textOpacity, colorTransformation])
-
+    }, [containerWidth, containerHeight, bitmap, textMode, text, opacityCharset, backgroundColor, pixelColorTransformation, textColorTransformation, src, pixelSize, charSize, fontFamily, bold, italic, baseImageOpacity, pixelsOpacity, textOpacity])
 
     return <div className={mergeClasses("full", className)}>
         <div className="full relative" ref={divRef}>
