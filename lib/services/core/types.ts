@@ -49,4 +49,9 @@ export class RgbColor {
     public static blue(): RgbColor {
         return new RgbColor(0, 0, 255);
     }
+
+    public static multiply(val: number, color: RgbColor) {
+        const { r, g, b } = color;
+        return new RgbColor(val * r, val * g, val * b);
+    }
 }

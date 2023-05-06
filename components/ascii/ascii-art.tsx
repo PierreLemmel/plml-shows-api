@@ -1,5 +1,6 @@
 //@see: https://dev.to/patopitaluga/ascii-art-pixel-art-in-js-2oij
 
+import { useInterval } from "@/lib/services/core/hooks";
 import { inverseLerp } from "@/lib/services/core/mathf";
 import { mean, getStats, Stats } from "@/lib/services/core/stats";
 import { RgbColor } from "@/lib/services/core/types";
@@ -14,6 +15,8 @@ export interface AsciiArtProps extends React.HTMLAttributes<HTMLDivElement> {
     pixelColorTransformation?: (keyof typeof pixelColorTransformationMap) | ColorTransformation;
     textColorTransformation?: (keyof typeof textColorTransformationMap) | ColorTransformation;
     letterTransformation?: (keyof typeof letterTransformationsMap) | LetterTransformation;
+    noiseFunction?: NoiseFunction;
+
     backgroundColor?: string;
     src: string;
     pixelSize?: number;
@@ -24,7 +27,11 @@ export interface AsciiArtProps extends React.HTMLAttributes<HTMLDivElement> {
     baseImageOpacity?: number;
     pixelsOpacity?: number;
     textOpacity?: number;
+
+    refreshRate?: number;
 }
+
+export type NoiseFunction = (color: RgbColor, row: number, col: number, t: number, info: AsciiBitmapInfo) => number;
 
 export type TextMode = "OpacityLetters"|"RawText"
 
@@ -112,6 +119,12 @@ interface AsciiBitmapStats {
     blue: Stats;
 }
 
+interface AsciiBitmapInfo {
+    stats: AsciiBitmapStats;
+    widthInChars: number;
+    heightInChars: number;
+}
+
 const opacityCharMaps = {
     default: ' .:;+=xX$',
     complex: ' .`^",:;Il!i><~+_-?][}{1)(|tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$',
@@ -137,6 +150,8 @@ const AsciiArt = (props: AsciiArtProps) => {
         baseImageOpacity,
         pixelsOpacity,
         textOpacity,
+        noiseFunction,
+        refreshRate
     } = {
         opacityCharset: "default",
         backgroundColor: 'black',
@@ -153,6 +168,8 @@ const AsciiArt = (props: AsciiArtProps) => {
         baseImageOpacity: 0,
         pixelsOpacity: 0,
         textOpacity: 1,
+        noiseFunction: () => 1,
+        refreshRate: 0,
         ...props,
     }
 
@@ -164,6 +181,11 @@ const AsciiArt = (props: AsciiArtProps) => {
     const imgRef = useRef<HTMLImageElement>(null);
 
     const [bitmap, setBitmap] = useState<AsciiBitmap>();
+    const [time, setTime] = useState<number>(0);
+
+    useInterval(({ time: newTime }) => {
+        setTime(newTime)
+    }, 1000 / refreshRate, [refreshRate], refreshRate !== undefined && refreshRate !== 0)
 
     const {
         clientWidth: containerWidth,
@@ -257,7 +279,7 @@ const AsciiArt = (props: AsciiArtProps) => {
             const pixelW = canvasWidth / widthInChars;
             const pixelH = canvasHeight / heightInChars;
 
-            canvas.font = `${charSize}px ${bold ? 'bold ' : ''}${italic ? 'italic ' : ''}${fontFamily}`;
+            canvas.font = `${charSize}pt ${bold === true ? 'bold ' : ''}${italic === true ? 'italic ' : ''}${fontFamily}`;
             const charH = charSize;
 
             const textColorTransformer: ColorTransformation = typeof textColorTransformation === 'function' ? textColorTransformation : textColorTransformationMap[textColorTransformation];
@@ -271,23 +293,29 @@ const AsciiArt = (props: AsciiArtProps) => {
 
             const unspacedText = text.replace(/\s+/g, '');
 
+            const bmpInfo: AsciiBitmapInfo = {
+                stats,
+                widthInChars,
+                heightInChars
+            }
             for (let row = 0, y = 0, textIndex=0; row < heightInChars; row++, y += pixelH) {
                 
                 for (let col = 0, x = 0; col < widthInChars; col++, x += pixelW, textIndex++) {
 
                     const rawColor = pixels[col][row];
+                    const noise = noiseFunction(rawColor, row, col, time, bmpInfo)
                     
                     if (pixelsOpacity > 0) {
-                        const { r, g, b } = pixelColorTransformer(rawColor, stats);
+                        const { r, g, b } = RgbColor.multiply(noise, pixelColorTransformer(rawColor, stats));
 
                         canvas.fillStyle = `rgb(${r}, ${g}, ${b}, ${pixelsOpacity})`;
                         canvas.fillRect(x, y, pixelW, pixelH);
                     }
                     
                     if (textOpacity > 0) {
-                        const { r, g, b } = textColorTransformer(rawColor, stats);
+                        const { r, g, b } = RgbColor.multiply(noise, textColorTransformer(rawColor, stats));
 
-                        canvas.strokeStyle = `rgb(${r}, ${g}, ${b}, ${textOpacity})`;
+                        canvas.fillStyle = `rgb(${r}, ${g}, ${b}, ${textOpacity})`;
 
                         let letter;
                         if (textMode === "OpacityLetters") {
@@ -303,13 +331,13 @@ const AsciiArt = (props: AsciiArtProps) => {
 
                         const { width: charW } = canvas.measureText(letter);
                     
-                        canvas.strokeText(letter, x + pixelW / 2 - charW /2, y + pixelH - (pixelH - charH));
+                        canvas.fillText(letter, x + pixelW / 2 - charW /2, y + pixelH - (pixelH - charH));
                     }
                 }
             }
         }
 
-    }, [containerWidth, containerHeight, bitmap, textMode, text, opacityCharset, backgroundColor, pixelColorTransformation, textColorTransformation, src, pixelSize, charSize, fontFamily, bold, italic, baseImageOpacity, pixelsOpacity, textOpacity])
+    }, [containerWidth, containerHeight, bitmap, textMode, text, opacityCharset, backgroundColor, pixelColorTransformation, textColorTransformation, src, pixelSize, charSize, fontFamily, bold, italic, baseImageOpacity, pixelsOpacity, textOpacity, noiseFunction, time])
 
     return <div className={mergeClasses("full", className)}>
         <div className="full relative" ref={divRef}>
