@@ -1,4 +1,5 @@
 import { clampByte } from "../core/mathf";
+import { IntRange, Named } from "../core/types";
 
 
 export class Color {
@@ -128,9 +129,7 @@ export module Chans {
 
 
 
-interface Named {
-    readonly name: string;
-}
+
 
 export module Fixtures {   
 
@@ -217,3 +216,5 @@ export interface ClosingInterface extends WriteInterfaceBase<"Closing"> { }
 export type DmxWriteInterface = UndetectedInterface|ClosedInterface|OpeningInterface|OpenedInterface|ClosingInterface;
 
 export type WriteInterfaceType = "None"|"EnttecOpenDmx";
+
+export type DmxRange = IntRange<0, 256>;

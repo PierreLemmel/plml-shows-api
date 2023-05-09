@@ -1,5 +1,6 @@
 import { StageLightingPlan } from "../../dmx/dmx512";
 import { setDocument } from "../firebase";
+import { saveLightingPlan } from "../showControlApi";
 
 
 export default async function seedLightingPlans() {
@@ -165,7 +166,5 @@ export default async function seedLightingPlans() {
         }
     ]
 
-    coll.forEach(async plan => {
-        await setDocument<StageLightingPlan>(`dmx/lightingPlans/public/${plan.name}`, plan);
-    })
+    coll.forEach(saveLightingPlan)
 }

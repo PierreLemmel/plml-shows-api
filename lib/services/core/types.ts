@@ -34,24 +34,49 @@ export class RgbColor {
         return new RgbColor(rgb, rgb, rgb);
     }
 
-    public static white(): RgbColor {
+    public static get white(): RgbColor {
         return new RgbColor(255, 255, 255);
     }
 
-    public static red(): RgbColor {
+    public static get red(): RgbColor {
         return new RgbColor(255, 0, 0);
     }
 
-    public static green(): RgbColor {
+    public static get green(): RgbColor {
         return new RgbColor(0, 255, 0);
     }
 
-    public static blue(): RgbColor {
+    public static get blue(): RgbColor {
         return new RgbColor(0, 0, 255);
     }
 
     public static multiply(val: number, color: RgbColor) {
         const { r, g, b } = color;
+
+        
         return new RgbColor(val * r, val * g, val * b);
     }
+
+    public static named(name: RgbNamedColor): RgbColor {
+        return RgbColor[name];
+    }
 }
+
+type RgbColorStaticType = typeof RgbColor;
+
+type RgbColorStaticFunctions = keyof {
+    [K in keyof RgbColorStaticType]: RgbColorStaticType[K] extends Function ? RgbColorStaticType[K] : never
+}
+
+type RgbColorExcludedStaticFunction = "grayLevel"|"prototype"|"multiply"|"named";
+export type RgbNamedColor = Exclude<RgbColorStaticFunctions, RgbColorExcludedStaticFunction>
+
+export interface Named {
+    readonly name: string;
+}
+
+type Enumerate<N extends number, Acc extends number[] = []> = Acc['length'] extends N
+  ? Acc[number]
+  : Enumerate<N, [...Acc, Acc['length']]>
+
+export type IntRange<F extends number, T extends number> = Exclude<Enumerate<T>, Enumerate<F>>

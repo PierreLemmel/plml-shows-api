@@ -6,6 +6,7 @@ import multipleReviewsDataSet from "./migrations/003 - multipleReviewsDataset";
 import seedRandomTimerDurations from "./migrations/004 - seedTimerDurations";
 import seedFixtureDefinitions from "./migrations/005 - seedFixtureDefinitions";
 import seedLightingPlans from "./migrations/006 - seedLightingPlans";
+import seedShows from "./migrations/007 - seedShows";
 
 
 const migrationHandlers: MigrationHandler[] = [
@@ -15,6 +16,7 @@ const migrationHandlers: MigrationHandler[] = [
     seedRandomTimerDurations,
     seedFixtureDefinitions,
     seedLightingPlans,
+    seedShows,
 ];
 
 
