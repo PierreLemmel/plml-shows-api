@@ -1,8 +1,10 @@
+import { mergeClasses } from "@/lib/services/core/utils";
+
 const sharedClasses = `centered-row text-center font-bold text-white
 bg-gradient-to-r from-cyan-500 to-blue-500
 transition duration-300`
 
-const enabledSharedClasses=`hover:hue-rotate-15 cursor-pointer `
+const enabledSharedClasses=`hover:hue-rotate-15 cursor-pointer`
 
 const spinningSharedClasses=`cursor-progress`
 
@@ -37,16 +39,14 @@ export const AleasButton = (props: ButtonProps) => {
                 onClick(e)
             }
         }}
-        className={`
-            ${sharedClasses}
-            ${disabled ? disabledClasses : (spinning ? spinningClasses : enabledClasses)}
-            sm:text-base
-            md:text-xl
-            xl:text-2xl
-            py-3 px-6 min-w-[8em]
-            rounded-md
-            ${props.className ?? ""}
-        `}
+        className={mergeClasses(
+            sharedClasses,
+            disabled ? disabledClasses : (spinning ? spinningClasses : enabledClasses),
+            "sm:text-base md:text-xl xl:text-2xl",
+            "py-3 px-6 min-w-[8em]",
+            "rounded-md",
+            props.className
+        )}
     >
         {spinning ? <svg className="animate-spin h-5 w-5 -ml-1 mr-4" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -73,14 +73,14 @@ export const AleasRoundButton = (props: ButtonProps) => {
                 onClick(e)
             }
         }}
-        className={`
-            ${sharedClasses}
-            ${disabled ? disabledClasses : enabledClasses}
-            sm:text-[1.35rem] sm:px-[0.95rem] sm:py-1
-            md:text-2xl md:px-5 md:py-2
-            xl:text-4xl xl:px-6 xl:py-3
-            rounded-full
-            ${props.className ?? ""}
-        `}
+        className={mergeClasses(
+            sharedClasses,
+            disabled ? disabledClasses : enabledClasses,
+            "sm:text-[1.35rem] sm:px-[0.95rem] sm:py-1",
+            "md:text-2xl md:px-5 md:py-2",
+            "xl:text-4xl xl:px-6 xl:py-3",
+            "rounded-full",
+            props.className
+        )}
     />
 }

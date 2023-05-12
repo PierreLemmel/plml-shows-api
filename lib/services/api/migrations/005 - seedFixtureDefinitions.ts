@@ -1,5 +1,6 @@
 import { Fixtures } from "../../dmx/dmx512";
 import { setDocument } from "../firebase";
+import { saveFixtureCollection } from "../showControlApi";
 
 
 export default async function seedFixtureDefinitions() {
@@ -256,5 +257,5 @@ export default async function seedFixtureDefinitions() {
     await setDocument("dmx/fixtures", {
         defaultCollection: name
     })
-    await setDocument<Fixtures.FixtureModelCollection>(`dmx/fixtures/collections/${name}`, coll);
+    await saveFixtureCollection(coll);
 }

@@ -133,11 +133,31 @@ export module Chans {
 
 export module Fixtures {   
 
-    export type LedFixtureType = "Par LED" | "Barre LED" | "Générique LED" | "Lyre";
-    export type TradFixtureType = "Par Trad" | "PC Trad" | "Découpe Trad" | "Générique Trad"
+    const ledFixtureTypes = [
+        "Par LED",
+        "Barre LED",
+        "Générique LED",
+        "Lyre"
+    ] as const;
+    export type LedFixtureType = typeof ledFixtureTypes[number];
+
+    const tradFixtureTypes = [
+        "Par Trad",
+        "PC Trad",
+        "Découpe Trad",
+        "Générique Trad"
+    ] as const;
+    export type TradFixtureType = typeof tradFixtureTypes[number];
 
     export type FixtureType = LedFixtureType|TradFixtureType;
 
+    export const isLed = (type: FixtureType): type is LedFixtureType => {
+        return ledFixtureTypes.includes(type as LedFixtureType);
+    }
+
+    export const isTrad = (type: FixtureType): type is TradFixtureType => {
+        return tradFixtureTypes.includes(type as TradFixtureType);
+    }
     
     export interface LedFixtureModelDefinition extends Named {
     
