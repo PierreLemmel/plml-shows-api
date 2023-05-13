@@ -68,6 +68,7 @@ export interface ShowControlProps {
 
     loadLightingPlan: (plan: string) => void;
     loadShow: (name: string) => void;
+    loadFixtureCollection: (name: string) => void;
 }
 
 export function useShowControl(): ShowControlProps {
@@ -231,6 +232,7 @@ export function useShowControl(): ShowControlProps {
 
         loadLightingPlan: (name: string) => setLightingPlanName(name),
         loadShow: (name: string) => setShowName(name),
+        loadFixtureCollection: (name: string) => setFixtureCollectionName(name),
     }
 }
 

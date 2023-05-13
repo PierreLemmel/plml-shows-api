@@ -28,7 +28,7 @@ export const AleasButton = (props: ButtonProps) => {
         ...props
     }
     
-    const enabledClasses = enabledSharedClasses + 'hover:scale-105';
+    const enabledClasses = mergeClasses(enabledSharedClasses, 'hover:scale-105');
     const spinningClasses = spinningSharedClasses;
     const disabledClasses = disabledSharedClasses;
 
@@ -41,7 +41,7 @@ export const AleasButton = (props: ButtonProps) => {
         }}
         className={mergeClasses(
             sharedClasses,
-            disabled ? disabledClasses : (spinning ? spinningClasses : enabledClasses),
+            disabled === true ? disabledClasses : (spinning === true ? spinningClasses : enabledClasses),
             "sm:text-base md:text-xl xl:text-2xl",
             "py-3 px-6 min-w-[8em]",
             "rounded-md",

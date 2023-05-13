@@ -1,3 +1,7 @@
+import AleasBackground from "./aleas-background";
+import AleasHead from "./aleas-head";
+import AleasNavbar from "./aleas-navbar";
+
 export interface AleasMainContainerProps extends React.HTMLAttributes<HTMLDivElement> {
     overflow?: boolean;
 }
@@ -42,4 +46,48 @@ export const AleasTitle = (props: AleasTitleProps) => {
     ">
         {children}
     </div>
+}
+
+export interface AleasLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
+    title?: string;
+    description?: string;
+}
+
+export const AleasMainLayout = (props: AleasLayoutProps) => {
+    const {
+        children,
+        title,
+        description
+     } = props;
+
+    return <>
+        <AleasHead {...{title, description}} />
+
+        <main className="fullscreen relative overflow-hidden">
+            <AleasBackground />
+
+            <AleasNavbar />
+
+            <div
+                className="absolute top-0 left-0 full center-child"
+            >
+                <AleasMainContainer>
+
+                    {title && <AleasTitle>
+                        {title}
+                    </AleasTitle>}
+
+                    <div className="flex flex-col justify-evenly items-center flex-grow">
+                        {children}
+                    </div>
+
+                </AleasMainContainer>
+
+            </div>
+
+            
+
+            
+        </main>
+    </>
 }

@@ -2,7 +2,7 @@ import AleasBackground from "@/components/aleas/aleas-background";
 import { AleasButton } from "@/components/aleas/aleas-buttons";
 import { AleasDropdown, DropdownOption } from "@/components/aleas/aleas-dropdown";
 import AleasHead from "@/components/aleas/aleas-head";
-import { AleasMainContainer, AleasTitle } from "@/components/aleas/aleas-layout";
+import { AleasMainContainer, AleasMainLayout, AleasTitle } from "@/components/aleas/aleas-layout";
 import { Scene, ShowControlContext, useShowControl } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
@@ -41,59 +41,41 @@ const ShowPage = () => {
     }
 
     return <ShowControlContext.Provider value={showControl}>
-        <AleasHead title={showName} />
 
-        <main className="fullscreen relative overflow-hidden">
+        <AleasMainLayout title={showName}>
+            <div className="centered-col gap-4">
+                <div className="centered-row gap-3">
 
-            <AleasBackground />
-            <div
-                className="absolute top-0 left-0 full center-child"
-            >
-                <AleasMainContainer>
-                    <AleasTitle>
-                        {showName}
-                    </AleasTitle>
-
-                    <div className="center-child flex-grow">
-
-                        <div className="centered-col gap-4">
-                            <div className="centered-row gap-3">
-
-                                <div className="text-lg">
-                                    Scenes:
-                                </div>
-
-                                <AleasDropdown
-                                    options={dropdownOptions}
-                                    onSelectedOptionChanged={onDropdownSelectionChanged}
-                                    placeholder="Select a scene"
-                                />
-                            </div>
-
-                            <div className="centered-row gap-3">
-                                <AleasButton
-                                    onClick={onPlayBtnClicked}
-                                    disabled={!playBtnEnabled}
-                                >
-                                    Play
-                                </AleasButton>
-
-                                <AleasButton
-                                    onClick={onStopBtnClicked}
-                                    disabled={!stopBtnEnabled}
-                                >
-                                    Stop
-                                </AleasButton>
-                            </div>
-                            
-                        </div>
-
+                    <div className="text-lg">
+                        Scenes:
                     </div>
-                    
-                </AleasMainContainer>
 
+                    <AleasDropdown
+                        options={dropdownOptions}
+                        onSelectedOptionChanged={onDropdownSelectionChanged}
+                        placeholder="Select a scene"
+                    />
+                </div>
+
+                <div className="centered-row gap-3">
+                    <AleasButton
+                        onClick={onPlayBtnClicked}
+                        disabled={!playBtnEnabled}
+                    >
+                        Play
+                    </AleasButton>
+
+                    <AleasButton
+                        onClick={onStopBtnClicked}
+                        disabled={!stopBtnEnabled}
+                    >
+                        Stop
+                    </AleasButton>
+                </div>
+                
             </div>
-        </main>
+        </AleasMainLayout>
+
     </ShowControlContext.Provider>
         
 }

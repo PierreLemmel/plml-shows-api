@@ -1,21 +1,27 @@
 import { initializeApp } from "firebase/app";
 import { collection, doc, DocumentData, getDoc, getDocs, getFirestore, setDoc, WithFieldValue } from "firebase/firestore";
 import { getStorage, list, ref, getDownloadURL, getMetadata } from "firebase/storage";
+import { getAuth, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth"
+import { createContext, useContext, useEffect, useState } from "react";
 
 
 const firebaseConfig = {
-    apiKey: process.env.FIREBASE_API_KEY,
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: "plml-shows.firebaseapp.com",
     databaseURL: "https://plml-shows-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "plml-shows",
     storageBucket: "plml-shows.appspot.com",
-    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.FIREBASE_APP_ID
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
+
+console.log("hey")
+console.log(process.env)
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
+const auth = getAuth(app);
 
 export async function getDocument<T>(path: string) {
     const firedoc = await getDoc(doc(db, path));
@@ -48,4 +54,48 @@ export async function listFiles(folder: string) {
     const result = await list(folderRef);
 
     return result.items;
+}
+
+
+export interface AuthContextProps {
+    user: User|null;
+    signInWithGoogle: () => Promise<void>;
+    signOut: () => Promise<void>;
+}
+
+export const AuthContext = createContext<AuthContextProps>({
+    user: null,
+    signInWithGoogle: async () => {},
+    signOut: async () => {},
+});
+
+export const useAuth = () => {
+
+    const [user, setUser] = useState<User|null>(null);
+
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged(setUser);
+        return () => unsubscribe();
+    }, []);
+
+    const signInWithGoogle = async () => {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+    };
+
+    const signOut = async () => {
+        await auth.signOut();
+    };
+
+    const value: AuthContextProps = {
+        user,
+        signInWithGoogle,
+        signOut,
+    };
+
+    return value;
+};
+
+export function useAuthContext() {
+    return useContext(AuthContext);
 }
