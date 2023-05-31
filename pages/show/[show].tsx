@@ -3,18 +3,25 @@ import { AleasButton } from "@/components/aleas/aleas-buttons";
 import { AleasDropdown, DropdownOption } from "@/components/aleas/aleas-dropdown";
 import AleasHead from "@/components/aleas/aleas-head";
 import { AleasMainContainer, AleasMainLayout, AleasTitle } from "@/components/aleas/aleas-layout";
-import { Scene, ShowControlContext, useShowControl } from "@/lib/services/dmx/showControl";
+import { Scene, ShowControlContext, Track, useShowControl } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 
 const ShowPage = () => {
    
     const showControl = useShowControl();
-    const { show } = showControl;
+    const {
+        show,
+        controler
+    } = showControl;
 
     const router = useRouter();
     const showName = router.query["show"] as string;
+
+    const [scene, setScene] = useState<Scene>();
+
+    const [track, setTrack] = useState<Track>();
 
     useEffect(() => {
         showControl.loadShow(showName);
@@ -27,17 +34,27 @@ const ShowPage = () => {
         }
     }) || []
     const onDropdownSelectionChanged = (option: DropdownOption<Scene>) => {
-        console.log(option)
+        setScene(option.value);
     }
 
-    const playBtnEnabled = true;
+    const clearCurrentTrack = () => {
+        if (track && controler) {
+            controler.removeTrack(track);
+        }
+    }
+
+    const playBtnEnabled = scene !== undefined;
     const onPlayBtnClicked = () => {
 
+        if (scene) {
+            clearCurrentTrack();
+        }
     }
 
     const stopBtnEnabled = false;
     const onStopBtnClicked = () => {
 
+        clearCurrentTrack();
     }
 
     return <ShowControlContext.Provider value={showControl}>
