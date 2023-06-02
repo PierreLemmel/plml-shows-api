@@ -1,4 +1,3 @@
-import { DropdownOption } from "@/components/aleas/aleas-dropdown";
 import { createContext, Dispatch, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { getFixtureCollection, getLightingPlan, getShow } from "../api/showControlApi";
 import { useEffectAsync } from "../core/hooks";
@@ -52,6 +51,11 @@ export interface Track {
     scene: Scene;
     enabled: boolean;
     master: number;
+    info: TrackInfo;
+}
+
+export interface TrackInfo {
+
 }
 
 const isTrack = (track: Track|TrackId): track is Track => {
@@ -59,23 +63,20 @@ const isTrack = (track: Track|TrackId): track is Track => {
     return typeof track === "object";
 }
 
-export type CreateTrackOptions = Partial<Omit<Track, "scene"|"id">>
+export type CreateTrackOptions = Partial<Omit<Track, "scene"|"id"|"info">>
 
 export interface ShowControlProps {
     lightingPlan?: StageLightingPlan;
     show?: Show;
     controler?: ShowControler;
+    fixtureCollection?: Fixtures.FixtureModelCollection;
 
-    loadLightingPlan: (plan: string) => void;
     loadShow: (name: string) => void;
-    loadFixtureCollection: (name: string) => void;
 }
 
 export function useShowControl(): ShowControlProps {
 
-    const [fixtureCollectionName, setFixtureCollectionName] = useState<string>();
     const [showName, setShowName] = useState<string>();
-    const [lightingPlanName, setLightingPlanName] = useState<string>();
 
     const [show, setShow] = useState<Show>();
     const [fixtureCollection, setFixtureCollection] = useState<Fixtures.FixtureModelCollection>();
@@ -92,6 +93,10 @@ export function useShowControl(): ShowControlProps {
 
             const id = generateId();
 
+            const info: TrackInfo = {
+
+            }
+
             const track: Track = {
                 id,
                 scene,
@@ -100,7 +105,8 @@ export function useShowControl(): ShowControlProps {
                     enabled: true,
                     master: 1,
                     ...options
-                }
+                },
+                info
             }
 
             tracksRef.current.set(id, track);
@@ -202,16 +208,21 @@ export function useShowControl(): ShowControlProps {
 
     }, [showName]);
 
+    const lightingPlanName = show?.lightingPlan;
+    
     useEffectAsync(async () => {
 
         if (lightingPlanName === undefined) {
-            return;
+            setLightingPlan(undefined);
+        }
+        else {
+            const plan = await getLightingPlan(lightingPlanName);
+            setLightingPlan(plan);
         }
 
-        const plan = await getLightingPlan(lightingPlanName);
-        setLightingPlan(plan);
-
     }, [lightingPlanName]);
+
+    const fixtureCollectionName = "default";
 
     useEffectAsync(async () => {
 
@@ -229,10 +240,9 @@ export function useShowControl(): ShowControlProps {
         show,
         lightingPlan,
         controler,
+        fixtureCollection,
 
-        loadLightingPlan: (name: string) => setLightingPlanName(name),
         loadShow: (name: string) => setShowName(name),
-        loadFixtureCollection: (name: string) => setFixtureCollectionName(name),
     }
 }
 

@@ -1,11 +1,9 @@
-import AleasBackground from "@/components/aleas/aleas-background";
 import { AleasButton } from "@/components/aleas/aleas-buttons";
 import { AleasDropdown, DropdownOption } from "@/components/aleas/aleas-dropdown";
-import AleasHead from "@/components/aleas/aleas-head";
-import { AleasMainContainer, AleasMainLayout, AleasTitle } from "@/components/aleas/aleas-layout";
+import { AleasMainLayout } from "@/components/aleas/aleas-layout";
 import { Scene, ShowControlContext, Track, useShowControl } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 
 const ShowPage = () => {
@@ -13,7 +11,9 @@ const ShowPage = () => {
     const showControl = useShowControl();
     const {
         show,
-        controler
+        controler,
+        lightingPlan,
+        fixtureCollection,
     } = showControl;
 
     const router = useRouter();
@@ -25,14 +25,17 @@ const ShowPage = () => {
 
     useEffect(() => {
         showControl.loadShow(showName);
-    }, [showName])
+    }, [showName]);
+
 
     const dropdownOptions: DropdownOption<Scene>[] = show?.scenes.map(scene => {
         return {
             label: scene.name,
             value: scene
         }
-    }) || []
+    }) || []; 
+
+    const selectedOption = useMemo(() => dropdownOptions.find(o => o.value === scene), [scene])
     const onDropdownSelectionChanged = (option: DropdownOption<Scene>) => {
         setScene(option.value);
     }
@@ -40,22 +43,27 @@ const ShowPage = () => {
     const clearCurrentTrack = () => {
         if (track && controler) {
             controler.removeTrack(track);
+            setTrack(undefined)
         }
     }
 
     const playBtnEnabled = scene !== undefined;
     const onPlayBtnClicked = () => {
 
-        if (scene) {
+        if (scene && controler) {
             clearCurrentTrack();
+            const newTrack = controler.addTrack(scene);
+            setTrack(newTrack);
         }
     }
 
-    const stopBtnEnabled = false;
+    const stopBtnEnabled = track !== undefined;
     const onStopBtnClicked = () => {
 
         clearCurrentTrack();
     }
+
+    
 
     return <ShowControlContext.Provider value={showControl}>
 
@@ -69,6 +77,7 @@ const ShowPage = () => {
 
                     <AleasDropdown
                         options={dropdownOptions}
+                        value={selectedOption}
                         onSelectedOptionChanged={onDropdownSelectionChanged}
                         placeholder="Select a scene"
                     />
@@ -90,6 +99,27 @@ const ShowPage = () => {
                     </AleasButton>
                 </div>
                 
+                {track && lightingPlan && <div className="flex flex-col gap-4">
+                    {track.scene.elements.map(elt => {
+                        const { fixture: fixtureName, values } = elt;
+
+                        const fixture = lightingPlan.fixtures[fixtureName]
+
+                        const eltKey = `${track.scene.name}-${fixtureName}`;
+
+                        return <div key={eltKey}>
+                            <div>{fixture.name} ({fixture.address})</div>
+                            <div className="pl-4">
+                                {Object.entries(values).map((val, j) => {
+                                    const [chan, value] = val;
+
+                                    return <div key={`${eltKey}-${chan}`}>{`${chan}: ${value}`}</div>
+                                })}
+                            </div>
+                        </div>
+                    })}
+                </div>}
+
             </div>
         </AleasMainLayout>
 

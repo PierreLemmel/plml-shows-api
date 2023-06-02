@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { collection, doc, DocumentData, getDoc, getDocs, getFirestore, setDoc, WithFieldValue } from "firebase/firestore";
-import { getStorage, list, ref, getDownloadURL, getMetadata } from "firebase/storage";
+import { getStorage, list, ref } from "firebase/storage";
 import { getAuth, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth"
 import { createContext, useContext, useEffect, useState } from "react";
 
@@ -14,9 +14,6 @@ const firebaseConfig = {
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
-
-console.log("hey")
-console.log(process.env)
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);

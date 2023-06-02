@@ -16,6 +16,7 @@ export interface DropdownOption<T = any> {
 
 export interface DropdownProps<T = any> extends React.HTMLAttributes<HTMLDivElement> {
     options: DropdownOption<T>[];
+    value?: DropdownOption<T>;
     onSelectedOptionChanged: (option: DropdownOption<T>) => void;
 }
 
@@ -26,6 +27,7 @@ export const AleasDropdown = (props: DropdownProps) => {
         onSelectedOptionChanged,
         placeholder,
         disabled,
+        value
     } = {
         disabled: false,
         placeholder: "Select an option",
@@ -33,10 +35,8 @@ export const AleasDropdown = (props: DropdownProps) => {
     };
 
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedOption, setSelectedOption] = useState<DropdownOption>();
 
     const handleSelectOption = (option: DropdownOption) => {
-        setSelectedOption(option);
         onSelectedOptionChanged(option);
         setIsOpen(false);
     };
@@ -56,7 +56,7 @@ export const AleasDropdown = (props: DropdownProps) => {
                 )}
                 onClick={() => setIsOpen(!isOpen)}
             >
-                {selectedOption ? selectedOption.label : placeholder}
+                {value ? value.label : placeholder}
                 <svg
                     className="-mr-1 ml-2 h-5 w-5"
                     xmlns="http://www.w3.org/2000/svg"
@@ -79,9 +79,9 @@ export const AleasDropdown = (props: DropdownProps) => {
                 "z-10 origin-top-right absolute right-0 mt-2 w-48 rounded-md")
             }>
                 <div className="py-1 px-[0.1em]">
-                    {options.map((option) => (
+                    {options.map((option, i) => (
                     <div
-                        key={option.value}
+                        key={i}
                         className={mergeClasses(
                             "w-full text-left px-4 py-2",
                             "hover:brightness-125 hover:bg-indigo-500/40 rounded-md"
