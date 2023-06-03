@@ -87,6 +87,7 @@ export class Color {
 export module Chans {
 
     const numberChannelTypes = [
+        "Trad",
         "Dimmer",
         "Stroboscope",
         "White",
@@ -118,7 +119,7 @@ export module Chans {
         readonly size: number;
     }
 
-    export function isnumberChannel(chan: ChannelType): chan is NumberChannelType {
+    export function isNumberChannel(chan: ChannelType): chan is NumberChannelType {
         return numberChannelTypes.includes(chan as NumberChannelType);
     }
 
@@ -169,6 +170,10 @@ export module Fixtures {
                 readonly [position: number]: Chans.ChannelType;
             };
         }
+    }
+
+    export interface LedFixtureChannelsDefinition {
+        readonly [position: number]: Chans.ChannelType;
     }
 
     export interface TradFixtureModelDefinition extends Named {

@@ -1,7 +1,7 @@
 import { AleasButton } from "@/components/aleas/aleas-buttons";
 import { AleasDropdown, DropdownOption } from "@/components/aleas/aleas-dropdown";
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
-import { Scene, ShowControlContext, Track, useShowControl } from "@/lib/services/dmx/showControl";
+import { generateSceneInfo, Scene, SceneInfo, ShowControlContext, Track, useShowControl } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 
@@ -23,6 +23,15 @@ const ShowPage = () => {
 
     const [track, setTrack] = useState<Track>();
 
+    const trackInfo = useMemo<SceneInfo|undefined>(() => {
+        if (track && lightingPlan && fixtureCollection) {
+            return generateSceneInfo(track.scene, lightingPlan, fixtureCollection)
+        }
+        else {
+            return undefined;
+        }
+    }, [track, lightingPlan, fixtureCollection])
+    
     useEffect(() => {
         showControl.loadShow(showName);
     }, [showName]);
@@ -99,25 +108,9 @@ const ShowPage = () => {
                     </AleasButton>
                 </div>
                 
-                {track && lightingPlan && <div className="flex flex-col gap-4">
-                    {track.scene.elements.map(elt => {
-                        const { fixture: fixtureName, values } = elt;
-
-                        const fixture = lightingPlan.fixtures[fixtureName]
-
-                        const eltKey = `${track.scene.name}-${fixtureName}`;
-
-                        return <div key={eltKey}>
-                            <div>{fixture.name} ({fixture.address})</div>
-                            <div className="pl-4">
-                                {Object.entries(values).map((val, j) => {
-                                    const [chan, value] = val;
-
-                                    return <div key={`${eltKey}-${chan}`}>{`${chan}: ${value}`}</div>
-                                })}
-                            </div>
-                        </div>
-                    })}
+                {trackInfo && <div className="flex flex-col gap-4">
+                    <div>{trackInfo.name}</div>
+                    {JSON.stringify(trackInfo)}
                 </div>}
 
             </div>

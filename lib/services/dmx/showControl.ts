@@ -3,7 +3,7 @@ import { getFixtureCollection, getLightingPlan, getShow } from "../api/showContr
 import { useEffectAsync } from "../core/hooks";
 import { Named, RgbColor, RgbNamedColor } from "../core/types";
 import { generateId } from "../core/utils";
-import { Chans, DmxRange, Fixtures, StageLightingPlan } from "./dmx512";
+import { Chans, Color, DmxRange, Fixtures, StageLightingPlan } from "./dmx512";
 import { useDmxControlContext } from "./dmxControl";
 
 export interface Show extends Named {
@@ -18,13 +18,15 @@ export interface Scene extends Named {
     elements: SceneElement[];
 }
 
+export type SceneElementValues = Partial<{
+    [chan in Chans.NumberChannelType]: DmxRange;
+}> & Partial<{
+    [chan in Chans.ColorChannelType]: RgbColor|RgbNamedColor;
+}>
+
 export type SceneElement = {
     fixture: string;
-    values: Partial<{
-        [chan in Chans.NumberChannelType]: DmxRange;
-    }> & Partial<{
-        [chan in Chans.ColorChannelType]: RgbColor|RgbNamedColor;
-    }>
+    values: SceneElementValues;
 };
 
 export interface ShowControler {
@@ -45,17 +47,158 @@ export interface ShowControler {
 
 export type TrackId = string;
 
-export interface Track {
+export interface Track extends Named {
     id: TrackId;
-    name: string;
     scene: Scene;
     enabled: boolean;
     master: number;
-    info: TrackInfo;
 }
 
-export interface TrackInfo {
+export interface SceneInfo extends Named {
+    elements: SceneElementInfo[];
+}
 
+export interface FixtureInfo extends Named {
+    address: number;
+    model: FixtureModelInfo;
+}
+
+export type FixtureModelInfo = TradFixtureModelInfo|LedFixtureModelInfo;
+
+export interface TradFixtureModelInfo {
+    manufacturer?: string;
+    type: Fixtures.TradFixtureType;
+    power?: number;
+}
+
+export interface LedFixtureModelInfo {
+    manufacturer?: string;
+    type: Fixtures.LedFixtureType;
+    channels: {
+        [position: number]: Chans.ChannelType;
+    }
+}
+
+export interface SceneElementInfo {
+    fixture: FixtureInfo;
+    rawValues: number[];
+    values: SceneElementValues;
+}
+
+export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): SceneInfo {
+    
+    const { name } = scene;
+    const elements: SceneElementInfo[] = scene.elements.map(se => {
+
+        const {
+            fixture: fixtureName,
+            values
+        } = se;
+
+        const fixture = lightingPlan.fixtures[fixtureName];
+        const {
+            address,
+            mode,
+            model: modelName
+        } = fixture;
+
+        const modelDefinition = fixtures.fixtureModels[modelName];
+        const { type } = modelDefinition;
+
+        let modelInfo: FixtureModelInfo;
+        let computedValues: number[];
+        if (Fixtures.isTrad(type)) {
+            modelInfo = {
+                ...(modelDefinition as Fixtures.TradFixtureModelDefinition)
+            }
+
+            const trad = values["Trad"];
+
+            computedValues = [trad ?? 0];
+        }
+        else if (Fixtures.isLed(type)){
+            const ledModelDefinition = modelDefinition as Fixtures.LedFixtureModelDefinition;
+
+            const {
+                manufacturer,
+                modes,
+            } = ledModelDefinition;
+
+            if (!mode) {
+                throw "Mode should be defined for LED fixture"
+            }
+
+            computedValues = new Array(mode).fill(0);
+
+            const channels = modes[mode]
+            const chanMap = new Map<Chans.ChannelType, number>()
+
+            Object.entries(channels).forEach(([k, v]) => {
+                chanMap.set(v, Number.parseInt(k))
+            });
+
+            for (const chan in values) {
+                const chanType = <Chans.ChannelType>chan;
+                const chanAddr = chanMap.get(chanType);
+
+                if (chanAddr === undefined) {
+                    continue;
+                }
+                console.log(chanMap)
+
+                if (Chans.isNumberChannel(chanType)) {
+                    const val = values[chanType]!;
+                    computedValues[chanAddr] = val;
+                }
+                else if (Chans.isColorChannel(chanType)) {
+                    
+                    const val = values[chanType]!;
+
+                    const color = typeof val === 'string' ? RgbColor.named(val) : val;
+                    const { r, g, b } = color;
+                    console.log(color)
+
+                    computedValues[chanAddr] = r;
+                    computedValues[chanAddr + 1] = g;
+                    computedValues[chanAddr + 2] = b;
+                }
+                else {
+                    throw `Unsupported channel type: '${chan}'`;
+                }
+            }
+
+            modelInfo = {
+                type,
+                manufacturer,
+                channels
+            }
+        }
+        else {
+            throw `Unsupported type: '${type}`;
+        }
+
+
+        const fixtureInfo: FixtureInfo = {
+            name: fixtureName,
+            address,
+            model: modelInfo,
+        }
+
+        const sei: SceneElementInfo = {
+            fixture: fixtureInfo,
+            values,
+            rawValues: computedValues
+        }
+
+        return sei;
+    });
+    
+    const result : SceneInfo = {
+        name,
+        elements
+    }
+
+    return result;
 }
 
 const isTrack = (track: Track|TrackId): track is Track => {
@@ -93,20 +236,13 @@ export function useShowControl(): ShowControlProps {
 
             const id = generateId();
 
-            const info: TrackInfo = {
-
-            }
-
             const track: Track = {
                 id,
                 scene,
-                ...{
-                    name: scene.name,
-                    enabled: true,
-                    master: 1,
-                    ...options
-                },
-                info
+                name: scene.name,
+                enabled: true,
+                master: 1,
+                ...options
             }
 
             tracksRef.current.set(id, track);
