@@ -1,6 +1,6 @@
-import { createContext, Dispatch, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, Dispatch, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { getFixtureCollection, getLightingPlan, getShow } from "../api/showControlApi";
-import { useEffectAsync } from "../core/hooks";
+import { useEffectAsync, useInterval } from "../core/hooks";
 import { Named, RgbColor, RgbNamedColor } from "../core/types";
 import { generateId } from "../core/utils";
 import { Chans, Color, DmxRange, Fixtures, StageLightingPlan } from "./dmx512";
@@ -52,6 +52,12 @@ export interface Track extends Named {
     scene: Scene;
     enabled: boolean;
     master: number;
+    rawValues: DmxValueSegment[]
+}
+
+export interface DmxValueSegment {
+    address: number;
+    values: number[];
 }
 
 export interface SceneInfo extends Named {
@@ -85,19 +91,9 @@ export interface SceneElementInfo {
     values: SceneElementValues;
 }
 
-export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): SceneInfo {
-    
-    const { name } = scene;
-    const elements: SceneElementInfo[] = scene.elements.map(se => {
-
+export function computeDmxValues(fixtureName: string, values: SceneElementValues, lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): number[] {
+    const fixture = lightingPlan.fixtures[fixtureName];
         const {
-            fixture: fixtureName,
-            values
-        } = se;
-
-        const fixture = lightingPlan.fixtures[fixtureName];
-        const {
-            address,
             mode,
             model: modelName
         } = fixture;
@@ -105,13 +101,8 @@ export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan,
         const modelDefinition = fixtures.fixtureModels[modelName];
         const { type } = modelDefinition;
 
-        let modelInfo: FixtureModelInfo;
         let computedValues: number[];
         if (Fixtures.isTrad(type)) {
-            modelInfo = {
-                ...(modelDefinition as Fixtures.TradFixtureModelDefinition)
-            }
-
             const trad = values["Trad"];
 
             computedValues = [trad ?? 0];
@@ -120,7 +111,6 @@ export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan,
             const ledModelDefinition = modelDefinition as Fixtures.LedFixtureModelDefinition;
 
             const {
-                manufacturer,
                 modes,
             } = ledModelDefinition;
 
@@ -144,7 +134,6 @@ export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan,
                 if (chanAddr === undefined) {
                     continue;
                 }
-                console.log(chanMap)
 
                 if (Chans.isNumberChannel(chanType)) {
                     const val = values[chanType]!;
@@ -156,7 +145,6 @@ export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan,
 
                     const color = typeof val === 'string' ? RgbColor.named(val) : val;
                     const { r, g, b } = color;
-                    console.log(color)
 
                     computedValues[chanAddr] = r;
                     computedValues[chanAddr + 1] = g;
@@ -166,23 +154,80 @@ export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan,
                     throw `Unsupported channel type: '${chan}'`;
                 }
             }
-
-            modelInfo = {
-                type,
-                manufacturer,
-                channels
-            }
         }
         else {
             throw `Unsupported type: '${type}`;
         }
 
+        return computedValues;
+}
 
-        const fixtureInfo: FixtureInfo = {
-            name: fixtureName,
-            address,
-            model: modelInfo,
+export function computeFixtureInfo(fixtureName: string, lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): FixtureInfo {
+
+    const fixture = lightingPlan.fixtures[fixtureName];
+    const {
+        address,
+        mode,
+        model: modelName
+    } = fixture;
+
+    const modelDefinition = fixtures.fixtureModels[modelName];
+    const { type } = modelDefinition;
+
+    let modelInfo: FixtureModelInfo;
+
+    if (Fixtures.isTrad(type)) {
+        modelInfo = {
+            ...(modelDefinition as Fixtures.TradFixtureModelDefinition)
         }
+    }
+    else if (Fixtures.isLed(type)){
+        const ledModelDefinition = modelDefinition as Fixtures.LedFixtureModelDefinition;
+
+        const {
+            manufacturer,
+            modes,
+        } = ledModelDefinition;
+
+        if (!mode) {
+            throw "Mode should be defined for LED fixture"
+        }
+
+        const channels = modes[mode]
+
+        modelInfo = {
+            type,
+            manufacturer,
+            channels
+        }
+    }
+    else {
+        throw `Unsupported type: '${type}`;
+    }
+
+
+    const fixtureInfo: FixtureInfo = {
+        name: fixtureName,
+        address,
+        model: modelInfo,
+    }
+
+    return fixtureInfo;
+}
+
+export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): SceneInfo {
+    
+    const { name } = scene;
+    const elements: SceneElementInfo[] = scene.elements.map(se => {
+
+        const {
+            fixture: fixtureName,
+            values
+        } = se;
+
+
+        const fixtureInfo = computeFixtureInfo(fixtureName, lightingPlan, fixtures);
+        const computedValues = computeDmxValues(fixtureName, values, lightingPlan, fixtures);
 
         const sei: SceneElementInfo = {
             fixture: fixtureInfo,
@@ -219,6 +264,10 @@ export interface ShowControlProps {
 
 export function useShowControl(): ShowControlProps {
 
+    const refreshRate = 30;
+
+    const [lastUpdate, setLastUpdate] = useState<number>(0);
+
     const [showName, setShowName] = useState<string>();
 
     const [show, setShow] = useState<Show>();
@@ -228,28 +277,72 @@ export function useShowControl(): ShowControlProps {
     const [controler, setControler] = useState<ShowControler>();
 
     const dmxControl = useDmxControlContext();
+
+    useInterval((props) => {
+
+        const { time } = props;
+
+        if (dmxControl) {
+
+            dmxControl.clear();
+            const targets = dmxControl.targets;
+
+            tracksRef.current.forEach(track => {
+                const { enabled, master, rawValues } = track;
+                
+                if (!enabled || master <= 0) {
+                    return;
+                }
+
+                rawValues.forEach(segment => {
+                    const { address, values } = segment;
+                    
+                    for (let i=0, addr=address; i < values.length; i++, addr++) {
+                        const target = master * values[i];
+                        if (target > targets[addr]) {
+                            dmxControl.setTarget(addr, target)
+                        }
+                    }
+                })
+            })
+        }
+
+        setLastUpdate(time);
+
+    }, 1000 / refreshRate, [])
     
     const tracksRef = useRef<Map<TrackId, Track>>(new Map());
-    const addTrack = useMemo(() => {
-        
-        return (scene: Scene, options?: CreateTrackOptions) => {
+    const addTrack = useCallback((scene: Scene, options?: CreateTrackOptions) => {
 
-            const id = generateId();
+        const id = generateId();
 
-            const track: Track = {
-                id,
-                scene,
-                name: scene.name,
-                enabled: true,
-                master: 1,
-                ...options
+        const rawValues: DmxValueSegment[] = (lightingPlan && fixtureCollection) ? scene.elements.map(se => {
+
+            const { fixture, values: seValues } = se;
+
+            const { address } = lightingPlan.fixtures[fixture];
+            const values = computeDmxValues(fixture, seValues, lightingPlan, fixtureCollection);
+
+            return {
+                address,
+                values
             }
+        }) : [];
 
-            tracksRef.current.set(id, track);
-
-            return track;
+        const track: Track = {
+            id,
+            scene,
+            name: scene.name,
+            enabled: true,
+            master: 1,
+            rawValues,
+            ...options
         }
-    }, [tracksRef.current])
+
+        tracksRef.current.set(id, track);
+
+        return track;
+    }, [tracksRef.current, lightingPlan, fixtureCollection])
 
 
     const removeTrack = useMemo(() => {

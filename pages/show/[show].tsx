@@ -23,15 +23,6 @@ const ShowPage = () => {
 
     const [track, setTrack] = useState<Track>();
 
-    const trackInfo = useMemo<SceneInfo|undefined>(() => {
-        if (track && lightingPlan && fixtureCollection) {
-            return generateSceneInfo(track.scene, lightingPlan, fixtureCollection)
-        }
-        else {
-            return undefined;
-        }
-    }, [track, lightingPlan, fixtureCollection])
-    
     useEffect(() => {
         showControl.loadShow(showName);
     }, [showName]);
@@ -77,7 +68,7 @@ const ShowPage = () => {
     return <ShowControlContext.Provider value={showControl}>
 
         <AleasMainLayout title={showName}>
-            <div className="centered-col gap-4">
+            <div className="centered-col gap-8">
                 <div className="centered-row gap-3">
 
                     <div className="text-lg">
@@ -108,9 +99,11 @@ const ShowPage = () => {
                     </AleasButton>
                 </div>
                 
-                {trackInfo && <div className="flex flex-col gap-4">
-                    <div>{trackInfo.name}</div>
-                    {JSON.stringify(trackInfo)}
+                {<div className="flex flex-col gap-4">
+                    <div>{track ?
+                        <>Currently playing: {track.name}</> :
+                        <>No Scene playing</>
+                    }</div>
                 </div>}
 
             </div>

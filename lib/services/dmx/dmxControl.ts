@@ -90,7 +90,7 @@ export function useDmxControl(): DmxControlProps {
 
             values[i] = smoothDamp(values[i], target, velocities[i], fade, Number.MAX_VALUE, deltaTime / 1000);
         }
-        
+
         if (!blackout) {
             for (let i = 0; i < maxVal; i++) {
                 const uint8 = Math.round(values[i]);
