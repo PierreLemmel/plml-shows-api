@@ -1,24 +1,41 @@
 import '@/styles/globals.css'
 import 'react-toastify/dist/ReactToastify.css';
 import type { AppProps } from 'next/app'
-import { AuthContext, useAuth } from '@/lib/services/api/firebase';
-import { ShowControlContext, useShowControl } from '@/lib/services/dmx/showControl';
-import { DmxControlContext, useDmxControl } from '@/lib/services/dmx/dmxControl';
+import { AuthContext, UseNewAuth } from '@/lib/services/api/firebase';
+import { ShowControlContext, useNewShowControl } from '@/lib/services/dmx/showControl';
+import { DmxControlContext, useNewDmxControl } from '@/lib/services/dmx/dmxControl';
+import { ReactElement } from 'react';
 
 
 export default function App({ Component, pageProps }: AppProps) {
 
-	const auth = useAuth();
-	const showControl = useShowControl();
-	const dmxControl = useDmxControl();
+	
+	const showControl = useNewShowControl();
+	const dmxControl = useNewDmxControl();
 
-	return <AuthContext.Provider value={auth}>
-		<ShowControlContext.Provider value={showControl}>
-			<DmxControlContext.Provider value={dmxControl}>
+	return <AuthContextWrapper>
+		<DmxControlContextWrapper>
+			<ShowControlContextWrapper>
 				
 				<Component {...pageProps} />
 
-			</DmxControlContext.Provider>
-		</ShowControlContext.Provider>
-	</AuthContext.Provider>
+			</ShowControlContextWrapper>
+		</DmxControlContextWrapper>
+	</AuthContextWrapper>
 }
+
+interface WrapperProps {
+	children: ReactElement;
+}
+
+const AuthContextWrapper = ({ children }: WrapperProps) => <AuthContext.Provider value={UseNewAuth()}>
+	{children}
+</AuthContext.Provider>
+
+const DmxControlContextWrapper = ({ children }: WrapperProps) => <DmxControlContext.Provider value={useNewDmxControl()}>
+	{children}
+</DmxControlContext.Provider>
+
+const ShowControlContextWrapper = ({ children }: WrapperProps) => <ShowControlContext.Provider value={useNewShowControl()}>
+	{children}
+</ShowControlContext.Provider>

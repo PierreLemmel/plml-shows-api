@@ -2,9 +2,9 @@ import { createContext, Dispatch, useCallback, useContext, useEffect, useMemo, u
 import { getFixtureCollection, getLightingPlan, getShow } from "../api/showControlApi";
 import { useEffectAsync, useInterval } from "../core/hooks";
 import { Named, RgbColor, RgbNamedColor } from "../core/types";
-import { generateId } from "../core/utils";
+import { doNothing, generateId, notImplemented } from "../core/utils";
 import { Chans, Color, DmxRange, Fixtures, StageLightingPlan } from "./dmx512";
-import { useDmxControlContext } from "./dmxControl";
+import { useDmxControl } from "./dmxControl";
 
 export interface Show extends Named {
     name: string;
@@ -253,16 +253,22 @@ const isTrack = (track: Track|TrackId): track is Track => {
 
 export type CreateTrackOptions = Partial<Omit<Track, "scene"|"id"|"info">>
 
+export type ShowControlMode = "Console"|"Show";
+
 export interface ShowControlProps {
     lightingPlan?: StageLightingPlan;
     show?: Show;
-    controler?: ShowControler;
+    controler: ShowControler;
     fixtureCollection?: Fixtures.FixtureModelCollection;
+
+
+    mode: ShowControlMode;
+    setMode: Dispatch<ShowControlMode>;
 
     loadShow: (name: string) => void;
 }
 
-export function useShowControl(): ShowControlProps {
+export function useNewShowControl(): ShowControlProps {
 
     const refreshRate = 30;
 
@@ -274,44 +280,12 @@ export function useShowControl(): ShowControlProps {
     const [fixtureCollection, setFixtureCollection] = useState<Fixtures.FixtureModelCollection>();
     const [lightingPlan, setLightingPlan] = useState<StageLightingPlan>();
 
-    const [controler, setControler] = useState<ShowControler>();
+    const [mode, setMode] = useState<ShowControlMode>("Console");
 
-    const dmxControl = useDmxControlContext();
-
-    useInterval((props) => {
-
-        const { time } = props;
-
-        if (dmxControl) {
-
-            dmxControl.clear();
-            const targets = dmxControl.targets;
-
-            tracksRef.current.forEach(track => {
-                const { enabled, master, rawValues } = track;
-                
-                if (!enabled || master <= 0) {
-                    return;
-                }
-
-                rawValues.forEach(segment => {
-                    const { address, values } = segment;
-                    
-                    for (let i=0, addr=address; i < values.length; i++, addr++) {
-                        const target = master * values[i];
-                        if (target > targets[addr]) {
-                            dmxControl.setTarget(addr, target)
-                        }
-                    }
-                })
-            })
-        }
-
-        setLastUpdate(time);
-
-    }, 1000 / refreshRate, [])
-    
     const tracksRef = useRef<Map<TrackId, Track>>(new Map());
+
+    const dmxControl = useDmxControl();
+
     const addTrack = useCallback((scene: Scene, options?: CreateTrackOptions) => {
 
         const id = generateId();
@@ -395,36 +369,56 @@ export function useShowControl(): ShowControlProps {
 
     }, [tracksRef.current, dmxControl, lightingPlan, fixtureCollection])
 
-    useEffect(() => {
-        if (dmxControl) {
-            const {
-                blackout, setBlackout,
-                fade, setFade,
-                master, setMaster,
-            } = dmxControl;
-    
-            const tracks = tracksRef.current;
-            
+    const controler = useMemo<ShowControler>(() => {
+        const {
+            blackout, setBlackout,
+            fade, setFade,
+            master, setMaster,
+        } = dmxControl;
 
-            const controler: ShowControler = {
-                blackout, setBlackout,
-                fade, setFade,
-                master, setMaster,
+        const tracks = tracksRef.current;
 
-                commitValues,
+        return  {
+            blackout, setBlackout,
+            fade, setFade,
+            master, setMaster,
 
-                tracks,
-                addTrack,
-                removeTrack,
-            }
+            commitValues,
 
-            setControler(controler);
-        }
-        else {
-            setControler(undefined);
+            tracks,
+            addTrack,
+            removeTrack,
         }
     }, [dmxControl])
-    
+
+    useInterval((props) => {
+        const { time } = props;
+
+        dmxControl.cleanTargets();
+        const targets = dmxControl.targets;
+
+        tracksRef.current.forEach(track => {
+            const { enabled, master, rawValues } = track;
+            
+            if (!enabled || master <= 0) {
+                return;
+            }
+
+            rawValues.forEach(segment => {
+                const { address, values } = segment;
+                
+                for (let i=0, addr=address; i < values.length; i++, addr++) {
+                    const target = master * values[i];
+                    if (target > targets[addr]) {
+                        dmxControl.setTarget(addr, target)
+                    }
+                }
+            })
+        })
+
+        setLastUpdate(time);
+
+    }, 1000 / refreshRate, [mode], mode === "Show");
 
     useEffectAsync(async () => {
 
@@ -470,13 +464,31 @@ export function useShowControl(): ShowControlProps {
         lightingPlan,
         controler,
         fixtureCollection,
+        mode,
+        setMode,
 
         loadShow: (name: string) => setShowName(name),
     }
 }
 
-export const ShowControlContext = createContext<ShowControlProps|null>(null);
+export const ShowControlContext = createContext<ShowControlProps>({
+    loadShow: doNothing,
+    mode: "Show",
+    setMode: doNothing,
+    controler: {
+        fade: 0,
+        setFade: doNothing,
+        master: 1,
+        setMaster: doNothing,
+        blackout: false,
+        setBlackout: doNothing,
+        tracks: new Map(),
+        addTrack: notImplemented,
+        removeTrack: notImplemented,
+        commitValues: notImplemented
+    }
+});
 
-export function useShowControlContext() {
-    return useContext<ShowControlProps|null>(ShowControlContext);
+export function useShowControl() {
+    return useContext<ShowControlProps>(ShowControlContext);
 }

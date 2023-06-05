@@ -66,7 +66,7 @@ export const AuthContext = createContext<AuthContextProps>({
     signOut: async () => {},
 });
 
-export const useAuth = () => {
+export const UseNewAuth = () => {
 
     const [user, setUser] = useState<User|null>(null);
 
@@ -93,6 +93,6 @@ export const useAuth = () => {
     return value;
 };
 
-export function useAuthContext() {
+export function useAuth() {
     return useContext(AuthContext);
 }

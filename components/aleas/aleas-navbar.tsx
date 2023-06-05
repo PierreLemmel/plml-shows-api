@@ -1,8 +1,7 @@
-import { useAuthContext } from "@/lib/services/api/firebase";
+import { useAuth } from "@/lib/services/api/firebase";
 import { mergeClasses } from "@/lib/services/core/utils";
-import { useDmxControlContext } from "@/lib/services/dmx/dmxControl";
+import { useDmxControl } from "@/lib/services/dmx/dmxControl";
 import Link from "next/link";
-import { useState } from "react";
 
 export interface AleasNavbarProps extends React.HTMLAttributes<HTMLDivElement> {
 
@@ -16,9 +15,9 @@ const AleasNavbar = (props: AleasNavbarProps) => {
         className
     } = props;
 
-    const { user, signInWithGoogle, signOut } = useAuthContext();
+    const { user, signInWithGoogle, signOut } = useAuth();
 
-    const dmxControl = useDmxControlContext();
+    const dmxControl = useDmxControl();
     const dmxState = dmxControl?.writer.state ?? "Undetected";
 
     const onDmxClick = () => {

@@ -84,3 +84,20 @@ export function generateId(length: number = 8): string {
     }
     return id;
 }
+
+type MatchMap<T extends string, U> = { [key in T]: U }
+type Patterns<T extends string, U> = MatchMap<T, U> | (Partial<MatchMap<T, U>> & { defaultValue: U })
+
+export function match<T extends string, U>(val: T, choices: Patterns<T, U>): U {
+    return ("defaultValue" in choices) ? (choices[val] || choices.defaultValue) : choices[val];
+}
+
+export function doNothing(...val: any[]) { }
+
+export function returnZero(...val: any[]) {
+    return 0;
+}
+
+export function notImplemented<T>(): T {
+    throw "Not implemented";
+}

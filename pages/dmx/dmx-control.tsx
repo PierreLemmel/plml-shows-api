@@ -1,4 +1,3 @@
-import { AleasButton } from '@/components/aleas/aleas-buttons';
 import { AleasMainLayout } from '@/components/aleas/aleas-layout';
 import DmxSlider from '@/components/dmx/dmx-slider';
 import DmxToggle from '@/components/dmx/dmx-toggle';
@@ -8,6 +7,10 @@ import { DmxControlContext, useDmxControl } from '@/lib/services/dmx/dmxControl'
 const TestDmxControl = () => {
 
     const dmxControl = useDmxControl();
+
+    if (!dmxControl) {
+        return <div>Loading...</div>
+    }
 
     const {
         master, setMaster,
@@ -23,7 +26,13 @@ const TestDmxControl = () => {
                 <StandardConsole width={16} displayValues={true} />
                 <div className="flex flex-col gap-3 items-center">
                     <div>Fade</div>
-                    <DmxSlider value={fade} setValue={setFade} sliderType="Value" />
+                    <DmxSlider
+                        value={fade}
+                        setValue={setFade}
+                        sliderType="Value"
+                        min={0} max={10}
+                        step={0.1}
+                    />
                     <DmxToggle className="mt-2" toggled={false} onClick={clear}>
                         Clear
                     </DmxToggle>

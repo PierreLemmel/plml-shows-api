@@ -1,13 +1,17 @@
+import { match } from "@/lib/services/core/utils";
 import ReactSlider from "react-slider";
 import DmxButton from "./dmx-button";
 
-export type SliderType = "Value"|"Percent"
+export type SliderType = "DmxRange"|"Percent"|"Value"
 
 export interface DmxSliderProps extends React.HTMLAttributes<HTMLDivElement> {
     value: number;
     setValue: (val: number) => void;
     label?: string;
     sliderType?: SliderType;
+    step?: number;
+    min?: number;
+    max?: number;
 }
 
 const DmxSlider = (props: DmxSliderProps) => {
@@ -16,21 +20,41 @@ const DmxSlider = (props: DmxSliderProps) => {
         setValue,
         label,
         className,
-        sliderType
+        sliderType,
+        min: minValue,
+        max: maxValue,
+        step,
     } = {
-        sliderType: "Value",
+        sliderType: "Value" as SliderType,
         ...props
     };
 
-    const valueSlider = sliderType === "Value";
+    const sliderVal = match(sliderType, {
+        "Percent": 100 * value,
+        defaultValue: value
+    });
 
-    const sliderVal = valueSlider ? value : 100 * value;
-    const setSliderVal = valueSlider ? setValue : (v: number) => setValue(v / 100)
 
-    const [min, max] = valueSlider ? [0, 255]: [0, 100]
-    const valueLabel = valueSlider ? sliderVal : `${sliderVal.toFixed()}%`
-    const widthClass = valueSlider ? "w-10" : "w-12";
+    const setSliderVal = match(sliderType, {
+        "Percent": (v: number) => setValue(v / 100),
+        defaultValue: setValue
+    });
 
+    const [min, max] = match(sliderType, {
+        "Value": [minValue ?? 0, maxValue ?? 100],
+        "DmxRange": [0, 255],
+        "Percent": [0, 100]
+    });
+
+    const widthClass = match(sliderType, {
+        "DmxRange": "w-12",
+        defaultValue: "w-10"
+    });
+
+    const valueLabel = match(sliderType, {
+        "Percent": `${sliderVal.toFixed()}%`,
+        defaultValue: sliderVal
+    })
 
     return <div className={`${widthClass} centered-col
         bg-slate-700 rounded-md py-2
@@ -39,6 +63,7 @@ const DmxSlider = (props: DmxSliderProps) => {
         <ReactSlider
             min={min}
             max={max}
+            step={step}
             orientation="vertical"
             invert
             value={sliderVal}

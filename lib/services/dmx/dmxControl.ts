@@ -1,7 +1,6 @@
 import { createContext, Dispatch, useCallback, useContext, useMemo, useRef, useState } from "react";
 import { useInterval } from "../core/hooks";
-import { smoothDamp, Velocity } from "../core/mathf";
-import { createArray } from "../core/utils";
+import { createArray, doNothing, returnZero } from "../core/utils";
 import { DmxWriteInterfaceState } from "./dmx512";
 import { useEnttecOpenDmx } from "./enttecOpenDmx";
 
@@ -21,10 +20,10 @@ export interface DmxControlProps {
     getTarget: GetDmxChan;
     setTarget: SetDmxChan;
 
+    cleanTargets: () => void;
     clear: () => void;
 
     targets: ReadonlyArray<number>;
-    velocities: ReadonlyArray<Readonly<Velocity>>;
     values: ReadonlyArray<number>;
 
     writer: DmxWriter;
@@ -50,7 +49,7 @@ export interface DmxWriter {
     close?(): void;
 }
 
-export function useDmxControl(): DmxControlProps {
+export function useNewDmxControl(): DmxControlProps {
 
     const [master, setMaster] = useState<number>(1.0);
     const [blackout, setBlackout] = useState<boolean>(false);
@@ -59,7 +58,6 @@ export function useDmxControl(): DmxControlProps {
     const [lastUpdate, setLastUpdate] = useState<number>(0);
 
     const targets = useMemo(() => createArray(512, 0), []);
-    const velocities = useMemo(() => createArray(512, Velocity.zero), []);
     const values = useMemo(() => createArray(512, 0), []);
     const output = useMemo(() => Buffer.alloc(512), []);
 
@@ -84,12 +82,25 @@ export function useDmxControl(): DmxControlProps {
             max: maxVal
         } = bounds;
 
-        for (let i = minVal; i < maxVal; i++) {
-            
-            const target = master * targets[i];
+        if (fade > 0) {
 
-            values[i] = smoothDamp(values[i], target, velocities[i], fade, Number.MAX_VALUE, deltaTime / 1000);
+            const d = 255 * ((deltaTime / 1000) / fade);
+
+            for (let i = minVal; i < maxVal; i++) {
+            
+                const target = master * targets[i];
+    
+                const val = values[i];
+                values[i] = val > target ? Math.max(target, val - d) : Math.min(target, val + d);
+            }
         }
+        else {
+            for (let i = minVal; i < maxVal; i++) {
+
+                values[i] = master * targets[i];
+            }
+        }
+        
 
         if (!blackout) {
             for (let i = 0; i < maxVal; i++) {
@@ -111,13 +122,10 @@ export function useDmxControl(): DmxControlProps {
     }
 
     useInterval(() => {
-
-        (async () => {
-            if (writeInterface.state === "Opened") {
-                await writeInterface.sendFrame(output);
-            }
-        })();
         
+        if (writeInterface.state === "Opened") {
+            writeInterface.sendFrame(output);
+        }
 
     }, 1000 / refreshRate, [writeState], writeState === "Opened");
 
@@ -134,13 +142,20 @@ export function useDmxControl(): DmxControlProps {
         if ((i + 1) > bounds.max) {
             bounds.max = i + 1;
         }
-        
+
         return targets[i] = Math.round(val);
     }, []);
 
+    const cleanTargets = useCallback(() => {
+        const { min, max } = boundsRef.current;
+
+        for (let i = min; i < max; i++) {
+            targets[i] = 0;
+        }
+    }, [])
+
     const clear = useCallback(() => {
         targets.fill(0);
-        velocities.fill(Velocity.zero());
         values.fill(0);
         output.fill(0);
 
@@ -174,18 +189,38 @@ export function useDmxControl(): DmxControlProps {
         getTarget,
         setTarget,
 
+        cleanTargets,
         clear,
 
         targets,
-        velocities,
         values,
 
         writer
     }
 }
 
-export const DmxControlContext = createContext<DmxControlProps|null>(null);
 
-export function useDmxControlContext() {
-    return useContext<DmxControlProps|null>(DmxControlContext);
+export const DmxControlContext = createContext<DmxControlProps>({
+    master: 0,
+    setMaster: doNothing,
+    blackout: false,
+    setBlackout: doNothing,
+    fade: 0,
+    setFade: doNothing,
+    getValue: returnZero,
+    getTarget: returnZero,
+    setTarget: doNothing,
+    cleanTargets: doNothing,
+    clear: doNothing,
+    targets: [],
+    values: [],
+    writer: {
+        canOpen: true,
+        canClose: false,
+        state: "Undetected"
+    }
+});
+
+export function useDmxControl() {
+    return useContext<DmxControlProps>(DmxControlContext);
 }
