@@ -1,7 +1,7 @@
 import { AleasButton } from "@/components/aleas/aleas-buttons";
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
-import { useNavigation } from "@/lib/services/core/navigation";
 import { useShowControl } from "@/lib/services/dmx/showControl";
+import { useRouter } from "next/router";
 
 export interface EditSceneProps {
 
@@ -14,13 +14,12 @@ const EditScene = (props: EditSceneProps) => {
         show
     } = showControl
 
-    const navigation = useNavigation();
-    const { back } = navigation;
+    const router = useRouter();
 
     return <AleasMainLayout>
         <div>{show?.name ?? "NO SHOW"}</div>
         <div>Edit Scene</div>
-        <AleasButton onClick={back}>
+        <AleasButton onClick={router.back}>
             OK
         </AleasButton>
     </AleasMainLayout>

@@ -2,8 +2,8 @@ import { AleasButton } from "@/components/aleas/aleas-buttons";
 import { AleasDropdown, DropdownOption } from "@/components/aleas/aleas-dropdown";
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
 import DmxSlider from "@/components/dmx/dmx-slider";
-import { useNavigation } from "@/lib/services/core/navigation";
 import { Scene, Track, useShowControl } from "@/lib/services/dmx/showControl";
+import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 
 
@@ -21,22 +21,11 @@ const ShowPage = () => {
         
     } = controler;
 
-    const {
-        router,
-        isPageLoaded,
-        navigateToRelativeUrl,
-        setQueryParameter
-    }= useNavigation();
+    const router = useRouter();
 
     const showName = router.query["show"] as string;
     
     const [scene, setScene] = useState<Scene>();
-    useEffect(() => {
-        if (isPageLoaded) {
-            setQueryParameter("scene", scene?.name);
-        }
-    }, [scene, isPageLoaded])
-
     const [track, setTrack] = useState<Track>();
 
     useEffect(() => {
@@ -47,12 +36,12 @@ const ShowPage = () => {
         showControl.setMode("Show")
     }, [])
 
-    const dropdownOptions: DropdownOption<Scene>[] = show?.scenes.map(scene => {
+    const dropdownOptions: DropdownOption<Scene>[] = useMemo(() => show?.scenes.map(scene => {
         return {
             label: scene.name,
             value: scene
         }
-    }) || []; 
+    }) || [], [show]); 
 
     const selectedOption = useMemo(() => dropdownOptions.find(o => o.value === scene), [scene, dropdownOptions])
     const onDropdownSelectionChanged = (option: DropdownOption<Scene>) => {
@@ -84,7 +73,7 @@ const ShowPage = () => {
     const editBtnClicked = scene !== undefined;
     const onEditBtnClicked = () => {
         if (scene) {
-            navigateToRelativeUrl(`/scenes/edit/${scene.name}`);
+            router.push(`${router.asPath}/scenes/edit/${scene.name}`);
         }
     }
 
@@ -155,3 +144,7 @@ const ShowPage = () => {
 }
 
 export default ShowPage;
+
+function useQuery() {
+    throw new Error("Function not implemented.");
+}
