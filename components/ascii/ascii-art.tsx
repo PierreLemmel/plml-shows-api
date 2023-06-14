@@ -5,11 +5,7 @@ import { inverseLerp } from "@/lib/services/core/mathf";
 import { mean, getStats, Stats } from "@/lib/services/core/stats";
 import { RgbColor } from "@/lib/services/core/types";
 import { createArray, flattenArray, mergeClasses } from "@/lib/services/core/utils";
-import { forwardRef, useEffect, useRef, useState } from "react";
-
-export interface AsciiArtRef {
-    downloadImage: () => void;
-}
+import { forwardRef, Ref, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 export interface AsciiArtProps extends React.HTMLAttributes<HTMLDivElement> {
     opacityCharset?: keyof typeof opacityCharMaps;
@@ -134,7 +130,11 @@ const opacityCharMaps = {
     squares: ' ░▒▓',
 }
 
-const AsciiArt = forwardRef((props: AsciiArtProps) => {
+export interface AsciiArtRef {
+    downloadImage: () => void;
+}
+
+const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
     const {
         opacityCharset,
         className,
@@ -181,11 +181,27 @@ const AsciiArt = forwardRef((props: AsciiArtProps) => {
     const divRef = useRef<HTMLDivElement>(null);
     const imgRef = useRef<HTMLImageElement>(null);
 
+    const downloadImage = useCallback(() => {
+        if (canvasRef.current) {
+            const url = canvasRef.current.toDataURL("image/jpg");
+            const link = document.createElement("a");
+            link.download = "ascii-art.jpg";
+            link.href = url;
+            link.click();
+            link.remove();
+        }
+        
+        console.log("Download2")
+    }, [])
+
+    useImperativeHandle(ref, () => ({ downloadImage }))
+
+    
+
     const [bitmap, setBitmap] = useState<AsciiBitmap>();
     const [time, setTime] = useState<number>(0);
 
     useInterval(({ time: newTime }) => {
-        console.log("Ho")
         setTime(newTime)
     }, 1000 / refreshRate, [refreshRate], refreshRate !== undefined && refreshRate !== 0)
 
@@ -349,4 +365,6 @@ const AsciiArt = forwardRef((props: AsciiArtProps) => {
     </div>
 }
 
-export default AsciiArt;
+
+
+export default forwardRef(AsciiArt);
