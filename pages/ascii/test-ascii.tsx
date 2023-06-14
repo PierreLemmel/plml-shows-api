@@ -1,40 +1,58 @@
 import AleasHead from '@/components/aleas/aleas-head'
-import AsciiArt from '@/components/ascii/ascii-art';
+import AsciiArt, { AsciiBitmapStats } from '@/components/ascii/ascii-art';
+import { inverseLerp } from '@/lib/services/core/mathf';
+import { mean } from '@/lib/services/core/stats';
+import { RgbColor } from '@/lib/services/core/types';
+import { randomBool, sequence } from '@/lib/services/core/utils';
+import { useCallback, useMemo } from 'react';
 
-const TestAscii = () => <>
-	<AleasHead title='Test Ascii' />
-	<main className="fullscreen relative overflow-hidden bg-slate-900">
-		<AsciiArt
-			className='p-0'
+const TestAscii = () => {
 
-			textMode="RawText"
-			text="Ce projet s’intéresse à expérimenter le hasard en théâtre improvisé en faisant usage des nouvelles technologies.
-			Il se place dans une période où les nouvelles technologies et notamment les intelligences artificielles génératives prennent une part de plus en plus importante dans le domaine artistique (génération de textes, d’images, de musiques…). Cela suscite de nombreuses interrogations sur le rôle des artistes dans différents domaines et sur le futur de la création artistique.
-			Dans ce contexte, il s’agira de mettre ces nouvelles technologies à profit afin de créer un environnement sonore et lumineux - aléatoire ou pseudo-aléatoire - dans lequel les comédien-ne-s improvisateur-ice-s peuvent expérimenter et auxquels ils doivent s’adapter. 
-			Nous pensons que le hasard étant par nature quelque chose d’incontrolable, il peut être une source d’imprévus et de création extraordinaire. Il nous ramène à une forme d’improvisation la plus brute et la plus pure qui soit. L’objectif de ce projet est à la fois de développer différents dispositifs techniques à mettre au service des artistes ainsi que de créer collectivement - avec différents artistes venus d’expériences et de domaines divers - de nouvelles façons d’aborder la scène en s’abandonnant complètement au hasard.
-			"
+	const text = useMemo(() => sequence(1000).map(() => randomBool() ? 1 : 0).join(""), [])
+	const colorTransformer = useCallback((color: RgbColor, stats: AsciiBitmapStats) => {
 
-			// textMode="OpacityLetters"
-			// opacityCharset="complex"
+		const { gray: { min, max } } = stats;
+		const { r, g, b } = color;
+		const gray = mean(r, g, b);
 
-			// src='/img/aleas-1200x1200.jpg'
-			// src='/test/sysex.jpg'
-			src='/test/test-aleas.jpg'
-			
-			pixelSize={9}
-			charSize={8}
-			baseImageOpacity={0.05}
-			pixelsOpacity={0.15}
-			
-			pixelColorTransformation="none"
-			textColorTransformation="none"
-			letterTransformation="framed"
+		const a0 = 20;
+		const a1 = 100;
 
-			// noiseFunction={() => Math.max(1 + 0.3 * 2 * (Math.random()- 0.5), 1)}
-			// noiseFunction={(color, row, col, t, info) => Math.max(1 + 0.25 * Math.sin(row + col + 1.2 * t / 1000), 0.1)}
-			// refreshRate={30}
-		/>
-	</main>
-</>
+		if (gray < a0) {
+			return RgbColor.black;
+		}
+		else {
+			const framed = 255 * inverseLerp(gray, min, max);
+			return RgbColor.grayLevel(framed);
+		}
+	}, []);
+
+	return <>
+		<AleasHead title='Test Ascii' />
+		<main className="fullscreen relative overflow-hidden bg-slate-900">
+			<AsciiArt
+				className='p-0'
+
+				textMode="RawText"
+				// textMode="OpacityLetters"
+				text={text}
+
+				// opacityCharset="complex"
+				// src='/img/aleas-1200x1200.jpg'
+				// src='/test/sysex.jpg'
+				src='/test/test-aleas.jpg'
+
+				pixelSize={9}
+				charSize={8}
+				baseImageOpacity={0.05}
+				pixelsOpacity={0.15}
+
+				pixelColorTransformation="none"
+				// textColorTransformation="none"
+				textColorTransformation={colorTransformer}
+				letterTransformation="framed" />
+		</main>
+	</>;
+}
 
 export default TestAscii;

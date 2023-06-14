@@ -9,10 +9,6 @@ import { ReactElement } from 'react';
 
 export default function App({ Component, pageProps }: AppProps) {
 
-	
-	const showControl = useNewShowControl();
-	const dmxControl = useNewDmxControl();
-
 	return <AuthContextWrapper>
 		<DmxControlContextWrapper>
 			<ShowControlContextWrapper>

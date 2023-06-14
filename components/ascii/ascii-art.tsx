@@ -5,8 +5,11 @@ import { inverseLerp } from "@/lib/services/core/mathf";
 import { mean, getStats, Stats } from "@/lib/services/core/stats";
 import { RgbColor } from "@/lib/services/core/types";
 import { createArray, flattenArray, mergeClasses } from "@/lib/services/core/utils";
-import { useWindowSize } from "@/lib/services/layout/responsive";
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
+
+export interface AsciiArtRef {
+    downloadImage: () => void;
+}
 
 export interface AsciiArtProps extends React.HTMLAttributes<HTMLDivElement> {
     opacityCharset?: keyof typeof opacityCharMaps;
@@ -112,7 +115,7 @@ interface AsciiBitmap {
     stats: AsciiBitmapStats;
 }
 
-interface AsciiBitmapStats {
+export interface AsciiBitmapStats {
     gray: Stats;
     red: Stats;
     green: Stats;
@@ -131,7 +134,7 @@ const opacityCharMaps = {
     squares: ' ░▒▓',
 }
 
-const AsciiArt = (props: AsciiArtProps) => {
+const AsciiArt = forwardRef((props: AsciiArtProps) => {
     const {
         opacityCharset,
         className,
@@ -173,8 +176,6 @@ const AsciiArt = (props: AsciiArtProps) => {
         ...props,
     }
 
-    const windowSize = useWindowSize();
-
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const imgCanvasRef = useRef<HTMLCanvasElement>(null);
     const divRef = useRef<HTMLDivElement>(null);
@@ -184,6 +185,7 @@ const AsciiArt = (props: AsciiArtProps) => {
     const [time, setTime] = useState<number>(0);
 
     useInterval(({ time: newTime }) => {
+        console.log("Ho")
         setTime(newTime)
     }, 1000 / refreshRate, [refreshRate], refreshRate !== undefined && refreshRate !== 0)
 
@@ -212,7 +214,6 @@ const AsciiArt = (props: AsciiArtProps) => {
 
 
     useEffect(() => {
-
         const img = imgRef.current;
         const imgCanvas = imgCanvasRef.current;
         const ctx = imgCanvas?.getContext('2d');
@@ -257,7 +258,6 @@ const AsciiArt = (props: AsciiArtProps) => {
     }, [src, pixelSize, containerWidth, containerHeight])
 
     useEffect(() => {
-        
         const canvas = canvasRef.current?.getContext('2d');
         const img = imgRef.current;
         
@@ -336,7 +336,6 @@ const AsciiArt = (props: AsciiArtProps) => {
                 }
             }
         }
-
     }, [containerWidth, containerHeight, bitmap, textMode, text, opacityCharset, backgroundColor, pixelColorTransformation, textColorTransformation, src, pixelSize, charSize, fontFamily, bold, italic, baseImageOpacity, pixelsOpacity, textOpacity, noiseFunction, time])
 
     return <div className={mergeClasses("full", className)}>

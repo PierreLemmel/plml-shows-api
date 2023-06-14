@@ -50,6 +50,10 @@ export class RgbColor {
         return new RgbColor(0, 0, 255);
     }
 
+    public static get black(): RgbColor {
+        return new RgbColor(0, 0, 0);
+    }
+
     public static multiply(val: number, color: RgbColor) {
         const { r, g, b } = color;
 
