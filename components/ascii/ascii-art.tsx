@@ -1,6 +1,6 @@
 //@see: https://dev.to/patopitaluga/ascii-art-pixel-art-in-js-2oij
 
-import { useInterval } from "@/lib/services/core/hooks";
+import { useInterval, useTimeout } from "@/lib/services/core/hooks";
 import { inverseLerp } from "@/lib/services/core/mathf";
 import { mean, getStats, Stats } from "@/lib/services/core/stats";
 import { RgbColor } from "@/lib/services/core/types";
@@ -28,6 +28,7 @@ export interface AsciiArtProps extends React.HTMLAttributes<HTMLDivElement> {
     textOpacity?: number;
 
     refreshRate?: number;
+    scale?: number;
 }
 
 export type NoiseFunction = (color: RgbColor, row: number, col: number, t: number, info: AsciiBitmapInfo) => number;
@@ -131,7 +132,7 @@ const opacityCharMaps = {
 }
 
 export interface AsciiArtRef {
-    downloadImage: () => void;
+    downloadImage: (name?: string) => void;
 }
 
 const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
@@ -154,7 +155,8 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
         pixelsOpacity,
         textOpacity,
         noiseFunction,
-        refreshRate
+        refreshRate,
+        scale
     } = {
         opacityCharset: "default",
         backgroundColor: 'black',
@@ -173,6 +175,7 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
         textOpacity: 1,
         noiseFunction: () => 1,
         refreshRate: 0,
+        scale: 1,
         ...props,
     }
 
@@ -181,29 +184,29 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
     const divRef = useRef<HTMLDivElement>(null);
     const imgRef = useRef<HTMLImageElement>(null);
 
-    const downloadImage = useCallback(() => {
+    const downloadImage = useCallback((name?: string) => {
         if (canvasRef.current) {
             const url = canvasRef.current.toDataURL("image/jpg");
             const link = document.createElement("a");
-            link.download = "ascii-art.jpg";
+            link.download = name ? `${name}-ascii.jpg` : "ascii-art.jpg";
             link.href = url;
             link.click();
             link.remove();
         }
-        
-        console.log("Download2")
     }, [])
 
     useImperativeHandle(ref, () => ({ downloadImage }))
-
     
 
     const [bitmap, setBitmap] = useState<AsciiBitmap>();
     const [time, setTime] = useState<number>(0);
+    const [imgLoaded, setImgLoaded] = useState<boolean>(false);
 
     useInterval(({ time: newTime }) => {
         setTime(newTime)
     }, 1000 / refreshRate, [refreshRate], refreshRate !== undefined && refreshRate !== 0)
+
+    useTimeout(() => setImgLoaded(true), 100)
 
     const {
         clientWidth: containerWidth,
@@ -220,14 +223,13 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
 
     const { canvasWidth, canvasHeight } = imgRatio > containerRatio ? 
         { 
-            canvasWidth: containerWidth,
-            canvasHeight: containerWidth / imgRatio
+            canvasWidth: scale * containerWidth,
+            canvasHeight: scale * containerWidth / imgRatio
         } :
         { 
-            canvasWidth: containerHeight * imgRatio,
-            canvasHeight: containerHeight
+            canvasWidth: scale * containerHeight * imgRatio,
+            canvasHeight: scale * containerHeight
         }
-
 
     useEffect(() => {
         const img = imgRef.current;
@@ -238,8 +240,8 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
         if (img && imgCanvas && ctx && container) {
             
             
-            const widthInChars = Math.floor(canvasWidth / pixelSize);
-            const heightInChars = Math.floor(canvasHeight / pixelSize);
+            const widthInChars = Math.floor(canvasWidth / (scale * pixelSize));
+            const heightInChars = Math.floor(canvasHeight / (scale * pixelSize));
             
             if (widthInChars === 0 || heightInChars === 0) {
                 return;
@@ -271,7 +273,7 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
             setBitmap({ widthInChars, heightInChars, pixels, stats });
         }
 
-    }, [src, pixelSize, containerWidth, containerHeight])
+    }, [src, pixelSize, containerWidth, containerHeight, canvasWidth, canvasHeight])
 
     useEffect(() => {
         const canvas = canvasRef.current?.getContext('2d');
@@ -295,8 +297,8 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
             const pixelW = canvasWidth / widthInChars;
             const pixelH = canvasHeight / heightInChars;
 
-            canvas.font = `${charSize}pt ${bold === true ? 'bold ' : ''}${italic === true ? 'italic ' : ''}${fontFamily}`;
-            const charH = charSize;
+            const charH = scale * charSize;
+            canvas.font = `${charH}pt ${bold === true ? 'bold ' : ''}${italic === true ? 'italic ' : ''}${fontFamily}`;
 
             const textColorTransformer: ColorTransformation = typeof textColorTransformation === 'function' ? textColorTransformation : textColorTransformationMap[textColorTransformation];
 
@@ -354,10 +356,14 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
         }
     }, [containerWidth, containerHeight, bitmap, textMode, text, opacityCharset, backgroundColor, pixelColorTransformation, textColorTransformation, src, pixelSize, charSize, fontFamily, bold, italic, baseImageOpacity, pixelsOpacity, textOpacity, noiseFunction, time])
 
+    
+
     return <div className={mergeClasses("full", className)}>
         <div className="full relative" ref={divRef}>
             <div className="absolute top-0 left-0 full center-child">
-                <canvas className="" width={canvasWidth} height={canvasHeight} ref={canvasRef} />
+                <canvas className="" width={canvasWidth} height={canvasHeight} ref={canvasRef} style={{
+                    transform: `scale(${1/scale})`
+                }}/>
             </div>
             <canvas className="absolute top-0 left-0 full hidden" width={containerWidth} height={containerHeight} ref={imgCanvasRef} />
             <img className="absolute top-0 left-0 hidden" src={src} ref={imgRef} />

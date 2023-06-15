@@ -47,3 +47,18 @@ export const useInterval = (callback: IntervalCallback, ms: number, deps?: Depen
         
     }, deps)
 }
+
+
+export const useTimeout = (callback: () => void, ms: number, deps?: DependencyList, condition?: boolean): void => {
+
+    deps ||= [];
+
+    useEffect(() => {
+
+        if (condition !== false) {
+            const timeout = setTimeout(() => callback(), ms);
+            return () => clearTimeout(timeout);
+        }
+        
+    }, deps)
+}

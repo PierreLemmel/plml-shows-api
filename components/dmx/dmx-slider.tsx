@@ -1,5 +1,6 @@
 import { match } from "@/lib/services/core/utils";
 import ReactSlider from "react-slider";
+import AleasSlider from "../aleas/aleas-slider";
 import DmxButton from "./dmx-button";
 
 export type SliderType = "DmxRange"|"Percent"|"Value"
@@ -60,22 +61,17 @@ const DmxSlider = (props: DmxSliderProps) => {
         bg-slate-700 rounded-md py-2
     ` + (className ?? "")}>
         <div className="text-center w-full mb-1">{valueLabel}</div>
-        <ReactSlider
+        <AleasSlider 
             min={min}
             max={max}
             step={step}
             orientation="vertical"
             invert
             value={sliderVal}
-            onChange={val => setSliderVal(val)}
-            className="w-2 h-full min-h-[12rem] bg-slate-500 rounded-md cursor-pointer"
-            thumbClassName="w-4 h-4 -left-1 bg-blue-600
-                rounded-full hover:scale-200 outline-none cursor-pointer
-                active:bg-blue-700 active:scale-105
-                hover:scale-105
-                transition-colors duration-300
-            "
-            trackClassName="bg-blue-600 cursor-pointer"
+            setValue={val => setSliderVal(val)}
+            className=""
+            thumbClassName=""
+            trackClassName=""
         />
         {label && <div className="mt-1">{label}</div>}
         <DmxButton
