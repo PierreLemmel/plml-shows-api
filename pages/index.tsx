@@ -29,7 +29,7 @@ const Home = () => <>
 						</AleasButton>
 					</Link>
 
-					<Link href="/random-timer">
+					<Link href="tools/random-timer">
 						<AleasButton>
 							Random Timer
 						</AleasButton>
