@@ -3,6 +3,7 @@ import { AleasDropdown, DropdownOption } from "@/components/aleas/aleas-dropdown
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
 import DmxSlider from "@/components/dmx/dmx-slider";
 import { Scene, Track, useShowControl } from "@/lib/services/dmx/showControl";
+import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 
@@ -18,7 +19,7 @@ const ShowPage = () => {
     const {
         master, setMaster,
         fade, setFade,
-        
+        currentTrack
     } = controler;
 
     const router = useRouter();
@@ -29,8 +30,17 @@ const ShowPage = () => {
     const [track, setTrack] = useState<Track>();
 
     useEffect(() => {
-        showControl.loadShow(showName);
+        if (showControl.show?.name !== showName) {
+            showControl.loadShow(showName);
+        }
     }, [showName]);
+
+    useEffect(() => {
+        if (currentTrack) {
+            setTrack(currentTrack);
+            setScene(currentTrack.scene)
+        }
+    }, [])
 
     useEffect(() => {
         showControl.setMode("Show")
@@ -143,8 +153,4 @@ const ShowPage = () => {
     </AleasMainLayout>
 }
 
-export default ShowPage;
-
-function useQuery() {
-    throw new Error("Function not implemented.");
-}
+export default ShowPage

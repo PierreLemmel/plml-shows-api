@@ -38,6 +38,7 @@ export interface ShowControler {
     setBlackout: Dispatch<boolean>;
 
     tracks: ReadonlyMap<TrackId, Track>;
+    currentTrack: Track|null;
 
     addTrack: (scene: Scene, options?: CreateTrackOptions) => Track;
     removeTrack: (track: Track|TrackId) => Track|undefined;
@@ -283,6 +284,7 @@ export function useNewShowControl(): ShowControlProps {
     const [mode, setMode] = useState<ShowControlMode>("Console");
 
     const tracksRef = useRef<Map<TrackId, Track>>(new Map());
+    const [currentTrack, setCurrentTrack] = useState<Track|null>(null);
 
     const dmxControl = useDmxControl();
 
@@ -314,6 +316,7 @@ export function useNewShowControl(): ShowControlProps {
         }
 
         tracksRef.current.set(id, track);
+        setCurrentTrack(track);
 
         return track;
     }, [tracksRef.current, lightingPlan, fixtureCollection])
@@ -326,6 +329,10 @@ export function useNewShowControl(): ShowControlProps {
 
             const trackId = isTrack(track) ? track.id : track;
             const result = tracks.get(trackId);
+
+            if (currentTrack?.id === trackId) {
+                setCurrentTrack(null);
+            }
 
             tracks.delete(trackId);
 
@@ -386,6 +393,7 @@ export function useNewShowControl(): ShowControlProps {
             commitValues,
 
             tracks,
+            currentTrack,
             addTrack,
             removeTrack,
         }
@@ -483,6 +491,7 @@ export const ShowControlContext = createContext<ShowControlProps>({
         blackout: false,
         setBlackout: doNothing,
         tracks: new Map(),
+        currentTrack: null,
         addTrack: notImplemented,
         removeTrack: notImplemented,
         commitValues: notImplemented

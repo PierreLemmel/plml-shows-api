@@ -2,12 +2,10 @@ import { AleasButton } from "@/components/aleas/aleas-buttons";
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
 import { useShowControl } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
+import { useEffect } from "react";
 
-export interface EditSceneProps {
 
-}
-
-const EditScene = (props: EditSceneProps) => {
+const EditScene = () => {
 
     const showControl = useShowControl();
     const {
@@ -16,7 +14,27 @@ const EditScene = (props: EditSceneProps) => {
 
     const router = useRouter();
 
-    return <AleasMainLayout>
+    const showName = router.query["show"] as string;
+    const sceneName = router.query["scene"] as string;
+
+    useEffect(() => {
+        if (showControl.show?.name !== showName) {
+            showControl.loadShow(showName);
+        }
+    }, [showName]);
+
+    useEffect(() => {
+        showControl.setMode("Show")
+    }, [])
+
+    useEffect(() => {
+        //...
+    }, [showName, sceneName])
+
+
+
+
+    return <AleasMainLayout title={`${showName} - ${sceneName}`}>
         <div>{show?.name ?? "NO SHOW"}</div>
         <div>Edit Scene</div>
         <AleasButton onClick={router.back}>
