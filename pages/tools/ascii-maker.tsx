@@ -1,4 +1,5 @@
 import { AleasButton } from '@/components/aleas/aleas-buttons';
+import AleasFileUpload from '@/components/aleas/aleas-file-upload';
 import AleasHead from '@/components/aleas/aleas-head'
 import AleasSlider from '@/components/aleas/aleas-slider';
 import AsciiArt, { AsciiArtRef, AsciiBitmapStats } from '@/components/ascii/ascii-art';
@@ -6,11 +7,9 @@ import { inverseLerp } from '@/lib/services/core/mathf';
 import { mean } from '@/lib/services/core/stats';
 import { RgbColor } from '@/lib/services/core/types';
 import { randomBool, sequence } from '@/lib/services/core/utils';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const TestAscii = () => {
-
-	const name = "Dorine";
 
 	const [threshold, setThreshold] = useState<number>(8);
 	const [floor, setFloor] = useState<number>(20);
@@ -40,31 +39,32 @@ const TestAscii = () => {
 	const [baseImageOpacity, setBaseImageOpacity] = useState<number>(0.20);
 	const [pixelsOpacity, setPixelsOpacity] = useState<number>(0.10);
 
+	const [image, setImage] = useState<string|null>(null);
+
+	const onImageUpload = useCallback((files: FileList | null) => {
+		if (files && files.length > 0) {
+			const file = files[0];
+			
+			if (file.type.startsWith("image")) {
+				const url = URL.createObjectURL(file);
+				setImage(url);
+			}
+		}
+		
+	}, [])
+
+	const lastImageRef = useRef<string|null>(null);
+	useEffect(() => {
+		if (lastImageRef.current) {
+			URL.revokeObjectURL(lastImageRef.current);
+		}
+		lastImageRef.current = image;
+	}, [image])
+
 	return <>
-		<AleasHead title={`Portrait Ascii${name && ` - ${name}`}`} />
-		{name && <main className="fullscreen relative overflow-hidden bg-slate-900">
-			<AsciiArt
-				ref={asciiArtRef}
-				className='p-0 full top-0 left-0 absolute'
-
-				textMode="RawText"
-				text={text}
-
-				src={`/ascii/portraits/${name}.jpg`}
-
-				pixelSize={size}
-				charSize={size - 1}
-				baseImageOpacity={baseImageOpacity}
-				pixelsOpacity={pixelsOpacity}
-
-				pixelColorTransformation="none"
-				textColorTransformation={colorTransformer}
-				letterTransformation="framed"
-
-				scale={scale}
-			/>
-
-			<div className='left-3 bottom-3 absolute centered-col gap-2'>
+		<AleasHead title="Ascii Maker" />
+		<main className="fullscreen overflow-hidden bg-slate-900 flex flex-row justify-between items-center gap-8">
+			<div className='p-3 centered-col gap-2'>
 				<div className='text-white'>Size: {size}</div>
 				<AleasSlider
 					orientation='horizontal'
@@ -126,14 +126,45 @@ const TestAscii = () => {
 					step={0.5}
 				/>
 				<AleasButton
-					onClick={() => asciiArtRef.current?.downloadImage(name)}
+					onClick={() => asciiArtRef.current?.downloadImage("ascii")}
 					className='scale-75 hover:scale-[80%]'
+					disabled={image === null}
 				>
 					Download
 				</AleasButton>
 			</div>
+
+			<div className="flex-grow full">
+				{image ? <div className="full centered-col gap-4 py-6">
+					<AsciiArt
+						ref={asciiArtRef}
+						className="flex-grow"
+
+						textMode="RawText"
+						text={text}
+
+						src={image}
+
+						pixelSize={size}
+						charSize={size - 1}
+						baseImageOpacity={baseImageOpacity}
+						pixelsOpacity={pixelsOpacity}
+
+						pixelColorTransformation="none"
+						textColorTransformation={colorTransformer}
+						letterTransformation="framed"
+
+						scale={scale}
+					/>
+					<AleasButton onClick={() => setImage(null)}>Delete</AleasButton>
+				</div>
+				 : 
+				<div className="full center-child text-white font-consolas">
+					<AleasFileUpload text="Uploadez une image à transformer" onUpload={onImageUpload} multiple={false} />
+				</div>}
+			</div>
 			
-		</main>}
+		</main>
 	</>;
 }
 
