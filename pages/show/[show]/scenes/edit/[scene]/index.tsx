@@ -32,15 +32,18 @@ const EditScene = () => {
     }, [])
 
     useEffect(() => {
-        //...
+        if (show) {
+            const result = show.scenes.find(sc => sc.name === sceneName)
+            setScene(result)
+        }
     }, [showName, sceneName])
 
 
 
 
     return <AleasMainLayout title={`${showName} - ${sceneName}`}>
-        <div><AleasSpinningLoader /></div>
-        <AleasSkeletonLoader lines={5} />
+        
+        {scene ? <div>{JSON.stringify(scene)}</div> : <AleasSkeletonLoader lines={5} />}
         <AleasButton onClick={router.back}>
             OK
         </AleasButton>

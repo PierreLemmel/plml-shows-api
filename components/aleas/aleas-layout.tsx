@@ -77,7 +77,7 @@ export const AleasMainLayout = (props: AleasLayoutProps) => {
                         {title}
                     </AleasTitle>}
 
-                    <div className="flex flex-col justify-evenly items-center flex-grow">
+                    <div className="flex flex-col justify-evenly items-center flex-grow w-full">
                         {children}
                     </div>
 

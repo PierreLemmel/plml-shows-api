@@ -14,31 +14,43 @@ const AleasSkeletonLoader = (props: AleasSkeletonLoaderProps) => {
      } = props;
 
     return <div className={mergeClasses(
-        "w-full h-4 mb-2",
-        "relative rounded overflow-hidden"
+        className,
+        "w-full flex flex-col items-center gap-3"
     )}>
-        {sequence(lines).map(i => <motion.div
-            key={`skeleton-line-${i}`}
-            className="absolute top-0 left-0 w-full h-full bg-gray-300"
-            initial={{ opacity: 0.7 }}
-            animate={{ opacity: 0.5 }}
-            transition={{
-                duration: 1.6,
-                repeat: Infinity,
-                repeatType: 'reverse'
-            }}
-        >
-            <motion.div
+        {sequence(lines).map(i => 
+            <div key={`skeleton-line-${i}`}
                 className={mergeClasses(
-                    "absolute top-0 h-full w-[50%]",
-                    "rounded animate-pulse opacity-75",
-                    "from-gray-300 via-gray-400 to-gray-400 bg-gradient-to-r"
-                )}
-                initial={{ transform: 'translateX(-240%)' }}
-                animate={{ transform: 'translateX(240%)' }}
-                transition={{ duration: 1.7, repeat: Infinity, repeatType: 'loop' }}
-            />
-        </motion.div>)}
+                    "w-full h-4 mb-2",
+                    "relative rounded overflow-hidden"
+            )}>
+                <motion.div
+                    className="absolute top-0 left-0 w-full h-full bg-gray-300"
+                    initial={{ opacity: 0.7 }}
+                    animate={{ opacity: 0.5 }}
+                    transition={{
+                        duration: 1.6,
+                        repeat: Infinity,
+                        repeatType: 'reverse'
+                    }}
+                >
+                    <motion.div
+                        className={mergeClasses(
+                            "absolute top-0 h-full w-[50%]",
+                            "rounded animate-pulse opacity-75",
+                            "from-gray-300 via-gray-400 to-gray-400 bg-gradient-to-r"
+                        )}
+                        initial={{ transform: 'translateX(-240%)' }}
+                        animate={{ transform: 'translateX(240%)' }}
+                        transition={{
+                            duration: 2.4,
+                            repeat: Infinity,
+                            repeatType: 'loop',
+                            delay: i * i * 0.02
+                        }}
+                        
+                    />
+                </motion.div>
+        </div>)}
     </div>
 };
 
