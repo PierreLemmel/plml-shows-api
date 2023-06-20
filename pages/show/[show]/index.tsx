@@ -5,7 +5,7 @@ import DmxSlider from "@/components/dmx/dmx-slider";
 import { Scene, Track, useShowControl } from "@/lib/services/dmx/showControl";
 import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 
 const ShowPage = () => {
@@ -58,34 +58,39 @@ const ShowPage = () => {
         setScene(option.value);
     }
 
-    const clearCurrentTrack = () => {
+    const clearCurrentTrack = useCallback(() => {
         if (track && controler) {
             controler.removeTrack(track);
             setTrack(undefined)
         }
-    }
+    }, [track, controler]);
 
     const playBtnEnabled = scene !== undefined;
-    const onPlayBtnClicked = () => {
+    const onPlayBtnClicked = useCallback(() => {
 
         if (scene && controler) {
             clearCurrentTrack();
             const newTrack = controler.addTrack(scene);
             setTrack(newTrack);
         }
-    }
+    }, [track, controler]);
 
     const stopBtnEnabled = track !== undefined;
-    const onStopBtnClicked = () => {
+    const onStopBtnClicked = useCallback(() => {
         clearCurrentTrack();
-    }
+    }, [clearCurrentTrack]);
 
     const editBtnClicked = scene !== undefined;
-    const onEditBtnClicked = () => {
+    const onEditBtnClicked = useCallback(() => {
         if (scene) {
             router.push(`${router.asPath}/scenes/edit/${scene.name}`);
         }
-    }
+    }, [scene]);
+
+    const newBtnEnabled = true;
+    const onNewSceneBtnClicked = useCallback(() => {
+        router.push(`${router.asPath}/scenes/new`)
+    }, []);
 
     return <AleasMainLayout title={showName}>
         <div className="centered-row gap-4">
@@ -104,7 +109,7 @@ const ShowPage = () => {
                     />
                 </div>
 
-                <div className="centered-row gap-3">
+                <div className="grid grid-cols-2 gap-3">
                     <AleasButton
                         onClick={onPlayBtnClicked}
                         disabled={!playBtnEnabled}
@@ -124,6 +129,13 @@ const ShowPage = () => {
                         disabled={!editBtnClicked}
                     >
                         Edit
+                    </AleasButton>
+
+                    <AleasButton
+                        onClick={onNewSceneBtnClicked}
+                        disabled={!newBtnEnabled}
+                    >
+                        New scene
                     </AleasButton>
                 </div>
                 

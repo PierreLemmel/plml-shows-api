@@ -1,8 +1,10 @@
 import { AleasButton } from "@/components/aleas/aleas-buttons";
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
-import { useShowControl } from "@/lib/services/dmx/showControl";
+import AleasSkeletonLoader from "@/components/aleas/aleas-skeleton-loader";
+import AleasSpinningLoader from "@/components/aleas/aleas-spinning-loader";
+import { Scene, useShowControl } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 
 const EditScene = () => {
@@ -16,6 +18,8 @@ const EditScene = () => {
 
     const showName = router.query["show"] as string;
     const sceneName = router.query["scene"] as string;
+
+    const [scene, setScene] = useState<Scene>()
 
     useEffect(() => {
         if (showControl.show?.name !== showName) {
@@ -35,8 +39,8 @@ const EditScene = () => {
 
 
     return <AleasMainLayout title={`${showName} - ${sceneName}`}>
-        <div>{show?.name ?? "NO SHOW"}</div>
-        <div>Edit Scene</div>
+        <div><AleasSpinningLoader /></div>
+        <AleasSkeletonLoader lines={5} />
         <AleasButton onClick={router.back}>
             OK
         </AleasButton>
