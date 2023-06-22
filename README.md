@@ -1,38 +1,21 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Présentation
 
-## Getting Started
+Dans ce spectacle unique, les comédiens remettent leur sort entre les mains du hasard ! La mise en scène, le son, la lumière et le temps sont entièrement contrôlés aléatoirement par un ordinateur. Les artistes vont dès lors rivaliser d'ingéniosité pour transformer ces hasardeuses propositions en moments de pur plaisir pour le spectateur.
 
-First, run the development server:
+Drôle de chose que le hasard ! À la fois incontrôlable, surprenant et implacable, tantôt généreux, tantôt capricieux, on dit de lui qu'il fait parfois bien les choses.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
+Alors laissez-le vous embarquer dans une succession d'histoires et de tableaux parfois drôles, parfois touchants, mais toujours inattendus !
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+# Note d’intention
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+Aléas est né d’une envie, développer une nouvelle forme d'improvisation visuelle, narrative, impulsée par le hasard de la mise en scène. Nous souhaitons créer des ponts entre le théâtre et la science du hasard.
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+Aléas vise à expérimenter le hasard en théâtre improvisé en faisant usage des nouvelles technologies. Il se place dans une période où les nouvelles technologies et notamment les intelligences artificielles génératives prennent une part de plus en plus importante dans le domaine artistique (génération de textes, d’images, de musiques...). Cela suscite de nombreuses interrogations sur le rôle des artistes dans différents domaines et sur le futur de la création artistique.
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+Dans ce contexte, il s’agira de mettre ces nouvelles technologies à profit afin de créer un environnement sonore et lumineux aléatoire dans lequel les comédien-ne-s improvisateur-ice-s peuvent expérimenter et auxquels ils doivent s’adapter.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+Nous pensons que le hasard étant par nature quelque chose d’incontrolable, il peut être une source d’imprévus et de création extraordinaire. Il nous ramène à une forme d’improvisation la plus brute et la plus pure qui soit. Comment aborde-t-on la scène en s’abandonnant complètement au hasard ?
 
-## Learn More
+# Nous soutenir
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+Nous faisons notre premier Avignon et vous pouvez nous soutenir en participant [à notre cagnotte](bit.ly/spectaclealeas)
