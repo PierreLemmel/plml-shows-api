@@ -1,4 +1,4 @@
-import { getStaticBilletReducReviews, StaticReviewsData } from "@/lib/services/billetreduc";
+import { getStaticBilletReducReviews, StaticReviewsData } from "@/lib/services/api/billetreduc";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<StaticReviewsData>) {

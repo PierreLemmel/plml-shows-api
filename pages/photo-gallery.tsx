@@ -2,7 +2,7 @@ import { GetStaticProps, InferGetStaticPropsType } from 'next';
 import AleasBackground from "@/components/aleas/aleas-background";
 import AleasHead from "@/components/aleas/aleas-head";
 import { AleasMainContainer, AleasTitle } from "@/components/aleas/aleas-layout";
-import { Album, getAlbum, listAlbums, Photo } from '@/lib/services/photos';
+import { Album, getAlbum, listAlbums, Photo } from '@/lib/services/api/photos';
 import React, { useState } from "react";
 import Gallery from '@/components/gallery';
 import { motion } from 'framer-motion';

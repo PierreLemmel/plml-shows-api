@@ -3,8 +3,8 @@ import { AleasButton } from "@/components/aleas/aleas-buttons";
 import AleasHead from "@/components/aleas/aleas-head";
 import { AleasMainContainer, AleasTitle } from "@/components/aleas/aleas-layout";
 import { createDurationCollection, DurationProviderCollectionProps } from "@/lib/aleas/providers/duration";
-import { getRandomTimerDurationProviderCollection } from "@/lib/services/aleas";
-import { padNumber } from "@/lib/services/helpers";
+import { getRandomTimerDurationProviderCollection } from "@/lib/services/aleas/aleas";
+import { padNumber } from "@/lib/services/core/utils";
 import { GetStaticProps, InferGetStaticPropsType } from "next";
 import { useMemo, useRef, useState } from "react";
 

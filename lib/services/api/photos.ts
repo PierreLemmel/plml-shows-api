@@ -1,7 +1,6 @@
-import { getBytes, getDownloadURL, getMetadata } from "firebase/storage";
+import { getBytes, getDownloadURL } from "firebase/storage";
 import imageSize from "image-size";
 import { getDocument, listDocuments, listFiles, setDocument } from "./firebase";
-
 
 
 export interface Album {

@@ -1,13 +1,13 @@
 import { GetStaticProps, InferGetStaticPropsType } from 'next';
-import { getBilletReducReviews, getBilletReducSettings } from "@/lib/services/billetreduc";
 import { useEffect, useRef, useState } from "react";
-import { randomInt, } from '@/lib/services/helpers';
+import { randomInt, } from '@/lib/services/core/utils';
 import { motion } from 'framer-motion';
 import AleasBackground from '@/components/aleas/aleas-background';
 import { AleasButton, AleasRoundButton } from '@/components/aleas/aleas-buttons';
 import AleasHead from '@/components/aleas/aleas-head';
 import { AleasMainContainer, AleasTitle } from '@/components/aleas/aleas-layout';
 import { ToastContainer, toast } from 'react-toastify';
+import { getBilletReducReviews, getBilletReducSettings } from '@/lib/services/api/billetreduc';
 
 interface BilletReducProps {
     reviews: string[],

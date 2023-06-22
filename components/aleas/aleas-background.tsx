@@ -1,7 +1,8 @@
-import { randomRange, randomBool } from "@/lib/services/helpers"
-import { smoothDamp, Velocity } from "@/lib/services/mathf";
-import { useWindowSize } from "@/lib/services/responsive"
+import { randomRange, randomBool, currentTime } from "@/lib/services/core/utils"
+import { smoothDamp, Velocity } from "@/lib/services/core/mathf";
+import { useWindowSize } from "@/lib/services/layout/responsive"
 import { useEffect, useRef, useCallback, useMemo } from "react"
+import { IntervalCallback, useInterval } from "@/lib/services/core/hooks";
 
 
 interface BackgroundCellData {
@@ -32,8 +33,8 @@ const AleasBackground = () => {
     }
 
     const durationRange = {
-        min: 3.5,
-        max: 13.2
+        min: 7.2,
+        max: 19.2
     }
 
     const pulsationRange = {
@@ -90,7 +91,12 @@ const AleasBackground = () => {
 
         const { rows, cols } = rowsColsRef.current!;
 
-        const canvas = canvasRef.current!;
+        const canvas = canvasRef.current;
+
+        if (!canvas) {
+            return;
+        }
+
         const ctx = canvas.getContext('2d')!;
 
         const { width, height } = canvas;
@@ -101,7 +107,6 @@ const AleasBackground = () => {
 
         ctx.fillStyle = bgGradient;
         ctx.fillRect(0, 0, width, height);
-
 
         const fontSize = 25;
         ctx.font = `${fontSize}px consolas`;
@@ -123,17 +128,11 @@ const AleasBackground = () => {
         })
     }, [rows, cols]);
 
-    const deltaTime = 1 / 30;
     const threshold = 0.01;
 
-    const startTime = useMemo<number>(() => {
-        return new Date().getTime();
-    }, []);
+    const updateData = useCallback<IntervalCallback>(({ ellapsed, deltaTime }) => {
 
-    const updateData = useCallback(() => {
-
-        const time = new Date().getTime();
-        const ellapsed = (time - startTime) / 1000;
+        const ellapsedMs = ellapsed / 1000;
 
         cellsDataRef.current?.forEach(row => row.forEach(cell => {
             const {
@@ -142,10 +141,9 @@ const AleasBackground = () => {
                 value, nextSwap
             } = cell;
 
-            const newOpacity = smoothDamp(opacity, goingUp ? opacityMax : opacityMin, velocity, pulsation, Number.MAX_VALUE, deltaTime);
+            const newOpacity = smoothDamp(opacity, goingUp ? opacityMax : opacityMin, velocity, pulsation, Number.MAX_VALUE, deltaTime / 1000);
             cell.opacity = newOpacity;
 
-            
             if (
                 (goingUp && Math.abs(opacityMax - newOpacity) < threshold) ||
                 (!goingUp && Math.abs(newOpacity - opacityMin) < threshold)
@@ -154,22 +152,19 @@ const AleasBackground = () => {
             }
 
 
-            if (ellapsed > nextSwap) {
+            if (ellapsedMs > nextSwap) {
                 cell.value = value === 0 ? 1 : 0;
-                cell.nextSwap = nextSwap + duration;
+                cell.nextSwap = ellapsedMs + duration;
             }
         }))
     }, []);
 
-    useEffect(() => {
+    useInterval((props) => {
+        
+        updateData(props);
+        repaintCanvas();
 
-        const interval = setInterval(() => {
-            updateData();
-            repaintCanvas();
-        }, 1000 * deltaTime);
-
-        return () => clearInterval(interval);
-    },[])
+    }, 1000 / 30, [])
 
     return <div className="full absolute top-0">
         <canvas className="full" width={windowWidth} height={windowHeight} ref={canvasRef} />

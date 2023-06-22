@@ -1,4 +1,4 @@
-import { Photo } from "@/lib/services/photos"
+import { Photo } from "@/lib/services/api/photos"
 import Image from "next/image";
 
 interface GalleryProps extends React.HTMLAttributes<HTMLDivElement> {

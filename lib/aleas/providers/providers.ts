@@ -1,4 +1,4 @@
-import { randomRange } from "@/lib/services/helpers";
+import { randomRange } from "@/lib/services/core/utils";
 
 export const minProviderWeight = 1.0;
 export const maxProviderWeight = 1.0;

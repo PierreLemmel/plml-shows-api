@@ -1,9 +1,18 @@
+import AleasBackground from "./aleas-background";
+import AleasHead from "./aleas-head";
+import AleasNavbar from "./aleas-navbar";
+
 export interface AleasMainContainerProps extends React.HTMLAttributes<HTMLDivElement> {
     overflow?: boolean;
+
+    navbar?: boolean;
 }
 
 export const AleasMainContainer = (props: AleasMainContainerProps) => {
-    const { children, overflow } = props;
+    const {
+        children,
+        overflow
+    } = props;
 
     return <div className={`flex flex-col items-center justify-between
         bg-slate-800/80    
@@ -42,4 +51,53 @@ export const AleasTitle = (props: AleasTitleProps) => {
     ">
         {children}
     </div>
+}
+
+export interface AleasLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
+    title?: string;
+    description?: string;
+    navbar?: boolean;
+}
+
+export const AleasMainLayout = (props: AleasLayoutProps) => {
+    const {
+        children,
+        title,
+        description,
+        navbar,
+     } = {
+        navbar: true,
+        ...props
+     };
+
+    return <>
+        <AleasHead {...{title, description}} />
+
+        <main className="fullscreen relative overflow-hidden">
+            <AleasBackground />
+
+            {navbar && <AleasNavbar />}
+
+            <div
+                className="absolute top-0 left-0 full center-child"
+            >
+                <AleasMainContainer>
+
+                    {title && <AleasTitle>
+                        {title}
+                    </AleasTitle>}
+
+                    <div className="flex flex-col justify-evenly items-center flex-grow w-full">
+                        {children}
+                    </div>
+
+                </AleasMainContainer>
+
+            </div>
+
+            
+
+            
+        </main>
+    </>
 }

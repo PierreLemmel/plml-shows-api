@@ -2,8 +2,8 @@ import { randomUUID } from "crypto";
 import { backOff } from "exponential-backoff";
 import { Timestamp } from "firebase/firestore";
 import { Configuration, OpenAIApi } from "openai";
+import { flattenArray, randomRange } from "../core/utils";
 import { getDocument, setDocument } from "./firebase";
-import { flattenArray, randomRange } from "./helpers";
 
 const reviewsDocPath = "billetreduc/reviews";
 const staticReviewsDocPath = "billetreduc/static-reviews";
