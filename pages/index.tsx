@@ -17,21 +17,15 @@ const Home = () => <>
 				
 				<div className="flex flex-col gap-8 sm:items-stretch">
 
+					<Link href="/about">
+						<AleasButton>
+							Présentation du spectacle
+						</AleasButton>
+					</Link>
+
 					<Link href="/billetreduc">
 						<AleasButton>
 							Générateur de critiques BilletReduc
-						</AleasButton>
-					</Link>
-
-					<Link href="/photos">
-						<AleasButton>
-							Galerie photos
-						</AleasButton>
-					</Link>
-
-					<Link href="tools/random-timer">
-						<AleasButton>
-							Random Timer
 						</AleasButton>
 					</Link>
 
