@@ -1,6 +1,7 @@
 import AleasBackground from "@/components/aleas/aleas-background";
 import AleasHead from "@/components/aleas/aleas-head";
 import { AleasMainContainer, AleasMainLayout, AleasTitle } from "@/components/aleas/aleas-layout"
+import Link from "next/link";
 
 const About = () => {
 
@@ -10,9 +11,11 @@ const About = () => {
             <AleasBackground />
             <div className="full absolute top-0 center-child text-center">
                 <AleasMainContainer>
-                    <AleasTitle>
-                        Aléas, Improvisation aléatoire
-                    </AleasTitle>
+                    <Link href="/">
+                        <AleasTitle>
+                            Aléas, Improvisation aléatoire
+                        </AleasTitle>
+                    </Link>
                     
                     <div className="flex flex-col gap-4 overflow-auto pr-2 text-justify">
 

@@ -1,6 +1,7 @@
 import AleasBackground from "./aleas-background";
 import AleasHead from "./aleas-head";
 import AleasNavbar from "./aleas-navbar";
+import { AleasToastContainer } from "./aleas-toast-container";
 
 export interface AleasMainContainerProps extends React.HTMLAttributes<HTMLDivElement> {
     overflow?: boolean;
@@ -55,18 +56,24 @@ export const AleasTitle = (props: AleasTitleProps) => {
 
 export interface AleasLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
     title?: string;
+    titleDisplay?: boolean;
     description?: string;
     navbar?: boolean;
+    toasts?: boolean;
 }
 
 export const AleasMainLayout = (props: AleasLayoutProps) => {
     const {
         children,
         title,
+        titleDisplay,
         description,
         navbar,
+        toasts
      } = {
         navbar: true,
+        titleDisplay: true,
+        toasts: false,
         ...props
      };
 
@@ -83,7 +90,7 @@ export const AleasMainLayout = (props: AleasLayoutProps) => {
             >
                 <AleasMainContainer>
 
-                    {title && <AleasTitle>
+                    {titleDisplay && title && <AleasTitle>
                         {title}
                     </AleasTitle>}
 
@@ -95,8 +102,7 @@ export const AleasMainLayout = (props: AleasLayoutProps) => {
 
             </div>
 
-            
-
+            {toasts && <AleasToastContainer />}
             
         </main>
     </>

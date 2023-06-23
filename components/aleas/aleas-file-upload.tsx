@@ -1,12 +1,16 @@
-import { mergeClasses } from "@/lib/services/core/utils";
-import { useCallback, useRef, useState } from "react";
+import { doNothing, mergeClasses } from "@/lib/services/core/utils";
+import { useCallback, useMemo, useState } from "react";
 
-export type FileUploadCallback = (files: FileList | null) => void;
+export type FileUploadCallback = (files: File[] | null) => void;
+export type FileUploadErrorCallback = (files: File[]) => void;
 
 interface AleasFileUploadProps extends React.HTMLAttributes<HTMLDivElement> {
     multiple?: boolean;
     onUpload?: FileUploadCallback;
+    onUploadError?: FileUploadErrorCallback;
     text?: string;
+    accept?: string;
+
 }
 
 const AleasFileUpload = (props: AleasFileUploadProps) => {
@@ -15,10 +19,15 @@ const AleasFileUpload = (props: AleasFileUploadProps) => {
         multiple,
         className,
         text,
-        onUpload
+        accept,
+        onUpload,
+        onUploadError,
     } = {
         multiple: false,
         text: "Drag and drop your file here or upload a file.",
+        accept: "*",
+        onUpload: doNothing,
+        onUploadError: doNothing,
         ...props
     }
 
@@ -36,26 +45,67 @@ const AleasFileUpload = (props: AleasFileUploadProps) => {
         }
     }, []);
     
-    
+    const filterFiles = useMemo<(list: FileList) => File[]>(() => {
+
+        if (accept === "*") {
+            return (list: FileList) => Array.from(list);
+        }
+        else {
+            const allowedTypes = accept.toLowerCase().split(",").map(str => str.trim());
+
+            return (list: FileList) => {
+                const files = Array.from(list);
+
+                const filtered: File[] = [];
+                const errors: File[] = []
+
+                files.forEach(file => {
+
+                    const chunks = file.name.toLowerCase().split(".");
+                    const extension = chunks[chunks.length - 1];
+                    
+                    if (allowedTypes.includes(extension)) {
+                        filtered.push(file)
+                    }
+                    else {
+                        errors.push(file);
+                    }
+                })
+
+                if (errors.length > 0) {
+                    onUploadError(errors);
+                }
+                return filtered;
+            }
+        }
+    }, [accept, onUploadError])
+
+
     const handleDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
         setDragActive(false);
 
         const files = e.dataTransfer?.files;
-        if (files && onUpload) {
-            onUpload(files);
+        if (files) {
+            const filteredFiles = filterFiles(files);
+            if (filteredFiles.length > 0) {
+                onUpload(filteredFiles);
+            }
         }
-    }, [onUpload])
+    }, [onUpload, filterFiles])
     
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault();
 
         const files = e.target.files;
-        if (files && onUpload) {
-            onUpload(files);
+        if (files) {
+            const filteredFiles = filterFiles(files)
+            if (filteredFiles.length > 0) {
+                onUpload(filteredFiles);
+            }
         }
-    }, [onUpload]);
+    }, [onUpload, filterFiles]);
     
     return <form
         onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()}

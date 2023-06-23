@@ -6,8 +6,8 @@ import AleasBackground from '@/components/aleas/aleas-background';
 import { AleasButton, AleasRoundButton } from '@/components/aleas/aleas-buttons';
 import AleasHead from '@/components/aleas/aleas-head';
 import { AleasMainContainer, AleasTitle } from '@/components/aleas/aleas-layout';
-import { ToastContainer, toast } from 'react-toastify';
 import { getBilletReducReviews, getBilletReducSettings } from '@/lib/services/api/billetreduc';
+import { AleasToastContainer, toast } from '@/components/aleas/aleas-toast-container';
 
 interface BilletReducProps {
     reviews: string[],
@@ -198,14 +198,7 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                     </AleasButton>
                 </AleasMainContainer>
             </motion.div>
-            <ToastContainer
-                position="bottom-center"
-                theme='dark'
-                autoClose={2000}
-                hideProgressBar={true}
-                pauseOnFocusLoss={false}
-                pauseOnHover={false}
-            />
+            <AleasToastContainer />
             
         </main>
         
