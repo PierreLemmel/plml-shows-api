@@ -16,23 +16,23 @@ const About = () => {
                     
                     <div className="flex flex-col gap-4 overflow-auto pr-2 text-justify">
 
-                        <p>Dans ce spectacle unique, les comédiens remettent leur sort entre les mains du hasard ! La mise en scène, le son, la lumière et le temps sont entièrement contrôlés aléatoirement par un ordinateur. Les artistes vont dès lors rivaliser d&apos;ingéniosité pour transformer ces hasardeuses propositions en moments de pur plaisir pour le spectateur.</p>
+                        <p>Dans ce spectacle unique, les comédiens <strong>remettent leur sort entre les mains du hasard !</strong> La mise en scène, le son, la lumière et le temps sont entièrement contrôlés aléatoirement par un ordinateur. Les artistes vont dès lors rivaliser d&apos;ingéniosité pour transformer ces hasardeuses propositions en moments de pur plaisir pour le spectateur.</p>
 
-                        <p>Drôle de chose que le hasard ! À la fois incontrôlable, surprenant et implacable, tantôt généreux, tantôt capricieux, on dit de lui qu&apos;il fait parfois bien les choses.</p>
+                        <p>Drôle de chose que le hasard ! À la fois incontrôlable, surprenant et implacable, tantôt généreux, tantôt capricieux, on dit de lui qu&apos;il <em>fait parfois bien les choses.</em></p>
 
-                        <p>Alors laissez-le vous embarquer dans une succession d&apos;histoires et de tableaux parfois drôles, parfois touchants, mais toujours inattendus !</p>
+                        <p>Alors laissez-le vous embarquer dans une succession d&apos;histoires et de tableaux parfois drôles, parfois touchants, mais <strong>toujours inattendus !</strong></p>
 
                         <div className="center-child w-full my-4"><img src='/img/aleas-1200x630.jpg' className="w-[400px] min-w-[75%] max-w-full " /></div>
 
                         <h2 className="text-3xl italic font-bold">Note d&apos;intention</h2>
                         
-                        <p>Aléas est né d&apos;une envie : développer une nouvelle forme d&apos;improvisation visuelle, narrative, impulsée par le hasard de la mise en scène. Nous souhaitons créer des ponts entre le théâtre et la science du hasard.</p>
+                        <p>Aléas est né d&apos;une envie : <strong>développer une nouvelle forme d&apos;improvisation visuelle</strong>, impulsée par le hasard de la mise en scène. Nous souhaitons <em>créer des ponts</em> entre le théâtre et la science du hasard.</p>
 
-                        <p>Aléas vise à expérimenter le hasard en théâtre improvisé en faisant usage des nouvelles technologies. Il se place dans une période où les nouvelles technologies et notamment les intelligences artificielles génératives prennent une part de plus en plus importante dans le domaine artistique (génération de textes, d&apos;images, de musiques...). Cela suscite de nombreuses interrogations sur le rôle des artistes dans différents domaines et sur le futur de la création artistique.</p>
+                        <p>Aléas vise à <strong>expérimenter le hasard en théâtre improvisé en faisant usage des nouvelles technologies</strong>. Il se place dans une période où les nouvelles technologies et notamment les intelligences artificielles génératives prennent une part de plus en plus importante dans le domaine artistique (génération de textes, d&apos;images, de musiques...). Cela suscite de nombreuses interrogations sur <em>le rôle des artistes dans différents domaines</em> et sur le futur de la création artistique.</p>
 
-                        <p>Dans ce contexte, il s&apos;agit de mettre ces nouvelles technologies à profit afin de créer un environnement sonore et lumineux aléatoire dans lequel les comédien-ne-s improvisateur-ice-s peuvent expérimenter et auxquels ils doivent s&apos;adapter.</p>
+                        <p>Dans ce contexte, il s&apos;agit de <strong>mettre ces nouvelles technologies à profit</strong> afin de créer un environnement sonore et lumineux aléatoire dans lequel les comédien-ne-s improvisateur-ice-s peuvent expérimenter et auxquels ils doivent s&apos;adapter.</p>
 
-                        <p>Nous pensons que le hasard étant par nature quelque chose d&apos;incontrôlable, il peut être une source d&apos;imprévus et de création extraordinaire. Il nous ramène à une forme d&apos;improvisation la plus brute et la plus pure qui soit. Comment aborde-t-on la scène en s&apos;abandonnant complètement au hasard ?</p>
+                        <p>Nous pensons que le hasard étant par nature quelque chose d&apos;incontrôlable, il peut être une <strong>source d&apos;imprévus et de création extraordinaire</strong>. Il nous ramène à une <em>forme d&apos;improvisation la plus brute et la plus pure qui soit</em>. Comment aborde-t-on la scène en s&apos;abandonnant complètement au hasard ?</p>
 
                     </div>
                 </AleasMainContainer>
