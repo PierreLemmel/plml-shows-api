@@ -6,7 +6,7 @@ Drôle de chose que le hasard ! À la fois incontrôlable, surprenant et implaca
 
 Alors laissez-le vous embarquer dans une succession d'histoires et de tableaux parfois drôles, parfois touchants, mais toujours inattendus !
 
-[Affiche Aléas](http://aleas-spectacle.fr/img/aleas-1200x630.jpg)
+![Affiche Aléas](http://aleas-spectacle.fr/img/aleas-1200x630.jpg)
 
 # Note d’intention
 
