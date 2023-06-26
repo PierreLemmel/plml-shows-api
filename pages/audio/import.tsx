@@ -2,9 +2,9 @@ import { AleasButton } from "@/components/aleas/aleas-buttons";
 import AleasFileUpload from "@/components/aleas/aleas-file-upload";
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
 import { toast } from "@/components/aleas/aleas-toast-container";
-import WaveformProgress from "@/components/audio/waveform-progress";
+import AleasAudioPlayer from "@/components/audio/aleas-audio-player";
 import { match } from "@/lib/services/core/utils";
-import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type DisplayState = "AudioImport"|"AudioEditSettings"|"AudioEditKeypoints";
 
@@ -27,21 +27,6 @@ const Import = () => {
     }, []);
 
     const [audioFile, setAudioFile] = useState<File>();
-    const [audioUrl, setAudioUrl] = useState<string>();
-
-    const audioEltRef: RefObject<HTMLAudioElement> = useRef(null);
-
-    useEffect(() => {
-
-        if (audioUrl) {
-            URL.revokeObjectURL(audioUrl);
-        }
-
-        if (audioFile) {
-            const newUrl = URL.createObjectURL(audioFile);
-            setAudioUrl(newUrl);
-        }
-    }, [audioFile])
 
     const onUpload = useCallback((files: File[]|null) => {
 
@@ -72,15 +57,7 @@ const Import = () => {
                 </>,
                 "AudioEditSettings": <>
                     <div>EDIT SETTINGS</div>
-                    {audioFile && <WaveformProgress
-                        spectrum={null}
-                        currentTime={0}
-                        duration={0} />}
-                    <AleasButton
-                        onClick={() => audioEltRef.current?.play()}
-                    >
-                        Play audio
-                    </AleasButton>
+                    {audioFile && <AleasAudioPlayer audioFile={audioFile} />}
                 </>,
                 "AudioEditKeypoints": <>
                     <div>EDIT KEY POINTS</div>
@@ -95,7 +72,6 @@ const Import = () => {
                 Effacer
             </AleasButton>
         </div>
-        <audio ref={audioEltRef} src={audioUrl} controls={false}></audio>
     </AleasMainLayout>
 }
 

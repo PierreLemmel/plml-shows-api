@@ -1,11 +1,11 @@
 import { resample, clamp } from "@/lib/services/core/maths";
 import { formatMinuteSeconds } from "@/lib/services/core/time";
-import { doNothing } from "@/lib/services/core/utils";
+import { doNothing, mergeClasses } from "@/lib/services/core/utils";
 import { DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 
-export interface WaveformProgressProps {
-    readonly spectrum: number[]|null;
+export interface WaveformProgressProps extends React.HTMLAttributes<HTMLDivElement> {
+    readonly spectrum: number[];
 
     readonly currentTime: number;
     readonly duration: number;
@@ -29,7 +29,8 @@ const WaveformProgress = (props: WaveformProgressProps) => {
         currentTime,
         duration,
         onCurrentTimeChanged,
-        spectrum
+        spectrum,
+        className,
     } = {
         onCurrentTimeChanged: doNothing,
         ...props
@@ -166,7 +167,10 @@ const WaveformProgress = (props: WaveformProgressProps) => {
     const canvasClass = "w-full h-full absolute left-0 top-0";
     const canvasWidth = railRef.current?.clientWidth ?? 0;
 
-    return <div className="w-full centered-col mt-6" ref={railRef}>
+    return <div className={mergeClasses(
+        "w-full centered-col mt-6",
+        className,
+    )} ref={railRef}>
 
         <div className={`w-full h-36 rounded-lg border-[1px] py-2 ${borderColor} ${backgroundColor}`}>
             {/* Rail */}
