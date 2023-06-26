@@ -1,4 +1,4 @@
-import { clampByte } from "../core/mathf";
+import { clampByte } from "../core/maths";
 import { IntRange, Named } from "../core/types";
 
 

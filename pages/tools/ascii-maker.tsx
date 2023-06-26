@@ -3,7 +3,7 @@ import AleasFileUpload from '@/components/aleas/aleas-file-upload';
 import AleasHead from '@/components/aleas/aleas-head'
 import AleasSlider from '@/components/aleas/aleas-slider';
 import AsciiArt, { AsciiArtRef, AsciiBitmapStats } from '@/components/ascii/ascii-art';
-import { inverseLerp } from '@/lib/services/core/mathf';
+import { inverseLerp } from '@/lib/services/core/maths';
 import { mean } from '@/lib/services/core/stats';
 import { RgbColor } from '@/lib/services/core/types';
 import { randomBool, sequence } from '@/lib/services/core/utils';

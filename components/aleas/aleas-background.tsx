@@ -1,5 +1,5 @@
 import { randomRange, randomBool, currentTime } from "@/lib/services/core/utils"
-import { smoothDamp, Velocity } from "@/lib/services/core/mathf";
+import { smoothDamp, Velocity } from "@/lib/services/core/maths";
 import { useWindowSize } from "@/lib/services/layout/responsive"
 import { useEffect, useRef, useCallback, useMemo } from "react"
 import { IntervalCallback, useInterval } from "@/lib/services/core/hooks";

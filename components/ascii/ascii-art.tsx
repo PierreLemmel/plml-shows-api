@@ -1,7 +1,7 @@
 //@see: https://dev.to/patopitaluga/ascii-art-pixel-art-in-js-2oij
 
 import { useInterval, useTimeout } from "@/lib/services/core/hooks";
-import { inverseLerp } from "@/lib/services/core/mathf";
+import { inverseLerp } from "@/lib/services/core/maths";
 import { mean, getStats, Stats } from "@/lib/services/core/stats";
 import { RgbColor } from "@/lib/services/core/types";
 import { createArray, flattenArray, mergeClasses } from "@/lib/services/core/utils";
