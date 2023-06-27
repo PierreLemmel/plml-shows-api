@@ -1,5 +1,6 @@
 import { getSpectrumData, SpectrumData } from "@/lib/services/audio/audioControl";
 import { useEffectAsync } from "@/lib/services/core/hooks";
+import { formatMinuteSeconds } from "@/lib/services/core/time";
 import { doNothing, mergeClasses } from "@/lib/services/core/utils";
 import { on } from "events";
 import { forwardRef, Ref, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
@@ -49,18 +50,21 @@ const AleasAudioPlayer = (props: AudioPlayerProps, ref: Ref<AudioPlayerRef>) => 
 
     const onCurrentTimeChanged = useCallback((currentTime: number) => {
         setCurrentTime(currentTime);
+        audioRef.current!.currentTime = currentTime;
     }, []);
 
     const [audioUrl, setAudioUrl] = useState<string>();
 
     const onTimeUpdate = useCallback(() => setCurrentTime(audioRef.current?.currentTime ?? 0), []);
 
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
+
     const onPlay = useCallback(() => {
-        console.log("onPlay");
+        setIsPlaying(true);
     }, []);
 
     const onStop = useCallback(() => {
-        console.log("onStop");
+        setIsPlaying(false);
     }, [])
 
     useEffect(() => {
@@ -97,18 +101,42 @@ const AleasAudioPlayer = (props: AudioPlayerProps, ref: Ref<AudioPlayerRef>) => 
     }, [audioFile])
 
 
+    const onButtonClicked = useCallback(() => {
+        if (isPlaying) {
+            pause();
+        } else {
+            play();
+        }
+    }, [isPlaying, play, pause]);
+
     return <div className={mergeClasses(
-        "flex flex-row items-center justify-between w-full",
+        "flex flex-col items-stretch justify-between w-full gap-2",
+        "border border-stone-500 rounded-md p-1",
         className,
     )}>
-        {spectrumData && <WaveformProgress
-            className="w-full"
-            duration={spectrumData.duration}
-            spectrum={spectrumData.spectrum}
-            currentTime={currentTime}
-            onCurrentTimeChanged={onCurrentTimeChanged}
-        />}
-        <audio ref={audioRef} src={audioUrl} controls={true} />
+        <div className="flex flex-row items-center justify-between gap-4 pt-1">
+
+            <div className="w-12 h-12 cursor-pointer hover:scale-105" onClick={onButtonClicked}>
+                <svg className="full fill-white" viewBox="0 0 24 24">
+                {isPlaying ? 
+                    <path d="M14,19H18V5H14M6,19H10V5H6V19Z" />:
+                    <path d="M8 5v14l11-7z" />
+                }
+                </svg>
+            </div>
+            
+            {spectrumData && <WaveformProgress
+                className="h-24 w-full"
+                duration={spectrumData.duration}
+                spectrum={spectrumData.spectrum}
+                currentTime={currentTime}
+                onCurrentTimeChanged={onCurrentTimeChanged}
+            />}
+
+        </div>
+
+        {spectrumData && <div className="text-center">{formatMinuteSeconds(currentTime)} / {formatMinuteSeconds(spectrumData.duration)}</div>}
+        <audio ref={audioRef} src={audioUrl} controls={false} />
     </div>
 }
 

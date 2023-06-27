@@ -1,12 +1,14 @@
 import { AleasButton } from "@/components/aleas/aleas-buttons";
 import AleasFileUpload from "@/components/aleas/aleas-file-upload";
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
+import AleasTextArea from "@/components/aleas/aleas-textarea";
 import { toast } from "@/components/aleas/aleas-toast-container";
 import AleasAudioPlayer from "@/components/audio/aleas-audio-player";
 import { match } from "@/lib/services/core/utils";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type DisplayState = "AudioImport"|"AudioEditSettings"|"AudioEditKeypoints";
+
 
 const Import = () => {
 
@@ -42,6 +44,10 @@ const Import = () => {
         files.forEach(file => toast(`Impossible d'importer le fichier '${file.name}'`));
     }, []);
 
+    const [name, setName] = useState<string>("");
+    const [tempo, setTempo] = useState<number>(0);
+    const [signature, setSignature] = useState<string>("");
+
     return <AleasMainLayout title="Aléas - Import Audio" titleDisplay={false} toasts={true}>
         <div className="full flex flex-col items-center justify-between">
             <div>Importer un fichier Audio</div>
@@ -56,7 +62,10 @@ const Import = () => {
                         />
                 </>,
                 "AudioEditSettings": <>
-                    <div>EDIT SETTINGS</div>
+                    <div className="grid col-span-2">
+                        <div>Nom</div>
+                        <AleasTextArea value={name} onTextChange={setName} />
+                    </div>
                     {audioFile && <AleasAudioPlayer audioFile={audioFile} />}
                 </>,
                 "AudioEditKeypoints": <>
