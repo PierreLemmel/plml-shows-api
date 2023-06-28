@@ -36,15 +36,15 @@ const AleasTextArea = (props: AleasTextAreaProps) => {
             }
         };
 
-        if (textareaRef.current) {
-            textareaRef.current.addEventListener('keydown', handleTabKey);
-        }
+        const textAreaCurrentVal = textareaRef.current;
 
-        return () => {
-            if (textareaRef.current) {
-                textareaRef.current.removeEventListener('keydown', handleTabKey);
+        if (textAreaCurrentVal) {
+            textAreaCurrentVal.addEventListener('keydown', handleTabKey);
+
+            return () => {
+                textAreaCurrentVal.removeEventListener('keydown', handleTabKey);
             }
-        };
+        }
     }, [onTextChange]);
 
     return <textarea

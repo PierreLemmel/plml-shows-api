@@ -22,25 +22,25 @@ const AleasBackground = () => {
     const cellsDataRef = useRef<BackgroundCellData[][]>();
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    const opacityMinRange = {
+    const opacityMinRange = useMemo(() => ({
         min: 0,
         max: 0.3
-    }
+    }), []);
 
-    const opacityMaxRange = {
+    const opacityMaxRange = useMemo(() => ({
         min: 0.7,
         max: 1.0
-    }
+    }), []);
 
-    const durationRange = {
+    const durationRange = useMemo(() => ({
         min: 7.2,
         max: 19.2
-    }
+    }), []);
 
-    const pulsationRange = {
+    const pulsationRange = useMemo(() => ({
         min: 2.1,
         max: 7.8
-    }
+    }), []);
 
     const { windowWidth, windowHeight } = useWindowSize();
 
@@ -85,7 +85,7 @@ const AleasBackground = () => {
 
         cellsDataRef.current = data;
 
-    }, [rows, cols])
+    }, [rows, cols, opacityMinRange, opacityMaxRange, durationRange, pulsationRange])
 
     const repaintCanvas = useCallback(() => {
 
@@ -126,7 +126,7 @@ const AleasBackground = () => {
                 ctx.fillText(value.toString(), x, y)
             })
         })
-    }, [rows, cols]);
+    }, []);
 
     const threshold = 0.01;
 

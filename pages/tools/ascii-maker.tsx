@@ -41,7 +41,7 @@ const TestAscii = () => {
 
 	const [image, setImage] = useState<string|null>(null);
 
-	const onImageUpload = useCallback((files: FileList | null) => {
+	const onImageUpload = useCallback((files: File[] | null) => {
 		if (files && files.length > 0) {
 			const file = files[0];
 			

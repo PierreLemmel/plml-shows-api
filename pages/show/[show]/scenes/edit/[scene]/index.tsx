@@ -25,18 +25,18 @@ const EditScene = () => {
         if (showControl.show?.name !== showName) {
             showControl.loadShow(showName);
         }
-    }, [showName]);
+    }, [showName, showControl]);
 
     useEffect(() => {
         showControl.setMode("Show")
-    }, [])
+    }, [showControl])
 
     useEffect(() => {
         if (show) {
             const result = show.scenes.find(sc => sc.name === sceneName)
             setScene(result)
         }
-    }, [showName, sceneName])
+    }, [showName, sceneName, show])
 
 
 

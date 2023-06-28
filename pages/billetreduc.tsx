@@ -1,5 +1,5 @@
 import { GetStaticProps, InferGetStaticPropsType } from 'next';
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { randomInt, } from '@/lib/services/core/utils';
 import { motion } from 'framer-motion';
 import AleasBackground from '@/components/aleas/aleas-background';
@@ -42,7 +42,7 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
 
     const review = reviews[index];
 
-    const onRegenerate = () => {
+    const onRegenerate = useCallback(() => {
         
         setFadeIn(false);
         fadeTimeout.current = setTimeout(() => {
@@ -55,9 +55,9 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
             setFadeIn(true);
         }, fadeDuration * 1000)
         
-    }
+    }, [setFadeIn, setIndex, fadeDuration, index, reviews.length]);
 
-    useEffect(onRegenerate, []);
+    useEffect(onRegenerate, [onRegenerate]);
 
     const onCopied = () => {
         navigator.clipboard.writeText(review)

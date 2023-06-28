@@ -63,7 +63,7 @@ const WaveformProgress = (props: WaveformProgressProps) => {
 
         const newTime = clampTime(duration * ((trackRef.current.offsetLeft + offsetX) / railRef.current.clientWidth));
         onCurrentTimeChanged(newTime);
-    }, [clampTime, onCurrentTimeChanged])
+    }, [clampTime, onCurrentTimeChanged, duration])
 
     const [ready, setReady] = useState<boolean>(false);
 

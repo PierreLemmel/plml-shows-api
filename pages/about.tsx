@@ -1,7 +1,8 @@
 import AleasBackground from "@/components/aleas/aleas-background";
 import AleasHead from "@/components/aleas/aleas-head";
-import { AleasMainContainer, AleasMainLayout, AleasTitle } from "@/components/aleas/aleas-layout"
+import { AleasMainContainer, AleasTitle } from "@/components/aleas/aleas-layout"
 import Link from "next/link";
+import Image from "next/image";
 
 const About = () => {
 
@@ -25,7 +26,7 @@ const About = () => {
 
                         <p>Alors laissez-le vous embarquer dans une succession d&apos;histoires et de tableaux parfois drôles, parfois touchants, mais <strong>toujours inattendus !</strong></p>
 
-                        <div className="center-child w-full my-4"><img src='/img/aleas-1200x630.jpg' className="w-[400px] min-w-[75%] max-w-full " /></div>
+                        <div className="center-child w-full my-4"><Image src='/img/aleas-1200x630.jpg' className="w-[400px] min-w-[75%] max-w-full " alt="" /></div>
 
                         <h2 className="text-3xl italic font-bold">Note d&apos;intention</h2>
                         

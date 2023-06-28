@@ -46,7 +46,7 @@ const AleasAudioPlayer = (props: AudioPlayerProps, ref: Ref<AudioPlayerRef>) => 
         currentTime,
         play,
         pause
-    }), [spectrumData, currentTime]);
+    }), [spectrumData, currentTime, play, pause]);
 
     const onCurrentTimeChanged = useCallback((currentTime: number) => {
         setCurrentTime(currentTime);
@@ -83,7 +83,7 @@ const AleasAudioPlayer = (props: AudioPlayerProps, ref: Ref<AudioPlayerRef>) => 
             audio.removeEventListener("timeupdate", onTimeUpdate);
         }
 
-    }, []);
+    }, [onPlay, onStop, onTimeUpdate]);
 
     useEffect(() => {
 
@@ -98,7 +98,7 @@ const AleasAudioPlayer = (props: AudioPlayerProps, ref: Ref<AudioPlayerRef>) => 
             const newUrl = URL.createObjectURL(audioFile);
             setAudioUrl(newUrl);
         }
-    }, [audioFile])
+    }, [audioUrl, audioFile])
 
 
     const onButtonClicked = useCallback(() => {

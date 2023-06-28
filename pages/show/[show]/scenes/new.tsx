@@ -22,7 +22,7 @@ const NewScene = (props: NewSceneProps) => {
         if (showControl.show?.name !== showName) {
             showControl.loadShow(showName);
         }
-    }, [showName]);
+    }, [showName, showControl]);
 
     return <AleasMainLayout title={showName}>
         <div>{show?.name ?? "NO SHOW"}</div>

@@ -33,18 +33,18 @@ const ShowPage = () => {
         if (showControl.show?.name !== showName) {
             showControl.loadShow(showName);
         }
-    }, [showName]);
+    }, [showName, showControl]);
 
     useEffect(() => {
         if (currentTrack) {
             setTrack(currentTrack);
             setScene(currentTrack.scene)
         }
-    }, [])
+    }, [currentTrack])
 
     useEffect(() => {
         showControl.setMode("Show")
-    }, [])
+    }, [showControl]);
 
     const dropdownOptions: DropdownOption<Scene>[] = useMemo(() => show?.scenes.map(scene => {
         return {
@@ -73,7 +73,7 @@ const ShowPage = () => {
             const newTrack = controler.addTrack(scene);
             setTrack(newTrack);
         }
-    }, [track, controler]);
+    }, [controler, scene, clearCurrentTrack]);
 
     const stopBtnEnabled = track !== undefined;
     const onStopBtnClicked = useCallback(() => {
@@ -85,12 +85,12 @@ const ShowPage = () => {
         if (scene) {
             router.push(`${router.asPath}/scenes/edit/${scene.name}`);
         }
-    }, [scene]);
+    }, [scene, router]);
 
     const newBtnEnabled = true;
     const onNewSceneBtnClicked = useCallback(() => {
         router.push(`${router.asPath}/scenes/new`)
-    }, []);
+    }, [router]);
 
     return <AleasMainLayout title={showName}>
         <div className="centered-row gap-4">

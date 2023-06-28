@@ -319,7 +319,7 @@ export function useNewShowControl(): ShowControlProps {
         setCurrentTrack(track);
 
         return track;
-    }, [tracksRef.current, lightingPlan, fixtureCollection])
+    }, [lightingPlan, fixtureCollection])
 
 
     const removeTrack = useMemo(() => {
@@ -338,7 +338,7 @@ export function useNewShowControl(): ShowControlProps {
 
             return result;
         }
-    }, [tracksRef.current]);
+    }, [currentTrack?.id]);
 
     const commitValues = useMemo(() => {
 
@@ -374,7 +374,7 @@ export function useNewShowControl(): ShowControlProps {
         }
         
 
-    }, [tracksRef.current, dmxControl, lightingPlan, fixtureCollection])
+    }, [dmxControl, lightingPlan, fixtureCollection])
 
     const controler = useMemo<ShowControler>(() => {
         const {
@@ -397,7 +397,7 @@ export function useNewShowControl(): ShowControlProps {
             addTrack,
             removeTrack,
         }
-    }, [dmxControl])
+    }, [dmxControl, currentTrack, addTrack, removeTrack, commitValues ])
 
     useInterval((props) => {
         const { time } = props;

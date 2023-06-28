@@ -1,11 +1,10 @@
-//@see: https://dev.to/patopitaluga/ascii-art-pixel-art-in-js-2oij
-
 import { useInterval, useTimeout } from "@/lib/services/core/hooks";
 import { inverseLerp } from "@/lib/services/core/maths";
 import { mean, getStats, Stats } from "@/lib/services/core/stats";
 import { RgbColor } from "@/lib/services/core/types";
 import { createArray, flattenArray, mergeClasses } from "@/lib/services/core/utils";
 import { forwardRef, Ref, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import Image from "next/image";
 
 export interface AsciiArtProps extends React.HTMLAttributes<HTMLDivElement> {
     opacityCharset?: keyof typeof opacityCharMaps;
@@ -273,7 +272,7 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
             setBitmap({ widthInChars, heightInChars, pixels, stats });
         }
 
-    }, [src, pixelSize, containerWidth, containerHeight, canvasWidth, canvasHeight])
+    }, [src, pixelSize, containerWidth, containerHeight, canvasWidth, canvasHeight, scale, imgLoaded])
 
     useEffect(() => {
         const canvas = canvasRef.current?.getContext('2d');
@@ -354,7 +353,7 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
                 }
             }
         }
-    }, [containerWidth, containerHeight, bitmap, textMode, text, opacityCharset, backgroundColor, pixelColorTransformation, textColorTransformation, src, pixelSize, charSize, fontFamily, bold, italic, baseImageOpacity, pixelsOpacity, textOpacity, noiseFunction, time])
+    }, [containerWidth, containerHeight, bitmap, textMode, text, opacityCharset, backgroundColor, pixelColorTransformation, textColorTransformation, src, pixelSize, charSize, fontFamily, bold, italic, baseImageOpacity, pixelsOpacity, textOpacity, noiseFunction, time, letterTransformation, canvasWidth, canvasHeight, scale, imgLoaded])
 
     
 
@@ -366,7 +365,7 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
                 }}/>
             </div>
             <canvas className="absolute top-0 left-0 full hidden" width={containerWidth} height={containerHeight} ref={imgCanvasRef} />
-            <img className="absolute top-0 left-0 hidden" src={src} ref={imgRef} />
+            <Image className="absolute top-0 left-0 hidden" src={src} alt="" ref={imgRef} />
         </div>
     </div>
 }
