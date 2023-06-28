@@ -12,7 +12,8 @@ export interface AleasMainContainerProps extends React.HTMLAttributes<HTMLDivEle
 export const AleasMainContainer = (props: AleasMainContainerProps) => {
     const {
         children,
-        overflow
+        overflow,
+        className,
     } = props;
 
     return <div className={`flex flex-col items-center justify-between

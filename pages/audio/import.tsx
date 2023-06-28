@@ -1,11 +1,13 @@
 import { AleasButton } from "@/components/aleas/aleas-buttons";
 import AleasFileUpload from "@/components/aleas/aleas-file-upload";
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
-import AleasTextArea from "@/components/aleas/aleas-textarea";
+import AleasNumberInput from "@/components/aleas/aleas-number-input";
+import AleasTagsField from "@/components/aleas/aleas-tags-field";
+import AleasTextField from "@/components/aleas/aleas-textfield";
 import { toast } from "@/components/aleas/aleas-toast-container";
 import AleasAudioPlayer from "@/components/audio/aleas-audio-player";
-import { match } from "@/lib/services/core/utils";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { match, mergeClasses } from "@/lib/services/core/utils";
+import { useCallback, useMemo, useState } from "react";
 
 type DisplayState = "AudioImport"|"AudioEditSettings"|"AudioEditKeypoints";
 
@@ -44,13 +46,16 @@ const Import = () => {
         files.forEach(file => toast(`Impossible d'importer le fichier '${file.name}'`));
     }, []);
 
-    const [name, setName] = useState<string>("");
-    const [tempo, setTempo] = useState<number>(0);
-    const [signature, setSignature] = useState<string>("");
+    const [name, setName] = useState<string>("Music");
+    const [tempo, setTempo] = useState<number>(120);
+    const [signature, setSignature] = useState<string>("4 / 4");
+
+    const [categories, setCategories] = useState<string[]>([]);
+    const [tags, setTags] = useState<string[]>([]);
 
     return <AleasMainLayout title="Aléas - Import Audio" titleDisplay={false} toasts={true}>
-        <div className="full flex flex-col items-center justify-between">
-            <div>Importer un fichier Audio</div>
+        <div className="full flex flex-col items-stretch">
+            <div className="text-center">Importer un fichier Audio</div>
             {match(displayState, {
                 "AudioImport": <>
                     <AleasFileUpload
@@ -59,13 +64,31 @@ const Import = () => {
                         accept="mp3,wav"
                         onUpload={onUpload}
                         onUploadError={onUploadError}
-                        />
+                    />
                 </>,
                 "AudioEditSettings": <>
-                    <div className="grid col-span-2">
-                        <div>Nom</div>
-                        <AleasTextArea value={name} onTextChange={setName} />
+                    <div className="w-full h-max flex-grow overflow-y-auto bg-red-400">
+                        <div className={mergeClasses(
+                            "grid grid-cols-2 grid-rows-5 gap-2 place-items-center",
+                            "w-full",
+                        )}>
+                            <div>Nom :</div>
+                            <AleasTextField value={name} onValueChange={setName} />
+
+                            <div>Tempo :</div>
+                            <AleasNumberInput value={tempo} onValueChange={setTempo} min={1} max={300} />
+
+                            <div>Signature :</div>
+                            <AleasTextField value={signature} onValueChange={setSignature} />
+
+                            <div> Categories :</div>
+                            <AleasTagsField tags={categories} onTagsChange={setCategories} />
+
+                            <div>Tags :</div>
+                            <AleasTagsField tags={tags} onTagsChange={setTags} />
+                        </div>
                     </div>
+
                     {audioFile && <AleasAudioPlayer audioFile={audioFile} />}
                 </>,
                 "AudioEditKeypoints": <>

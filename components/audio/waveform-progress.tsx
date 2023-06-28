@@ -54,7 +54,7 @@ const WaveformProgress = (props: WaveformProgressProps) => {
     }, [duration])
     
     const onClickOnTrack = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-        
+        console.log("click")
         if (!trackRef.current || !railRef.current) {
             return;
         }
@@ -126,9 +126,11 @@ const WaveformProgress = (props: WaveformProgressProps) => {
 
         const playedEnd = (duration - currentTime) / duration;
 
-        renderCanvas(playableCanvasRef.current, notPlayedColor, 0, 0);
         renderCanvas(playedCanvasRef.current, playedColor, 0, playedEnd);
-    }, [currentTime, duration, notPlayedColor, playedColor, ready, renderCanvas]);
+        
+    }, [currentTime, duration, playedColor, ready, renderCanvas]);
+    
+    useEffect(() => renderCanvas(playableCanvasRef.current, notPlayedColor, 0, 0), [notPlayedColor, renderCanvas, duration, ready])
 
     const canvasClass = "w-full h-full absolute left-0 top-0";
     const canvasWidth = railRef.current?.clientWidth ?? 0;
@@ -136,24 +138,22 @@ const WaveformProgress = (props: WaveformProgressProps) => {
     return <div className={mergeClasses(
         "centered-col h-min-24",
         className,
-    )} ref={railRef}>
+    )} ref={railRef} onClick={() => console.log(clickable)}>
 
         <div className="full rounded-lg py-2">
             {/* Rail */}
             <div className="w-full h-full relative" ref={railRef}>
                 {/* Track */}
-                <div className="h-full absolute rounded-md" ref={trackRef}>
-
-                    {/* Clickable track */}
-                    {clickable && <div className="hover:cursor-pointer z-50 h-full w-full absolute bg-none" onClick={onClickOnTrack}></div>}
-                </div>
+                {clickable && <div className={mergeClasses(
+                    "h-full w-full absolute rounded-md",
+                    "hover:cursor-pointer z-50"
+                )} ref={trackRef} onClick={onClickOnTrack} />}
 
                 {/* Played */}
                 <div className="h-full absolute rounded transition duration-100"
                     style={{
                         right: `${100.0 * (duration - currentTime) / duration}%`
                     }}>
-
                 </div>
 
                 <canvas ref={playableCanvasRef} className={canvasClass} width={canvasWidth} />

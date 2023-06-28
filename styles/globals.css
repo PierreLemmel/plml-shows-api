@@ -21,3 +21,20 @@
 .full {
     @apply w-full h-full;
 }
+
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 1em;
+    border-left: 1px solid #BBB;
+    background: #FFF url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAkAAAAJCAYAAADgkQYQAAAAKUlEQVQYlWNgwAT/sYhhKPiPT+F/LJgEsHv37v+EMGkmkuImoh2NoQAANlcun/q4OoYAAAAASUVORK5CYII=) no-repeat center;
+    background-size: 0.7rem;
+    opacity: 0.58;
+    border-radius: 0.15rem;
+    color: white;
+}

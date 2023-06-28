@@ -4,6 +4,7 @@ import { formatMinuteSeconds } from "@/lib/services/core/time";
 import { doNothing, mergeClasses } from "@/lib/services/core/utils";
 import { on } from "events";
 import { forwardRef, Ref, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import AleasSpinningLoader from "../aleas/aleas-spinning-loader";
 import WaveformProgress from "./waveform-progress";
 
 export interface AudioPlayerProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -34,9 +35,7 @@ const AleasAudioPlayer = (props: AudioPlayerProps, ref: Ref<AudioPlayerRef>) => 
         const spectrum = await getSpectrumData(blob);
 
         setSpectrumData(spectrum);
-    }, [audioFile])
-
-    
+    }, [audioFile])    
 
     const play = useCallback(() => audioRef.current?.play(), []);
     const pause = useCallback(() => audioRef.current?.pause(), []);
@@ -89,16 +88,20 @@ const AleasAudioPlayer = (props: AudioPlayerProps, ref: Ref<AudioPlayerRef>) => 
 
         setCurrentTime(0);
 
+        /* eslint-disable */
         if (audioUrl) {
             URL.revokeObjectURL(audioUrl);
             setAudioUrl(undefined);
         }
+        /* eslint-enable */
+        
+
 
         if (audioFile) {
             const newUrl = URL.createObjectURL(audioFile);
             setAudioUrl(newUrl);
         }
-    }, [audioUrl, audioFile])
+    }, [audioFile])
 
 
     const onButtonClicked = useCallback(() => {
@@ -125,13 +128,15 @@ const AleasAudioPlayer = (props: AudioPlayerProps, ref: Ref<AudioPlayerRef>) => 
                 </svg>
             </div>
             
-            {spectrumData && <WaveformProgress
+            {spectrumData ? <WaveformProgress
                 className="h-24 w-full"
                 duration={spectrumData.duration}
                 spectrum={spectrumData.spectrum}
                 currentTime={currentTime}
                 onCurrentTimeChanged={onCurrentTimeChanged}
-            />}
+            /> : <div className="h-24 w-full center-child">
+                <AleasSpinningLoader />
+            </div>}
 
         </div>
 

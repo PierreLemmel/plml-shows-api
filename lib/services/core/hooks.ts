@@ -8,7 +8,7 @@ export const useEffectAsync = (effect: () => Promise<void>, deps?: DependencyLis
         (async () => {
             await effect();
         })();
-    }, [effect, ...deps]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, deps); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 export interface IntervalCallbackProps {
@@ -47,7 +47,7 @@ export const useInterval = (callback: IntervalCallback, ms: number, deps?: Depen
             return () => clearInterval(interval);
         }
         
-    }, [ms, callback, condition, startTime, ...deps])  // eslint-disable-line react-hooks/exhaustive-deps
+    }, [ms, condition, startTime, ...deps])  // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 
@@ -62,5 +62,5 @@ export const useTimeout = (callback: () => void, ms: number, deps?: DependencyLi
             return () => clearTimeout(timeout);
         }
         
-    }, [ms, callback, condition, ...deps]) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [ms, condition, ...deps]) // eslint-disable-line react-hooks/exhaustive-deps
 }
