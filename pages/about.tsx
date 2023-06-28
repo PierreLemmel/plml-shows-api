@@ -26,7 +26,7 @@ const About = () => {
 
                         <p>Alors laissez-le vous embarquer dans une succession d&apos;histoires et de tableaux parfois drôles, parfois touchants, mais <strong>toujours inattendus !</strong></p>
 
-                        <div className="center-child w-full my-4"><Image src='/img/aleas-1200x630.jpg' className="w-[400px] min-w-[75%] max-w-full " alt="" /></div>
+                        <div className="center-child w-full my-4"><Image src='/img/aleas-1200x630.jpg' className="w-[400px] min-w-[75%] max-w-full" width={1200} height={630} alt="" /></div>
 
                         <h2 className="text-3xl italic font-bold">Note d&apos;intention</h2>
                         

@@ -1,3 +1,4 @@
+import { mergeClasses } from "@/lib/services/core/utils";
 import AleasBackground from "./aleas-background";
 import AleasHead from "./aleas-head";
 import AleasNavbar from "./aleas-navbar";
@@ -14,21 +15,26 @@ export const AleasMainContainer = (props: AleasMainContainerProps) => {
         children,
         overflow,
         className,
+        ...restProps
     } = props;
 
-    return <div className={`flex flex-col items-center justify-between
-        bg-slate-800/80    
-        text-gray-200 font-mono
-        sm:rounded-2xl md:rounded-[1.5rem]
-        w-[85%] h-[92%]
-        md:w-[85%] md:h-[90%]
-        lg:w-4/5 lg:h-4/5
-        xl:w-3/4 xl:h-4/5
-        sm:px-5 sm:py-3 sm:gap-4
-        md:px-12 md:py-6 md:gap-8 
-        lg:px-12 lg:py-6 lg:gap-8 
-    ` + (props.className ?? "")
-    + (overflow ? "overflow-y-auto" : "")} {...props}>
+    return <div className={mergeClasses(
+            "flex flex-col items-center justify-between",
+            "bg-slate-800/80",
+            "text-gray-200 font-mono",
+            "sm:rounded-2xl md:rounded-[1.5rem]",
+            "w-[85%] h-[92%]",
+            "md:w-[85%] md:h-[90%]",
+            "lg:w-4/5 lg:h-4/5",
+            "xl:w-3/4 xl:h-4/5",
+            "sm:px-5 sm:py-3 sm:gap-4",
+            "md:px-12 md:py-6 md:gap-8 ",
+            "lg:px-12 lg:py-6 lg:gap-8 ",
+            className,
+            (overflow ? "overflow-y-auto" : "")
+        )}
+        {...restProps}
+    >
         {children}
     </div>
 }
