@@ -88,20 +88,16 @@ const AleasAudioPlayer = (props: AudioPlayerProps, ref: Ref<AudioPlayerRef>) => 
 
         setCurrentTime(0);
 
-        /* eslint-disable */
         if (audioUrl) {
             URL.revokeObjectURL(audioUrl);
             setAudioUrl(undefined);
         }
-        /* eslint-enable */
-        
-
 
         if (audioFile) {
             const newUrl = URL.createObjectURL(audioFile);
             setAudioUrl(newUrl);
         }
-    }, [audioFile])
+    }, [audioFile]) // eslint-disable-line react-hooks/exhaustive-deps
 
 
     const onButtonClicked = useCallback(() => {

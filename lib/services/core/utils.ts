@@ -65,8 +65,8 @@ export const createArray = <T>(length: number, val: T|((i: number) => T))  => {
 
 export const currentTime = () => new Date().getTime();
 
-export const mergeClasses = (...classes: (string|undefined)[]) => {
-    return classes.reduce((prev, curr) => {
+export const mergeClasses = (...classes: (string|undefined|false)[]): string => {
+    const result = classes.reduce((prev, curr) => {
         if (curr) {
             return prev + " " + curr;
         }
@@ -74,6 +74,8 @@ export const mergeClasses = (...classes: (string|undefined)[]) => {
             return prev;
         }
     }, "");
+
+    return result || ""; 
 }
 
 export function generateId(length: number = 8): string {

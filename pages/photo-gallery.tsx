@@ -1,7 +1,7 @@
 import { GetStaticProps, InferGetStaticPropsType } from 'next';
 import AleasBackground from "@/components/aleas/aleas-background";
 import AleasHead from "@/components/aleas/aleas-head";
-import { AleasMainContainer, AleasTitle } from "@/components/aleas/aleas-layout";
+import { AleasModalContainer, AleasTitle } from "@/components/aleas/aleas-layout";
 import { Album, getAlbum, listAlbums, Photo } from '@/lib/services/api/photos';
 import React, { useState } from "react";
 import Gallery from '@/components/gallery';
@@ -47,13 +47,13 @@ export default function PhotoGallery(props: InferGetStaticPropsType<typeof getSt
 
             <AleasBackground />
             <div className="absolute top-0 left-0 full center-child">
-                <AleasMainContainer overflow={true}>
+                <AleasModalContainer overflow={true}>
                     <AleasTitle>Galerie Photos</AleasTitle>
 
                     <div className='flex-grow w-full center-child'>
                         <Gallery photos={photos} photoClicked={photoClicked} />
                     </div>
-                </AleasMainContainer>
+                </AleasModalContainer>
             </div>
 
             {/* Overlay */}

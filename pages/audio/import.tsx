@@ -54,55 +54,60 @@ const Import = () => {
     const [tags, setTags] = useState<string[]>([]);
 
     return <AleasMainLayout title="Aléas - Import Audio" titleDisplay={false} toasts={true}>
-        <div className="full flex flex-col items-stretch">
-            <div className="text-center">Importer un fichier Audio</div>
+        <div className="full flex flex-col items-stretch justify-between gap-4">
+            <div className="text-center flex-grow-0">Importer un fichier Audio</div>
             {match(displayState, {
                 "AudioImport": <>
-                    <AleasFileUpload
-                        multiple={false}
-                        text="Déposez les fichiers à importer (.mp3 ou .wav)"
-                        accept="mp3,wav"
-                        onUpload={onUpload}
-                        onUploadError={onUploadError}
-                    />
+                    <div className="center-child">
+                        <AleasFileUpload
+                            multiple={false}
+                            text="Déposez les fichiers à importer (.mp3 ou .wav)"
+                            accept="mp3,wav"
+                            onUpload={onUpload}
+                            onUploadError={onUploadError}
+                        />
+                    </div>
                 </>,
                 "AudioEditSettings": <>
-                    <div className="w-full h-max flex-grow overflow-y-auto bg-red-400">
-                        <div className={mergeClasses(
-                            "grid grid-cols-2 grid-rows-5 gap-2 place-items-center",
-                            "w-full",
-                        )}>
-                            <div>Nom :</div>
-                            <AleasTextField value={name} onValueChange={setName} />
+                    <div className="w-full flex-grow">
+                        <div className="w-full max-h-[60vh] overflow-y-auto flex flex-col gap-8 pr-3">
+                            <div className={mergeClasses(
+                                "grid grid-cols-2 auto-rows-min gap-2 place-items-center",
+                                "w-full fit-content",
+                            )}>
+                                <div>Nom :</div>
+                                <AleasTextField value={name} onValueChange={setName} />
 
-                            <div>Tempo :</div>
-                            <AleasNumberInput value={tempo} onValueChange={setTempo} min={1} max={300} />
+                                <div>Tempo :</div>
+                                <AleasNumberInput value={tempo} onValueChange={setTempo} min={1} max={300} />
 
-                            <div>Signature :</div>
-                            <AleasTextField value={signature} onValueChange={setSignature} />
+                                <div>Signature :</div>
+                                <AleasTextField value={signature} onValueChange={setSignature} />
 
-                            <div> Categories :</div>
-                            <AleasTagsField tags={categories} onTagsChange={setCategories} />
+                                <div> Categories :</div>
+                                <AleasTagsField tags={categories} onTagsChange={setCategories} />
 
-                            <div>Tags :</div>
-                            <AleasTagsField tags={tags} onTagsChange={setTags} />
+                                <div>Tags :</div>
+                                <AleasTagsField tags={tags} onTagsChange={setTags} />
+                            </div>
+                        
+                            {audioFile && <AleasAudioPlayer audioFile={audioFile} />}
                         </div>
                     </div>
-
-                    {audioFile && <AleasAudioPlayer audioFile={audioFile} />}
                 </>,
                 "AudioEditKeypoints": <>
                     <div>EDIT KEY POINTS</div>
                 </>
             })}
-        </div>
-        <div className="flex flex-row items-center justify-center gap-3">
-            <AleasButton onClick={onImportClicked} disabled={!importBtnEnabled}>
-                Importer
-            </AleasButton>
-            <AleasButton onClick={onClearClicked} disabled={!clearBtnEnabled}>
-                Effacer
-            </AleasButton>
+        
+            <div className="flex flex-row flex-grow-0 items-center justify-center gap-3">
+                <AleasButton onClick={onImportClicked} disabled={!importBtnEnabled}>
+                    Importer
+                </AleasButton>
+                <AleasButton onClick={onClearClicked} disabled={!clearBtnEnabled}>
+                    Effacer
+                </AleasButton>
+            </div>
         </div>
     </AleasMainLayout>
 }

@@ -365,7 +365,7 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
                 }}/>
             </div>
             <canvas className="absolute top-0 left-0 full hidden" width={containerWidth} height={containerHeight} ref={imgCanvasRef} />
-            <Image className="absolute top-0 left-0 hidden" src={src} alt="" ref={imgRef} />
+            <img className="absolute top-0 left-0 hidden" src={src} alt="" ref={imgRef} />
         </div>
     </div>
 }

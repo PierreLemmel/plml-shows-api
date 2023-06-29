@@ -11,6 +11,10 @@ export const useEffectAsync = (effect: () => Promise<void>, deps?: DependencyLis
     }, deps); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
+export const useEffectOnce = (effect: () => void): void => {
+    useEffect(effect, []); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
 export interface IntervalCallbackProps {
     time: number;
     deltaTime: number;
