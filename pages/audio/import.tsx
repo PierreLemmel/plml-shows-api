@@ -53,6 +53,8 @@ const Import = () => {
     const [categories, setCategories] = useState<string[]>([]);
     const [tags, setTags] = useState<string[]>([]);
 
+    const categorieTags = useMemo(() => ["Relaxante", "Rage", "Contemplative", "Positive", "Beats"], []);
+
     return <AleasMainLayout title="Aléas - Import Audio" titleDisplay={false} toasts={true}>
         <div className="full flex flex-col items-stretch justify-between gap-4">
             <div className="text-center flex-grow-0">Importer un fichier Audio</div>
@@ -85,7 +87,11 @@ const Import = () => {
                                 <AleasTextField value={signature} onValueChange={setSignature} />
 
                                 <div> Categories :</div>
-                                <AleasTagsField tags={categories} onTagsChange={setCategories} />
+                                <AleasTagsField
+                                    tags={categories}
+                                    tagOptions={categorieTags}
+                                    onTagsChange={setCategories}
+                                />
 
                                 <div>Tags :</div>
                                 <AleasTagsField tags={tags} onTagsChange={setTags} />
