@@ -6,6 +6,7 @@ import AleasTagsField from "@/components/aleas/aleas-tags-field";
 import AleasTextField from "@/components/aleas/aleas-textfield";
 import { toast } from "@/components/aleas/aleas-toast-container";
 import AleasAudioPlayer from "@/components/audio/aleas-audio-player";
+import { withLogin } from "@/lib/middlewares/withLogin";
 import { match, mergeClasses } from "@/lib/services/core/utils";
 import { useCallback, useMemo, useState } from "react";
 
@@ -118,4 +119,4 @@ const Import = () => {
     </AleasMainLayout>
 }
 
-export default Import;
+export default withLogin(Import);

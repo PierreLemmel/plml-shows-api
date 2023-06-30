@@ -56,12 +56,14 @@ export async function listFiles(folder: string) {
 
 export interface AuthContextProps {
     user: User|null;
+    initialized: boolean;
     signInWithGoogle: () => Promise<void>;
     signOut: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextProps>({
     user: null,
+    initialized: false,
     signInWithGoogle: async () => {},
     signOut: async () => {},
 });
@@ -69,9 +71,13 @@ export const AuthContext = createContext<AuthContextProps>({
 export const UseNewAuth = () => {
 
     const [user, setUser] = useState<User|null>(null);
+    const [initialized, setInitialized] = useState<boolean>(false);
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged(setUser);
+        const unsubscribe = auth.onAuthStateChanged(newUser => {
+            setUser(newUser);
+            setInitialized(true);
+        });
         return () => unsubscribe();
     }, []);
 
@@ -86,6 +92,7 @@ export const UseNewAuth = () => {
 
     const value: AuthContextProps = {
         user,
+        initialized,
         signInWithGoogle,
         signOut,
     };
