@@ -6,11 +6,13 @@ import AleasNumberInput from "@/components/aleas/aleas-number-input";
 import AleasTagsField from "@/components/aleas/aleas-tags-field";
 import AleasTextField from "@/components/aleas/aleas-textfield";
 import { toast } from "@/components/aleas/aleas-toast-container";
-import AleasAudioPlayer from "@/components/audio/aleas-audio-player";
+import AleasAudioPlayer, { AudioPlayerRef } from "@/components/audio/aleas-audio-player";
 import { withLogin } from "@/lib/middlewares/withLogin";
+import { importAudioClip } from "@/lib/services/api/audio";
+import { AudioClipInfo } from "@/lib/services/audio/audioControl";
 import MusicSignatureEditor from "@/lib/services/audio/music-signature-editor";
 import { match, mergeClasses } from "@/lib/services/core/utils";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type DisplayState = "AudioImport"|"AudioEditSettings"|"AudioEditKeypoints";
 
@@ -46,7 +48,7 @@ const Import = () => {
 
     const sources = useMemo(() => ["AIVA", "Soundraw", "Human"], []);
     const sourceOptions = useMemo<DropdownOption<string>[]>(() => sources.map(source => ({ label: source, value: source })), [sources]);
-    const [source, setSource] = useState<DropdownOption<string>|undefined>(sourceOptions[0]);
+    const [source, setSource] = useState<DropdownOption<string>>(sourceOptions[0]);
 
     const categorieTags = useMemo(() => ["Relaxante", "Rage", "Contemplative", "Positive", "Beats"], []);
 
@@ -63,16 +65,41 @@ const Import = () => {
 
     useEffect(() => reset(), []);
 
-    const importBtnEnabled = audioFile !== undefined;
+    const [isImporting, setIsImporting] = useState<boolean>(false)
+    const importBtnEnabled = (audioFile !== undefined) && !isImporting;
     const onImportClicked = useCallback(async () => {
-        toast("Fichier audio importé");
-    }, [])
+        if (!audioFile) {
+            return;
+        }
+
+        try {
+            const clipInfo: AudioClipInfo = {
+                duration: audioPlayerRef?.current?.duration ?? 0,
+                tempo,
+                signature,
+                source: source.value,
+                categories: [],
+                tags: []
+            }
+
+            setIsImporting(true);
+            await importAudioClip(audioFile, name, clipInfo)
+            toast("Fichier audio importé !");
+            setIsImporting(false);
+            reset();
+        }
+        catch (e) {
+            toast(e as string);
+        }
+    }, [audioFile, tempo, signature, source.value, categories, tags])
 
     const clearBtnEnabled = audioFile !== undefined;
     const onClearClicked = useCallback(() => {
         reset();
         setAudioFile(undefined);
     }, [reset]);
+
+    const audioPlayerRef = useRef<AudioPlayerRef>(null);
 
     return <AleasMainLayout title="Aléas - Import Audio" titleDisplay={false} toasts={true}>
         <div className="full flex flex-col items-stretch justify-between gap-8">
@@ -129,7 +156,7 @@ const Import = () => {
                                 <AleasTagsField tags={tags} onTagsChange={setTags} />
                             </div>
                         
-                            {audioFile && <AleasAudioPlayer audioFile={audioFile} />}
+                            {audioFile && <AleasAudioPlayer ref={audioPlayerRef} audioFile={audioFile} />}
                         </div>
                     </div>
                 </>,
@@ -139,7 +166,11 @@ const Import = () => {
             })}
         
             <div className="flex flex-row flex-grow-0 items-center justify-center gap-3">
-                <AleasButton onClick={onImportClicked} disabled={!importBtnEnabled}>
+                <AleasButton
+                    onClick={onImportClicked}
+                    disabled={!importBtnEnabled}
+                    spinning={isImporting}
+                >
                     Importer
                 </AleasButton>
                 <AleasButton onClick={onClearClicked} disabled={!clearBtnEnabled}>

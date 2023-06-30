@@ -1,3 +1,4 @@
+import { Timestamp } from "firebase/firestore";
 import { resample } from "../core/maths";
 
 export interface SpectrumData {
@@ -20,4 +21,35 @@ export async function getSpectrumData(src: ArrayBuffer, sampleSize?: number): Pr
         spectrum,
         duration: audioData.duration
     };
+}
+
+export interface AudioClipData {
+    id: string;
+    name: string;
+    url: string;
+    created: Timestamp;
+
+    info: AudioClipInfo;
+}
+
+export interface AudioClipInfo {
+    duration: number;
+    tempo: number;
+    signature: string;
+    source: string;
+    author?: string;
+
+    categories: string[];
+    tags: string[];
+}
+
+export interface AudioClipCollection {
+    name: string;
+    clips: {
+        [key: string]: AudioClipData;
+    }
+}
+
+export async function getFileDuration(file: File) {
+    
 }

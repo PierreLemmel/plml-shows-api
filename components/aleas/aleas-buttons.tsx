@@ -18,24 +18,22 @@ interface ButtonProps extends React.HTMLAttributes<HTMLDivElement> {
 export const AleasButton = (props: ButtonProps) => {
     
     const {
-        disabled,
-        spinning,
+        disabled = false,
+        spinning = false,
         children,
-        onClick
-    } = {
-        disabled: false,
-        spinning: false,
-        ...props
-    }
+        className,
+        onClick,
+        ...restProps
+    } = props;
     
     const enabledClasses = mergeClasses(enabledSharedClasses, 'hover:scale-105');
     const spinningClasses = spinningSharedClasses;
     const disabledClasses = disabledSharedClasses;
 
     return <div
-        {...props}
+        {...restProps}
         onClick={e => {
-            if (!disabled && onClick) {
+            if (!disabled && !spinning && onClick) {
                 onClick(e)
             }
         }}
@@ -45,7 +43,7 @@ export const AleasButton = (props: ButtonProps) => {
             "sm:text-base md:text-xl xl:text-2xl",
             "py-3 px-6 min-w-[8em]",
             "rounded-md",
-            props.className
+            className
         )}
     >
         {spinning ? <svg className="animate-spin h-5 w-5 -ml-1 mr-4" viewBox="0 0 24 24">

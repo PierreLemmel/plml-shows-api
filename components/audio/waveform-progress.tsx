@@ -54,7 +54,6 @@ const WaveformProgress = (props: WaveformProgressProps) => {
     }, [duration])
     
     const onClickOnTrack = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-        console.log("click")
         if (!trackRef.current || !railRef.current) {
             return;
         }
@@ -138,7 +137,7 @@ const WaveformProgress = (props: WaveformProgressProps) => {
     return <div className={mergeClasses(
         "centered-col h-min-24",
         className,
-    )} ref={railRef} onClick={() => console.log(clickable)}>
+    )} ref={railRef}>
 
         <div className="full rounded-lg py-2">
             {/* Rail */}

@@ -1,8 +1,9 @@
 import { initializeApp } from "firebase/app";
 import { collection, doc, DocumentData, getDoc, getDocs, getFirestore, setDoc, WithFieldValue } from "firebase/firestore";
-import { getStorage, list, ref } from "firebase/storage";
+import { getDownloadURL, getStorage, list, ref, uploadBytes } from "firebase/storage";
 import { getAuth, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth"
 import { createContext, useContext, useEffect, useState } from "react";
+import exp from "constants";
 
 
 const firebaseConfig = {
@@ -51,6 +52,28 @@ export async function listFiles(folder: string) {
     const result = await list(folderRef);
 
     return result.items;
+}
+
+export interface UploadFileResult {
+    path: string;
+    fileName: string;
+    downloadUrl: string;
+}
+
+export async function uploadFile(folder: string, file: File, name?: string): Promise<UploadFileResult> {
+    const fileName = name || file.name;
+    const path = folder + '/' + fileName;
+
+    const fileRef = ref(storage, path);
+    await uploadBytes(fileRef, file);
+
+    const downloadUrl = await getDownloadURL(fileRef);
+
+    return {
+        path,
+        fileName,
+        downloadUrl
+    }
 }
 
 
