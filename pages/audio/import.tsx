@@ -1,4 +1,5 @@
 import { AleasButton } from "@/components/aleas/aleas-buttons";
+import { AleasDropdownButton, AleasDropdownInput, DropdownOption } from "@/components/aleas/aleas-dropdowns";
 import AleasFileUpload from "@/components/aleas/aleas-file-upload";
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
 import AleasNumberInput from "@/components/aleas/aleas-number-input";
@@ -7,8 +8,9 @@ import AleasTextField from "@/components/aleas/aleas-textfield";
 import { toast } from "@/components/aleas/aleas-toast-container";
 import AleasAudioPlayer from "@/components/audio/aleas-audio-player";
 import { withLogin } from "@/lib/middlewares/withLogin";
+import MusicSignatureEditor from "@/lib/services/audio/music-signature-editor";
 import { match, mergeClasses } from "@/lib/services/core/utils";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type DisplayState = "AudioImport"|"AudioEditSettings"|"AudioEditKeypoints";
 
@@ -16,20 +18,6 @@ type DisplayState = "AudioImport"|"AudioEditSettings"|"AudioEditKeypoints";
 const Import = () => {
 
     const [displayState, setDisplayState] = useState<DisplayState>("AudioImport");
-
-    const importBtnEnabled = useMemo<boolean>(() => {
-        return true;
-    }, []);
-    const onImportClicked = useCallback(() => {
-        console.log("Import")
-    }, [])
-
-    const clearBtnEnabled = useMemo<boolean>(() => {
-        return true;
-    }, []);
-    const onClearClicked = useCallback(() => {
-        
-    }, []);
 
     const [audioFile, setAudioFile] = useState<File>();
 
@@ -54,11 +42,41 @@ const Import = () => {
     const [categories, setCategories] = useState<string[]>([]);
     const [tags, setTags] = useState<string[]>([]);
 
+    const [author, setAuthor] = useState<string|undefined>(undefined);
+
+    const sources = useMemo(() => ["AIVA", "Soundraw", "Human"], []);
+    const sourceOptions = useMemo<DropdownOption<string>[]>(() => sources.map(source => ({ label: source, value: source })), [sources]);
+    const [source, setSource] = useState<DropdownOption<string>|undefined>(sourceOptions[0]);
+
     const categorieTags = useMemo(() => ["Relaxante", "Rage", "Contemplative", "Positive", "Beats"], []);
 
+    const reset = useCallback(() => {
+        setName("");
+        setTempo(120);
+        setSignature("4 / 4");
+
+        setCategories([]);
+        setTags([]);
+
+        setAuthor(undefined);
+    }, []);
+
+    useEffect(() => reset(), []);
+
+    const importBtnEnabled = audioFile !== undefined;
+    const onImportClicked = useCallback(async () => {
+        toast("Fichier audio importé");
+    }, [])
+
+    const clearBtnEnabled = audioFile !== undefined;
+    const onClearClicked = useCallback(() => {
+        reset();
+        setAudioFile(undefined);
+    }, [reset]);
+
     return <AleasMainLayout title="Aléas - Import Audio" titleDisplay={false} toasts={true}>
-        <div className="full flex flex-col items-stretch justify-between gap-4">
-            <div className="text-center flex-grow-0">Importer un fichier Audio</div>
+        <div className="full flex flex-col items-stretch justify-between gap-8">
+            <div className="text-center text-4xl flex-grow-0">Importer un fichier Audio</div>
             {match(displayState, {
                 "AudioImport": <>
                     <div className="center-child">
@@ -75,26 +93,39 @@ const Import = () => {
                     <div className="w-full flex-grow">
                         <div className="w-full max-h-[60vh] overflow-y-auto flex flex-col gap-8 pr-3">
                             <div className={mergeClasses(
-                                "grid grid-cols-2 auto-rows-min gap-2 place-items-center",
+                                "grid gap-2 place-items-center",
+                                "lg:grid-cols-[auto_1fr_auto_1fr] grid-cols-[auto_1fr] auto-rows-min",
                                 "w-full fit-content",
                             )}>
-                                <div>Nom :</div>
+                                <Label>Nom :</Label>
                                 <AleasTextField value={name} onValueChange={setName} />
 
-                                <div>Tempo :</div>
+                                <Label>Tempo :</Label>
                                 <AleasNumberInput value={tempo} onValueChange={setTempo} min={1} max={300} />
 
-                                <div>Signature :</div>
-                                <AleasTextField value={signature} onValueChange={setSignature} />
+                                <Label>Signature :</Label>
+                                <MusicSignatureEditor signature={signature} onSignatureChange={setSignature} />
 
-                                <div> Categories :</div>
+                                <Label>Source :</Label>
+                                <AleasDropdownInput
+                                    value={source}
+                                    onSelectedOptionChanged={setSource}
+                                    options={sourceOptions}
+                                />
+
+                                {source?.value === "Human" && <>
+                                    <Label>Auteur :</Label>
+                                    <AleasTextField value={author || ""} onValueChange={setAuthor} />
+                                </>}
+
+                                <Label> Categories :</Label>
                                 <AleasTagsField
                                     tags={categories}
                                     tagOptions={categorieTags}
                                     onTagsChange={setCategories}
                                 />
 
-                                <div>Tags :</div>
+                                <Label>Tags :</Label>
                                 <AleasTagsField tags={tags} onTagsChange={setTags} />
                             </div>
                         
@@ -103,7 +134,7 @@ const Import = () => {
                     </div>
                 </>,
                 "AudioEditKeypoints": <>
-                    <div>EDIT KEY POINTS</div>
+                    <div>EDIT KEY POINTS - UNIMPLEMENTED YET</div>
                 </>
             })}
         
@@ -118,5 +149,9 @@ const Import = () => {
         </div>
     </AleasMainLayout>
 }
+
+const Label = ({ children }: { children: string }) => <div className="text-xl font-bold">
+    {children}
+</div>
 
 export default withLogin(Import);

@@ -21,7 +21,6 @@ const AleasTagsField = (props: AleasTagsFieldProps) => {
     const [suggestions, setSuggestions] = useState<string[]>([]);
 
     const availableTagOptions = useMemo(() => tagOptions.filter((option) => !tags.find((tag) => tag.toLowerCase() === option.toLowerCase())), [tagOptions, tags]);
-    console.log(availableTagOptions)
 
     const hasSuggestions = suggestions.length > 0;
 
@@ -32,14 +31,17 @@ const AleasTagsField = (props: AleasTagsFieldProps) => {
 
         const filteredOptions = availableTagOptions.filter((option) => option.toLowerCase().includes(value.toLowerCase()));
         setSuggestions(filteredOptions);
-    }, [tagOptions]);
+    }, [availableTagOptions, tagOptions]);
 
     const handleInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
         const newTag = inputValue.trim();
         
         if (e.key === "Enter" && newTag) {
 
-            if (hasSuggestions && !availableTagOptions.find((option) => option.toLowerCase() === newTag.toLowerCase())) {
+            if (
+                (availableTagOptions.length > 0  && !availableTagOptions.find((option) => option.toLowerCase() === newTag.toLowerCase())) ||
+                (tags.find((tag) => tag.toLowerCase() === newTag.toLowerCase()))
+            ) {
                 return;
             }
 
@@ -47,7 +49,7 @@ const AleasTagsField = (props: AleasTagsFieldProps) => {
             onTagsChange(newTags);
             setInputValue("");
         }
-    }, [tags, inputValue, onTagsChange]);
+    }, [tags, inputValue, onTagsChange, availableTagOptions, hasSuggestions]);
 
     const handleSuggestionClick = useCallback((suggestion: string) => {
         const newTags = [...tags, suggestion];
@@ -74,8 +76,8 @@ const AleasTagsField = (props: AleasTagsFieldProps) => {
         {...restProps}
     >
         <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => <div
-                    key={tag}
+            {tags.map((tag, i) => <div
+                    key={`${tag}-${i}}`}
                     className="px-2 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-md text-white"
                 >
                     {tag}
@@ -99,9 +101,9 @@ const AleasTagsField = (props: AleasTagsFieldProps) => {
             "mt-2 absolute z-[100]",
             "bg-slate-700 rounded-md",
         )}>
-            {suggestions.map((suggestion) => (
+            {suggestions.map((suggestion, i) => (
                 <div
-                    key={suggestion}
+                    key={`${suggestion}-${i}`}
                     className={mergeClasses(
                         "cursor-pointer hover:bg-slate-600",
                         "px-2 py-1 rounded-md",

@@ -1,5 +1,5 @@
 import { AleasButton } from "@/components/aleas/aleas-buttons";
-import { AleasDropdown, DropdownOption } from "@/components/aleas/aleas-dropdown";
+import { AleasDropdownButton, DropdownOption } from "@/components/aleas/aleas-dropdowns";
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
 import DmxSlider from "@/components/dmx/dmx-slider";
 import { Scene, Track, useShowControl } from "@/lib/services/dmx/showControl";
@@ -101,7 +101,7 @@ const ShowPage = () => {
                         Scenes:
                     </div>
 
-                    <AleasDropdown
+                    <AleasDropdownButton
                         options={dropdownOptions}
                         value={selectedOption}
                         onSelectedOptionChanged={onDropdownSelectionChanged}
