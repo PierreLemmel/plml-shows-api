@@ -3,7 +3,7 @@ import { getFixtureCollection, getLightingPlan, getShow } from "../api/showContr
 import { useEffectAsync, useInterval } from "../core/hooks";
 import { Named, RgbColor, RgbNamedColor } from "../core/types";
 import { doNothing, generateId, notImplemented } from "../core/utils";
-import { Chans, Color, DmxRange, Fixtures, StageLightingPlan } from "./dmx512";
+import { Chans, DmxRange, Fixtures, StageLightingPlan } from "./dmx512";
 import { useDmxControl } from "./dmxControl";
 
 export interface Show extends Named {
@@ -29,8 +29,37 @@ export type SceneElement = {
     values: SceneElementValues;
 };
 
-export function extractChannels(model: FixtureModelInfo): (Chans.NumberChannelType|Chans.ColorChannelType)[] {
-    return [];
+export function extractChannelsFromFixture(model: FixtureModelInfo): (Chans.NumberChannelType|Chans.ColorChannelType)[] {
+
+    if (Fixtures.isLed(model.type)) {
+        const ledModel = model as LedFixtureModelInfo;
+        const channels = Object.values(ledModel.channels).filter(chan => Chans.isNumberChannel(chan) || Chans.isColorChannel(chan)) as (Chans.NumberChannelType|Chans.ColorChannelType)[];
+
+        return channels;
+    }
+    else if (Fixtures.isTrad(model.type)) {
+        return ["Trad"];
+    }
+    else {
+        throw 'Unknown fixture type';
+    }
+}
+
+export function createDefaultValuesForFixture(model: FixtureModelInfo): SceneElementValues {
+    const channels = extractChannelsFromFixture(model);
+
+    const values: SceneElementValues = {};
+
+    channels.forEach(chan => {
+        if (Chans.isNumberChannel(chan)) {
+            values[chan] = 0;
+        }
+        else if (Chans.isColorChannel(chan)) {
+            values[chan] = RgbColor.black;
+        }
+    });
+
+    return values;
 }
 
 export interface ShowControler {

@@ -2,32 +2,55 @@ import { initializeApp } from "firebase/app";
 import { collection, doc, DocumentData, getDoc, getDocs, getFirestore, setDoc, WithFieldValue } from "firebase/firestore";
 import { getDownloadURL, getStorage, list, ref, uploadBytes } from "firebase/storage";
 import { getAuth, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth"
-import { createContext, useContext, useEffect, useState } from "react";
-import exp from "constants";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
+interface FirebaseProps {
+    app: ReturnType<typeof initializeApp>;
+    db: ReturnType<typeof getFirestore>;
+    storage: ReturnType<typeof getStorage>;
+    auth: ReturnType<typeof getAuth>;
+}
 
-const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: "plml-shows.firebaseapp.com",
-    databaseURL: "https://plml-shows-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "plml-shows",
-    storageBucket: "plml-shows.appspot.com",
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
-};
+let firebase: FirebaseProps|null = null;
+function getFirebase(): FirebaseProps {
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
-const auth = getAuth(app);
+    if(!firebase) {
+        const firebaseConfig = {
+            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+            authDomain: "plml-shows.firebaseapp.com",
+            databaseURL: "https://plml-shows-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "plml-shows",
+            storageBucket: "plml-shows.appspot.com",
+            messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+            appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+        };
+        
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        const auth = getAuth(app);
+
+        firebase = {
+            app, db, storage, auth
+        }
+    };
+
+    return firebase;
+}
+
 
 export async function getDocument<T>(path: string) {
+    const { db } = getFirebase();
+
     const firedoc = await getDoc(doc(db, path));
 
     return <T> firedoc.data();
 }
 
 export async function setDocument<T extends WithFieldValue<DocumentData>>(path: string, data: Partial<T>, merge: boolean = true) {
+    const { db } = getFirebase();
+    
     await setDoc(
         doc(db, path),
         data,
@@ -37,6 +60,8 @@ export async function setDocument<T extends WithFieldValue<DocumentData>>(path: 
 
 
 export async function listDocuments(path: string) {
+    const { db } = getFirebase();
+
     const col = collection(db, path);
     const docRefs = await getDocs(col);
 
@@ -47,6 +72,7 @@ export async function listDocuments(path: string) {
 
 
 export async function listFiles(folder: string) {
+    const { storage } = getFirebase();
     
     const folderRef = ref(storage, folder);
     const result = await list(folderRef);
@@ -61,6 +87,8 @@ export interface UploadFileResult {
 }
 
 export async function uploadFile(folder: string, file: File, name?: string): Promise<UploadFileResult> {
+    const { storage } = getFirebase();
+    
     const fileName = name || file.name;
     const path = folder + '/' + fileName;
 
@@ -91,7 +119,8 @@ export const AuthContext = createContext<AuthContextProps>({
     signOut: async () => {},
 });
 
-export const UseNewAuth = () => {
+export const useNewAuth = () => {
+    const { auth } = getFirebase();
 
     const [user, setUser] = useState<User|null>(null);
     const [initialized, setInitialized] = useState<boolean>(false);

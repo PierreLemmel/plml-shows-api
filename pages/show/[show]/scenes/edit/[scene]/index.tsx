@@ -3,7 +3,7 @@ import { AleasMainLayout } from "@/components/aleas/aleas-layout";
 import AleasSkeletonLoader from "@/components/aleas/aleas-skeleton-loader";
 import { mergeClasses } from "@/lib/services/core/utils";
 import { Fixtures, StageLightingPlan } from "@/lib/services/dmx/dmx512";
-import { extractChannels, FixtureInfo, Scene, SceneElement, SceneElementInfo, useLightingPlanInfo, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
+import { createDefaultValuesForFixture, extractChannelsFromFixture, FixtureInfo, Scene, SceneElement, SceneElementInfo, useLightingPlanInfo, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
 import { DndProvider, useDrag, useDragLayer, useDrop, XYCoord } from 'react-dnd';
@@ -28,7 +28,6 @@ const EditScene = () => {
     const sceneName = router.query["scene"] as string;
 
     const [scene, setScene] = useState<Scene>();
-    const sceneInfo = useSceneInfo(scene);
     const lightingPlan = useLightingPlanInfo();
 
     useEffect(() => {
@@ -48,20 +47,25 @@ const EditScene = () => {
         }
     }, [showName, sceneName, show]);
 
-    const [workScene, setWorkScene] = useState<SceneElement[]>([]);
+    const [workScene, setWorkScene] = useState<Scene>();
     useEffect(() => {
         if (scene) {
-            const elts = structuredClone(scene.elements);
-            setWorkScene(elts)
+            const clone = structuredClone(scene);
+            setWorkScene(clone)
         }
     }, [scene])
+
+    const sceneInfo = useSceneInfo(workScene);
 
     const [isOver, sceneDropZone] = useDrop<DndDragObject>({
         accept: [
             ItemTypes.LPCard,
             ItemTypes.SECard,
         ],
-        drop: (item, monitor) => {
+        drop: (item) => {
+            if (!workScene) {
+                return;
+            }
             
             const { fixture } = item;
             const {
@@ -69,14 +73,18 @@ const EditScene = () => {
                 model
             } = fixture;
 
-            const channels = extractChannels(model);
+            const seValues = createDefaultValuesForFixture(model);
 
-            const foo: SceneElement = {
+            const newSceneElement: SceneElement = {
                 fixture: name,
-                values: {
-
-                }
+                values: seValues,
             }
+
+            const updated = [...workScene.elements, newSceneElement];
+            setWorkScene({
+                ...workScene,
+                elements: updated,
+            });
         },
         collect: monitor => monitor.isOver(),
     })
@@ -99,12 +107,12 @@ const EditScene = () => {
                     "overflow-y-auto",
                 )}>
                     <div className="text-xl text-center">Plan de feu</div>
-                    {lightingPlan ?
+                    {lightingPlan && workScene ?
                         <div className={mergeClasses(
                             "w-full flex flex-col items-stretch gap-2",
                         )}>
                             {Object.entries(lightingPlan.fixtures).map(([shortName, fixture]) => {
-                                const enabled = workScene.find(se => se.fixture === shortName) === undefined;
+                                const enabled = workScene.elements.find(se => se.fixture === shortName) === undefined;
 
                                 return <LPFixtureCard
                                     key={fixture.name}
@@ -179,7 +187,7 @@ const LPFixtureCard = (props: LPFixtureCardProps) => {
         fixture,
         enabled,
     } = props;
-    const { name } = fixture;
+    const { fullName } = fixture;
 
     const [
         { isDragging, currentOffset },
@@ -207,7 +215,7 @@ const LPFixtureCard = (props: LPFixtureCardProps) => {
         )}
         ref={drag}
     >
-        {name}
+        {fullName}
     </div>
 }
 
@@ -220,11 +228,47 @@ const SEFixtureCard = (props: SEFixtureCardProps) => {
     const { element } = props;
     const { fixture } = element;
 
+    const [isOpen, setIsOpen] = useState(false);
+
     return <div key={fixture.name} className={mergeClasses(
-        "w-full flex flex-row items-center justify-between",
-        "p-2 bg-slate-800/80 rounded-md"
+        "w-full flex flex-col items-center justify-between",
+        
     )}>
-        {fixture.fullName}
+        <div className={mergeClasses(
+            "w-full flex flex-row justify-between",
+            "p-2 bg-slate-800/80 rounded-t-md",
+            isOpen ? "" : "rounded-b-md",
+            "hover:cursor-pointer"
+        )}
+            onClick={() => setIsOpen(!isOpen)}    
+        >
+            <div>{fixture.fullName}</div>
+            <div className="h-6 w-6">
+                <svg
+                    className={mergeClasses(
+                        "full",
+                        isOpen && "-scale-y-100",
+                        "transition-transform duration-300 ease-in-out"
+                    )}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                >
+                    <path
+                        fillRule="evenodd"
+                        d="M6.293 7.293a1 1 0 011.414 0L10 9.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                    />
+                </svg>
+            </div>
+        </div>
+
+        {isOpen && <div className={mergeClasses(
+            "w-full flex flex-col items-stretch gap-2",
+            "bg-slate-800/70"
+        )}>
+            HELLO
+        </div>}
     </div>
 }
 
