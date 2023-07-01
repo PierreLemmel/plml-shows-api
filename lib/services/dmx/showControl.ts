@@ -29,6 +29,10 @@ export type SceneElement = {
     values: SceneElementValues;
 };
 
+export function extractChannels(model: FixtureModelInfo): (Chans.NumberChannelType|Chans.ColorChannelType)[] {
+    return [];
+}
+
 export interface ShowControler {
     fade: number;
     setFade: Dispatch<number>;
@@ -66,6 +70,7 @@ export interface SceneInfo extends Named {
 }
 
 export interface FixtureInfo extends Named {
+    fullName: string;
     address: number;
     model: FixtureModelInfo;
 }
@@ -90,6 +95,12 @@ export interface SceneElementInfo {
     fixture: FixtureInfo;
     rawValues: number[];
     values: SceneElementValues;
+}
+
+export interface LightingPlanInfo {
+    fixtures: {
+        [shortName: string]: FixtureInfo;
+    }
 }
 
 export function computeDmxValues(fixtureName: string, values: SceneElementValues, lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): number[] {
@@ -169,7 +180,8 @@ export function computeFixtureInfo(fixtureName: string, lightingPlan: StageLight
     const {
         address,
         mode,
-        model: modelName
+        model: modelName,
+        name: fullName
     } = fixture;
 
     const modelDefinition = fixtures.fixtureModels[modelName];
@@ -209,11 +221,29 @@ export function computeFixtureInfo(fixtureName: string, lightingPlan: StageLight
 
     const fixtureInfo: FixtureInfo = {
         name: fixtureName,
+        fullName,
         address,
         model: modelInfo,
     }
 
     return fixtureInfo;
+}
+
+export function computeLightingPlanInfo(lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): LightingPlanInfo {
+    const fixturesInfo: {
+        [shortName: string]: FixtureInfo;
+    } = {};
+
+    Object.entries(lightingPlan.fixtures).forEach(([k, v]) => {
+        const fixtureInfo = computeFixtureInfo(k, lightingPlan, fixtures);
+        fixturesInfo[k] = fixtureInfo;
+    });
+
+    const result: LightingPlanInfo = {
+        fixtures: fixturesInfo
+    }
+
+    return result;
 }
 
 export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): SceneInfo {
@@ -261,7 +291,6 @@ export interface ShowControlProps {
     show?: Show;
     controler: ShowControler;
     fixtureCollection?: Fixtures.FixtureModelCollection;
-
 
     mode: ShowControlMode;
     setMode: Dispatch<ShowControlMode>;
@@ -500,4 +529,36 @@ export const ShowControlContext = createContext<ShowControlProps>({
 
 export function useShowControl() {
     return useContext<ShowControlProps>(ShowControlContext);
+}
+
+export function useSceneInfo(scene: Scene|undefined): SceneInfo|null {
+
+    const {
+        lightingPlan,
+        fixtureCollection
+    } = useShowControl();
+
+    if (scene && lightingPlan && fixtureCollection) {
+        const info = generateSceneInfo(scene, lightingPlan, fixtureCollection);
+        return info;
+    }
+    else {
+        return null;
+    }
+}
+
+export function useLightingPlanInfo(): LightingPlanInfo|null {
+
+    const {
+        lightingPlan,
+        fixtureCollection
+    } = useShowControl();
+
+    if (lightingPlan && fixtureCollection) {
+        const info = computeLightingPlanInfo(lightingPlan, fixtureCollection);
+        return info;
+    }
+    else {
+        return null;
+    }
 }

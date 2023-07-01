@@ -204,6 +204,7 @@ export module Fixtures {
         readonly model: string;
         readonly mode?: number;
         readonly remarks?: string;
+        readonly key: string;
     }
 }
 

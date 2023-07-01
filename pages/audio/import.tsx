@@ -1,5 +1,5 @@
 import { AleasButton } from "@/components/aleas/aleas-buttons";
-import { AleasDropdownButton, AleasDropdownInput, DropdownOption } from "@/components/aleas/aleas-dropdowns";
+import { AleasDropdownInput, DropdownOption } from "@/components/aleas/aleas-dropdowns";
 import AleasFileUpload from "@/components/aleas/aleas-file-upload";
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
 import AleasNumberInput from "@/components/aleas/aleas-number-input";
@@ -7,7 +7,7 @@ import AleasTagsField from "@/components/aleas/aleas-tags-field";
 import AleasTextField from "@/components/aleas/aleas-textfield";
 import { toast } from "@/components/aleas/aleas-toast-container";
 import AleasAudioPlayer, { AudioPlayerRef } from "@/components/audio/aleas-audio-player";
-import { withLogin } from "@/lib/middlewares/withLogin";
+import { RequireLogin } from "@/lib/middlewares/requireLogin";
 import { importAudioClip } from "@/lib/services/api/audio";
 import { AudioClipInfo } from "@/lib/services/audio/audioControl";
 import MusicSignatureEditor from "@/lib/services/audio/music-signature-editor";
@@ -185,4 +185,8 @@ const Label = ({ children }: { children: string }) => <div className="text-xl fo
     {children}
 </div>
 
-export default withLogin(Import);
+const WithinLogin = () => <RequireLogin>
+    <Import />
+</RequireLogin>
+
+export default WithinLogin;
