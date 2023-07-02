@@ -1,6 +1,7 @@
+import { generateId } from "../../core/utils";
 import { Show } from "../../dmx/showControl";
 import { setDocument } from "../firebase";
-import { saveShow } from "../showControlApi";
+import { createShow } from "../showControlApi";
 
 
 export default async function seedShows() {
@@ -8,10 +9,12 @@ export default async function seedShows() {
     const shows: Show[] = [
         {
             name: "Test - Pierre",
+            id: generateId(),
             lightingPlan: "Pierre - Light",
             scenes: [
                 {
                     name: "Jar Chaud",
+                    id: generateId(),
                     elements: [
                         {
                             fixture: "flatParJar",
@@ -24,6 +27,7 @@ export default async function seedShows() {
                 },
                 {
                     name: "Jar Froid",
+                    id: generateId(),
                     elements: [
                         {
                             fixture: "flatParJar",
@@ -36,6 +40,7 @@ export default async function seedShows() {
                 },
                 {
                     name: "Full froid",
+                    id: generateId(),
                     elements: [
                         {
                             fixture: "flatParJar",
@@ -71,10 +76,11 @@ export default async function seedShows() {
         },
         {
             name: 'Aléas - Improvibar',
+            id: generateId(),
             lightingPlan: 'Improvibar',
             scenes: []
         },
     ]
 
-    shows.forEach(saveShow)
+    shows.forEach(createShow)
 }

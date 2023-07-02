@@ -1,20 +1,20 @@
 import { createContext, Dispatch, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { getFixtureCollection, getLightingPlan, getShow } from "../api/showControlApi";
+import { getFixtureCollection, getLightingPlan, getShow, createShow, updateShow } from "../api/showControlApi";
+import { replaceFirstElement } from "../core/arrays";
 import { useEffectAsync, useInterval } from "../core/hooks";
-import { Named, RgbColor, RgbNamedColor } from "../core/types";
-import { doNothing, generateId, notImplemented } from "../core/utils";
+import { Color, RgbColor, RgbNamedColor } from "../core/types/rgbColor";
+import { HasId, Named } from "../core/types/utils";
+import { doNothing, doNothingAsync, generateId, notImplemented } from "../core/utils";
 import { Chans, DmxRange, Fixtures, StageLightingPlan } from "./dmx512";
 import { useDmxControl } from "./dmxControl";
 
-export interface Show extends Named {
-    name: string;
-
+export interface Show extends Named, HasId {
     lightingPlan: string;
 
     scenes: Scene[];
 }
 
-export interface Scene extends Named {
+export interface Scene extends Named, HasId {
     elements: SceneElement[];
 }
 
@@ -55,7 +55,7 @@ export function createDefaultValuesForFixture(model: FixtureModelInfo): SceneEle
             values[chan] = 0;
         }
         else if (Chans.isColorChannel(chan)) {
-            values[chan] = RgbColor.black;
+            values[chan] = Color.black;
         }
     });
 
@@ -94,11 +94,11 @@ export interface DmxValueSegment {
     values: number[];
 }
 
-export interface SceneInfo extends Named {
+export interface SceneInfo extends Named, HasId {
     elements: SceneElementInfo[];
 }
 
-export interface FixtureInfo extends Named {
+export interface FixtureInfo extends Named, HasId {
     fullName: string;
     address: number;
     model: FixtureModelInfo;
@@ -184,7 +184,7 @@ export function computeDmxValues(fixtureName: string, values: SceneElementValues
                     
                     const val = values[chanType]!;
 
-                    const color = typeof val === 'string' ? RgbColor.named(val) : val;
+                    const color = typeof val === 'string' ? Color.named(val) : val;
                     const { r, g, b } = color;
 
                     computedValues[chanAddr] = r;
@@ -207,6 +207,7 @@ export function computeFixtureInfo(fixtureName: string, lightingPlan: StageLight
 
     const fixture = lightingPlan.fixtures[fixtureName];
     const {
+        id,
         address,
         mode,
         model: modelName,
@@ -249,6 +250,7 @@ export function computeFixtureInfo(fixtureName: string, lightingPlan: StageLight
 
 
     const fixtureInfo: FixtureInfo = {
+        id,
         name: fixtureName,
         fullName,
         address,
@@ -277,7 +279,7 @@ export function computeLightingPlanInfo(lightingPlan: StageLightingPlan, fixture
 
 export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): SceneInfo {
     
-    const { name } = scene;
+    const { name, id } = scene;
     const elements: SceneElementInfo[] = scene.elements.map(se => {
 
         const {
@@ -299,6 +301,7 @@ export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan,
     });
     
     const result : SceneInfo = {
+        id,
         name,
         elements
     }
@@ -320,6 +323,10 @@ export interface ShowControlProps {
     show?: Show;
     controler: ShowControler;
     fixtureCollection?: Fixtures.FixtureModelCollection;
+
+    mutations: {
+        saveScene: (scene: Scene) => Promise<void>
+    }
 
     mode: ShowControlMode;
     setMode: Dispatch<ShowControlMode>;
@@ -525,11 +532,50 @@ export function useNewShowControl(): ShowControlProps {
     }, [fixtureCollectionName]);
 
 
+    const saveScene = useCallback(async (scene: Scene) => {
+
+        if (!show) {
+            return;
+        }
+
+        const originalScenes = [...show.scenes];
+        const newScenes = replaceFirstElement(originalScenes, s => s.name === scene.name, scene);
+        
+        const updatedShow = { 
+            ...structuredClone(show),
+            scenes: newScenes
+        };
+        
+        await updateShow(updatedShow);
+
+    }, [show]);
+
+    const addScene = useCallback(async (scene: Scene) => {
+
+        if (!show) {
+            return;
+        }
+
+        const scenes = [...show.scenes, scene];
+        
+        const updatedShow = { 
+            ...show,
+            scenes: scenes
+        };
+        await updateShow(updatedShow);
+
+    }, [show]);
+
     return {
         show,
         lightingPlan,
         controler,
         fixtureCollection,
+
+        mutations: {
+            saveScene
+        },
+
         mode,
         setMode,
 
@@ -541,6 +587,9 @@ export const ShowControlContext = createContext<ShowControlProps>({
     loadShow: doNothing,
     mode: "Show",
     setMode: doNothing,
+    mutations: {
+        saveScene: doNothingAsync,
+    },
     controler: {
         fade: 0,
         setFade: doNothing,

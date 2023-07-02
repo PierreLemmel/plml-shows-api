@@ -1,4 +1,4 @@
-import { RgbColor } from "@/lib/services/core/types";
+import { Color } from "@/lib/services/core/types/rgbColor";
 import { createDefaultValuesForFixture, extractChannelsFromFixture, LedFixtureModelInfo, TradFixtureModelInfo } from "@/lib/services/dmx/showControl";
 
 
@@ -43,7 +43,7 @@ describe('createDefaultValuesForFixture', () => {
         const result = createDefaultValuesForFixture(fixtureModelInfo);
 
         expect(result).toEqual({
-            "Color": RgbColor.black,
+            "Color": Color.black,
             "Uv": 0,
             "Dimmer": 0,
             "Stroboscope": 0,

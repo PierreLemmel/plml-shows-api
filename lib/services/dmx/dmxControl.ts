@@ -1,6 +1,7 @@
 import { createContext, Dispatch, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createArray } from "../core/arrays";
 import { useInterval } from "../core/hooks";
-import { createArray, doNothing, returnZero } from "../core/utils";
+import { doNothing, returnZero } from "../core/utils";
 import { DmxWriteInterfaceState } from "./dmx512";
 import { useEnttecOpenDmx } from "./enttecOpenDmx";
 
