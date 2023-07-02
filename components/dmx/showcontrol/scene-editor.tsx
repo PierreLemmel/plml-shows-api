@@ -1,12 +1,15 @@
 import { AleasButton } from "@/components/aleas/aleas-buttons";
 import AleasSkeletonLoader from "@/components/aleas/aleas-skeleton-loader";
+import { replaceFirstElement } from "@/lib/services/core/arrays";
+import { Color } from "@/lib/services/core/types/rgbColor";
 import { Action, AsyncDipsatch } from "@/lib/services/core/types/utils";
-import { match, mergeClasses } from "@/lib/services/core/utils";
-import { Chans } from "@/lib/services/dmx/dmx512";
-import { createDefaultValuesForFixture, FixtureInfo, Scene, SceneElement, SceneElementInfo, Show, useLightingPlanInfo, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
-import { Dispatch, useEffect, useMemo, useState } from "react";
+import { match, mergeClasses, withValue } from "@/lib/services/core/utils";
+import { Chans, DmxRange } from "@/lib/services/dmx/dmx512";
+import { createDefaultValuesForFixture, FixtureInfo, Scene, SceneElement, SceneElementInfo, Show, toScene, useLightingPlanInfo, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
+import { Dispatch, useCallback, useEffect, useMemo, useState } from "react";
 import { DndProvider, useDrag, useDrop, XYCoord } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import DmxSlider from "../dmx-slider";
 
 export interface SceneEditorProps {
     show: Show|undefined;
@@ -90,63 +93,95 @@ const SceneEditor = (props: SceneEditorProps) => {
         setIsSaving(false);
     }
 
-    function onSceneElementValueChanged(): void {
-        throw new Error("Function not implemented.");
-    }
+    const onSceneElementValueChanged = useCallback((element: SceneElementInfo) => {
+        if (!sceneInfo || !workScene) {
+            return;
+        }
+        
+        const updatedElements = replaceFirstElement(sceneInfo.elements, sei => sei.fixture.id === element.fixture.id, element);
+
+        const updatedSI = withValue(sceneInfo, "elements", updatedElements);
+        const updatedScene = toScene(updatedSI);
+
+        setWorkScene(updatedScene);
+    }, [workScene, sceneInfo]);
+
+    const onSceneElementRemoved = useCallback((element: SceneElementInfo) => {
+        if (!sceneInfo || !workScene) {
+            return;
+        }
+
+        const { elements } = sceneInfo;
+        const remaining = elements
+            .filter(se => se.fixture.id !== element.fixture.id);
+
+        const updatedSI = withValue(sceneInfo, "elements", remaining);
+        const updatedScene = toScene(updatedSI);
+
+        setWorkScene(updatedScene);
+        
+    }, [workScene, sceneInfo])
 
     return <div className={mergeClasses(
-        "full flex flex-col items-stretch justify-between gap-4",
+        "full flex flex-col items-stretch justify-between gap-8",
     )}>
-        <div className="grid grid-cols-2 gap-6 flex-grow">
+        <div className="flex-grow h-full relative">
+            <div className="absolute top-0 left-0 bottom-0 right-0 grid grid-cols-2 gap-6">
 
-            {/* LP Column */}
-            <div className={mergeClasses(
-                "w-full flex flex-col items-stretch gap-4",
-                "bg-slate-700/80 px-3 py-2 rounded-lg",
-                "overflow-y-auto",
-            )}>
-                <div className="text-xl text-center">Plan de feu</div>
-                {lightingPlan && workScene ?
-                    <div className={mergeClasses(
-                        "w-full flex flex-col items-stretch gap-2",
-                    )}>
-                        {Object.entries(lightingPlan.fixtures).map(([shortName, fixture]) => {
-                            const enabled = workScene.elements.find(se => se.fixture === shortName) === undefined;
+                {/* LP Column */}
+                <div className={mergeClasses(
+                    "w-full h-full flex flex-col items-stretch gap-4",
+                    "bg-slate-700/80 px-3 py-2 rounded-lg",
+                    "overflow-y-auto",
+                )}>
+                    <div className="text-xl text-center">Plan de feu</div>
+                    {lightingPlan && workScene ?
+                        <div className={mergeClasses(
+                            "w-full flex flex-col items-stretch gap-2",
+                        )}>
+                            {Object.entries(lightingPlan.fixtures).map(([shortName, fixture]) => {
+                                const enabled = workScene.elements.find(se => se.fixture === shortName) === undefined;
 
-                            return <LPFixtureCard
-                                key={fixture.id}
-                                fixture={fixture}
-                                enabled={enabled}
-                            />;
-                        })}
-                    </div> :
-                    <AleasSkeletonLoader lines={5} />}
-            </div>
+                                return <LPFixtureCard
+                                    key={fixture.id}
+                                    fixture={fixture}
+                                    enabled={enabled}
+                                />;
+                            })}
+                        </div> :
+                        <AleasSkeletonLoader lines={5} />}
+                </div>
 
-            {/* Scene Column */}
-            <div className={mergeClasses(
-                "w-full flex flex-col items-stretch gap-4",
-                "bg-slate-700/80 px-3 py-2 rounded-lg",
-            )}>
-                {sceneInfo ? <>
-                    <div className="text-xl text-center">{sceneInfo.name}</div>
-                    <div
-                        ref={sceneDropZone}
-                        className={mergeClasses(
-                            "w-full flex-grow overflow-y-auto",
-                            "flex flex-col items-stretch gap-2",
-                    )}>
-                        {sceneInfo.elements.map(element => <SEFixtureCard
-                            key={element.fixture.id}
-                            element={element}
-                            onValueChanged={onSceneElementValueChanged}
-                        />)}
-                    </div>
-                </>
-                : <>
-                    <div className="text-xl text-center">Scène</div>
-                    <AleasSkeletonLoader lines={5} />
-                </>}
+                {/* Scene Column */}
+                <div className={mergeClasses(
+                    "w-full h-full flex flex-col items-stretch gap-4",
+                    "bg-slate-700/80 px-3 py-2 rounded-lg overflow-y-auto",
+                )}>
+                    {(workScene && sceneInfo) ? <>
+                        <div className="text-xl text-center">{sceneInfo.name}</div>
+                        <div
+                            ref={sceneDropZone}
+                            className={mergeClasses(
+                                "w-full flex-grow overflow-y-auto",
+                                "flex flex-col items-stretch gap-2",
+                        )}>
+                            {sceneInfo.elements.map(element => {                                
+
+                                return <SEFixtureCard
+                                    key={element.fixture.id}
+                                    element={element}
+                                    onValueChanged={(newVal) => onSceneElementValueChanged(newVal)}
+                                    onRemove={() => onSceneElementRemoved(element)}
+                                />;
+                            })}
+                        </div>
+                    </>
+                    : <>
+                        <div className="text-xl text-center">Scène</div>
+                        <AleasSkeletonLoader lines={5} />
+                    </>}
+                </div>
+
             </div>
         </div>
 
@@ -224,15 +259,21 @@ const LPFixtureCard = (props: LPFixtureCardProps) => {
 
 interface SEFixtureCardProps {
     element: SceneElementInfo;
-    onValueChanged: () => void;
+    onValueChanged: (values: SceneElementInfo) => void;
+    onRemove: () => void;
 }
 
 const SEFixtureCard = (props: SEFixtureCardProps) => {
 
-    const { element } = props;
+    const {
+        element,
+        onRemove,
+        onValueChanged
+    } = props;
+
     const {
         fixture,
-        values
+        values,
     } = element;
 
     const [isOpen, setIsOpen] = useState(false);
@@ -290,19 +331,31 @@ const SEFixtureCard = (props: SEFixtureCardProps) => {
             "bg-slate-800/60"
         )}>
             {orderedChans.map(chan => {
+                const { type, displayName } = chan;
 
-                return <div key={chan.type} className="flex flex-row justify-between">
-                    <div>{chan.displayName}</div>
-                    {match(chan.type, [{
-                        condition: Chans.isNumberChannel,
-                        value: <div>{values[chan.type as Chans.NumberChannelType] as number}</div>,
-                    },
-                    {
-                        condition: Chans.isColorChannel,
-                        value: <div>{JSON.stringify(values[chan.type as Chans.ColorChannelType])}</div>,
-                    }])}
+                return <div key={type} className="flex flex-row justify-between">
+                    <div>{displayName}</div>
+                    {Chans.isNumberChannel(type) && <div>
+                        <DmxSlider
+                            orientation="horizontal"
+                            value={values[type]!}
+                            setValue={(val) => {
+                                const updatedValues = {...values}
+                                updatedValues[type] = val as DmxRange;
+                                const updated = withValue(element, "values", values);
+
+                                onValueChanged(updated);
+                            }}
+                        />
+                    </div>}
+                    {Chans.isColorChannel(type) && <div>
+                        {JSON.stringify(Color.getColorValue(values[type]!))}
+                    </div>}
                 </div>
             })}
+            <div className="flex flex-row items-center justify-end">
+                <AleasButton onClick={onRemove} size="Small">Retirer</AleasButton>
+            </div>
         </div>}
     </div>
 }

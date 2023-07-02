@@ -1,4 +1,4 @@
-import { mergeClasses } from "@/lib/services/core/utils";
+import { match, mergeClasses } from "@/lib/services/core/utils";
 
 const sharedClasses = `centered-row text-center font-bold text-white
 bg-gradient-to-r from-cyan-500 to-blue-500
@@ -10,9 +10,12 @@ const spinningSharedClasses=`cursor-progress`
 
 const disabledSharedClasses=`brightness-50 cursor-not-allowed`
 
+export type ButtonSize = "Normal"|"Small"
+
 interface ButtonProps extends React.HTMLAttributes<HTMLDivElement> {
     disabled?: boolean;
     spinning?: boolean;
+    size?: ButtonSize;
 }
 
 export const AleasButton = (props: ButtonProps) => {
@@ -23,6 +26,7 @@ export const AleasButton = (props: ButtonProps) => {
         children,
         className,
         onClick,
+        size = "Normal",
         ...restProps
     } = props;
     
@@ -40,8 +44,16 @@ export const AleasButton = (props: ButtonProps) => {
         className={mergeClasses(
             sharedClasses,
             disabled === true ? disabledClasses : (spinning === true ? spinningClasses : enabledClasses),
-            "sm:text-base md:text-xl xl:text-2xl",
-            "py-3 px-6 min-w-[8em]",
+            match(size, {
+                ["Normal"]: mergeClasses(
+                    "py-3 px-6 min-w-[8em]",
+                    "sm:text-base md:text-xl xl:text-2xl",
+                ),
+                ["Small"]: mergeClasses(
+                    "py-1 px-2 min-w-[6em]",
+                    "sm:text-sm md:text-base xl:text-xl",
+                )
+            }),
             "rounded-md",
             className
         )}
@@ -56,16 +68,17 @@ export const AleasButton = (props: ButtonProps) => {
 
 export const AleasRoundButton = (props: ButtonProps) => {
 
-    const { disabled, onClick } = {
-        disabled: false,
-        ...props
-    }
+    const {
+        disabled = false,
+        onClick,
+        ...restProps
+    } = props
     
     const enabledClasses = enabledSharedClasses + 'hover:scale-110';
     const disabledClasses = disabledSharedClasses;
 
     return <div
-        {...props}
+        {...restProps}
         onClick={e => {
             if (!disabled && onClick) {
                 onClick(e)

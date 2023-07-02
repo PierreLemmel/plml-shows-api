@@ -1,10 +1,10 @@
-import { setValue } from "@/lib/services/core/utils";
+import { withValue } from "@/lib/services/core/utils";
 
-global.structuredClone = jest.fn(val => {
+global.structuredClone = global.structuredClone ?? jest.fn(val => {
     return JSON.parse(JSON.stringify(val));
 });
 
-describe("setValue", () => {
+describe("withValue", () => {
     type Test = {
         a: {
             b: number;
@@ -40,18 +40,18 @@ describe("setValue", () => {
     });
 
     it("should set a nested property", () => {
-        setValue(test, "a.b", 42);
-        expect(test.a.b).toBe(42);
+        const result = withValue(test, "a.b", 42);
+        expect(result.a.b).toBe(42);
     });
 
     it("should set a deep nested property", () => {
-        setValue(test, "a.c.d", "Updated");
-        expect(test.a.c.d).toBe("Updated");
+        const result = withValue(test, "a.c.d", "Updated");
+        expect(result.a.c.d).toBe("Updated");
     });
 
     it("should set a top-level property", () => {
-        setValue(test, "x", "New Value");
-        expect(test.x).toBe("New Value");
+        const result = withValue(test, "x", "New Value");
+        expect(result.x).toBe("New Value");
     });
 
 
@@ -63,7 +63,7 @@ describe("setValue", () => {
 
     it("Should compile for nested object", () => {
         expect(() => {
-            const result = setValue(test, "a.c", {
+            const result = withValue(test, "a.c", {
                 d: "Updated",
                 e: 14,
                 f: {
@@ -72,7 +72,7 @@ describe("setValue", () => {
                 }
             });
 
-            expect(result).toStrictEqual({
+            expect(result.a.c).toStrictEqual({
                 d: "Updated",
                 e: 14,
                 f: {
@@ -83,5 +83,3 @@ describe("setValue", () => {
         }).not.toThrow();
     });
 });
-
-console.log(`Node Version: ${process.version}`);

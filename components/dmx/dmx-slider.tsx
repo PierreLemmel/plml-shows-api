@@ -1,4 +1,4 @@
-import { match } from "@/lib/services/core/utils";
+import { match, mergeClasses } from "@/lib/services/core/utils";
 import ReactSlider from "react-slider";
 import AleasSlider from "../aleas/aleas-slider";
 import DmxButton from "./dmx-button";
@@ -13,6 +13,7 @@ export interface DmxSliderProps extends React.HTMLAttributes<HTMLDivElement> {
     step?: number;
     min?: number;
     max?: number;
+    orientation?: "horizontal"|"vertical";
 }
 
 const DmxSlider = (props: DmxSliderProps) => {
@@ -21,14 +22,13 @@ const DmxSlider = (props: DmxSliderProps) => {
         setValue,
         label,
         className,
-        sliderType,
+        sliderType = "Value",
         min: minValue,
         max: maxValue,
         step,
-    } = {
-        sliderType: "Value" as SliderType,
-        ...props
-    };
+        orientation = "vertical",
+        ...restProps
+    } = props;
 
     const sliderVal = match(sliderType, {
         "Percent": 100 * value,
@@ -57,15 +57,19 @@ const DmxSlider = (props: DmxSliderProps) => {
         defaultValue: sliderVal
     })
 
-    return <div className={`${widthClass} centered-col
-        bg-slate-700 rounded-md py-2
-    ` + (className ?? "")}>
+    return <div className={mergeClasses(
+        widthClass,
+        "centered-col",
+        "bg-slate-700 rounded-md py-2",
+        className
+    )}>
         <div className="text-center w-full mb-1">{valueLabel}</div>
         <AleasSlider 
+            {...restProps}
             min={min}
             max={max}
             step={step}
-            orientation="vertical"
+            orientation={orientation}
             invert
             value={sliderVal}
             setValue={val => setSliderVal(val)}

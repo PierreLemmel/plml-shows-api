@@ -314,6 +314,27 @@ const isTrack = (track: Track|TrackId): track is Track => {
     return typeof track === "object";
 }
 
+export function toScene(sceneInfo: SceneInfo): Scene {
+    const { id, name, elements } = sceneInfo;
+    
+    const result: Scene = {
+        id,
+        name,
+        elements: elements.map(sei => {
+            const { fixture, values} = sei;
+
+            const SceneElt: SceneElement = {
+                fixture: fixture.name,
+                values,
+            }
+
+            return SceneElt;
+        }),
+    }
+
+    return result;
+}
+
 export type CreateTrackOptions = Partial<Omit<Track, "scene"|"id"|"info">>
 
 export type ShowControlMode = "Console"|"Show";

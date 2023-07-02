@@ -117,14 +117,16 @@ export function notImplemented<T>(): T {
     throw "Not implemented";
 }
 
-export function setValue<T, P extends Pathes<T>>(obj: T, path: P, value: ValueAtPath<T, P>): T {
+export function withValue<T, P extends Pathes<T>>(obj: T, path: P, value: ValueAtPath<T, P>): T {
     
     const result = structuredClone(obj);
-    return result;
-    // const str = path as string;
 
-    // const parts = str.split(".");
-    // const lastPart = parts.pop()!;
-    // const lastObj = parts.reduce((prev, curr) => prev[curr], obj);
-    // lastObj[lastPart] = value;
+    const str = path as string;
+
+    const parts = str.split(".");
+    const lastPart = parts.pop()!;
+    const lastObj: any = parts.reduce((prev: any, curr) => prev[curr], result as any)
+    lastObj[lastPart] = value;
+
+    return result;
 }

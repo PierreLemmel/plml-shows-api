@@ -82,3 +82,11 @@ export function resample(input: number[]|Float32Array, samples: number): number[
 
     return result;
 }
+
+export function sum(input: number[]): number {
+    let sum = 0;
+    for (let i = 0; i < input.length; i++){
+        sum += input[i];
+    }
+    return sum;
+}

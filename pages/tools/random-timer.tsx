@@ -2,26 +2,13 @@ import AleasBackground from "@/components/aleas/aleas-background";
 import { AleasButton } from "@/components/aleas/aleas-buttons";
 import AleasHead from "@/components/aleas/aleas-head";
 import { AleasModalContainer, AleasTitle } from "@/components/aleas/aleas-layout";
-import { createDurationCollection, DurationProviderCollectionProps } from "@/lib/aleas/providers/duration";
-import { getRandomTimerDurationProviderCollection } from "@/lib/services/aleas/aleas";
 import { padNumber } from "@/lib/services/core/utils";
 import { GetStaticProps, InferGetStaticPropsType } from "next";
 import { useCallback, useMemo, useRef, useState } from "react";
 
-interface RandomTimerProps {
-    durationProviders: DurationProviderCollectionProps
+export interface RandomTimerProps {
 }
 
-export const getStaticProps: GetStaticProps<RandomTimerProps> = async () => {
-
-    const durationProviders = await getRandomTimerDurationProviderCollection();
-
-    return {
-        props: {
-            durationProviders
-        }
-    }
-}
 
 const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -31,11 +18,20 @@ const formatTime = (time: number) => {
     return `${padNumber(minutes, 2)}:${padNumber(seconds, 2)}'${padNumber(hundredthes, 2)}`;
 }
 
-export default function RandomTimer(props: InferGetStaticPropsType<typeof getStaticProps>) {
+export default function RandomTimer(props: RandomTimerProps) {
 
-    const { durationProviders } = props;
+    const {  } = props;
 
-    const dp = useMemo(() => createDurationCollection(durationProviders), [durationProviders])
+    const formatTime = useCallback((time: number) => {
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        const hundredthes = Math.floor((100 * time) % 100)
+    
+        return `${padNumber(minutes, 2)}:${padNumber(seconds, 2)}'${padNumber(hundredthes, 2)}`;
+    }, []);
+    
+
+    //const dp = useMemo(() => createDurationCollection(durationProviders), [durationProviders])
 
     const [duration, setDuration] = useState<number>(0);
     const [time, setTime] = useState<number>(185.56);
@@ -59,7 +55,7 @@ export default function RandomTimer(props: InferGetStaticPropsType<typeof getSta
     const startTimer = useCallback(() => {
         stopInterval();
 
-        const nextDuration = dp.nextValue();
+        const nextDuration = 60;
 
         setDuration(nextDuration);
         setTime(nextDuration);
@@ -84,7 +80,7 @@ export default function RandomTimer(props: InferGetStaticPropsType<typeof getSta
             }
 
         }, interval * 1000);
-    }, [dp, playAlarm])
+    }, [playAlarm])
 
     const onStartClicked = useCallback(() => startTimer(), [startTimer]);
     const onRestartClicked = useCallback(() => startTimer(), [startTimer]);
@@ -113,6 +109,7 @@ export default function RandomTimer(props: InferGetStaticPropsType<typeof getSta
             <div className="absolute top-0 left-0 full center-child">
                 <AleasModalContainer>
                     <AleasTitle>Random Timer</AleasTitle>
+                    <div className="text-red-500">THIS COMPONENT IS BROKEN I'LL FIX IT LATER</div>
 
                     <div className="centered-col">
                         {(isRunning && !isOver) && <>

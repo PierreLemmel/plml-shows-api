@@ -1,33 +1,18 @@
 export interface RgbColor {
-    r: number;
-    g: number;
-    b: number;
+    readonly r: number;
+    readonly g: number;
+    readonly b: number;
 }
 
 const rgb = (r: number, g: number, b: number) => ({ r, g, b})
 
 const staticColors = {
-
-    get white(): RgbColor {
-        return rgb(255, 255, 255);
-    },
-
-    get red(): RgbColor {
-        return rgb(255, 0, 0);
-    },
-
-    get green(): RgbColor {
-        return rgb(0, 255, 0);
-    },
-
-    get blue(): RgbColor {
-        return rgb(0, 0, 255);
-    },
-
-    get black(): RgbColor {
-        return rgb(0, 0, 0);
-    },
-}
+    white:  rgb(255, 255, 255),
+    red: rgb(255, 0, 0),
+    green: rgb(0, 255, 0),
+    blue:  rgb(0, 0, 255),
+    black: rgb(0, 0, 0),
+} as const;
 
 export const Color = {
     rgb,
@@ -52,6 +37,10 @@ export const Color = {
 
     named(name: RgbNamedColor): RgbColor {
         return staticColors[name];
+    },
+
+    getColorValue(color: RgbColor|RgbNamedColor) {
+        return typeof color === "string" ? staticColors[color] : color;
     }
 } as const;
 
