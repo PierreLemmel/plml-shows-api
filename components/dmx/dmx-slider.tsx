@@ -13,7 +13,6 @@ export interface DmxSliderProps extends React.HTMLAttributes<HTMLDivElement> {
     step?: number;
     min?: number;
     max?: number;
-    orientation?: "horizontal"|"vertical";
 }
 
 const DmxSlider = (props: DmxSliderProps) => {
@@ -26,7 +25,6 @@ const DmxSlider = (props: DmxSliderProps) => {
         min: minValue,
         max: maxValue,
         step,
-        orientation = "vertical",
         ...restProps
     } = props;
 
@@ -69,7 +67,7 @@ const DmxSlider = (props: DmxSliderProps) => {
             min={min}
             max={max}
             step={step}
-            orientation={orientation}
+            orientation={"vertical"}
             invert
             value={sliderVal}
             setValue={val => setSliderVal(val)}

@@ -42,9 +42,8 @@ function getFirebase(): FirebaseProps {
 
 export async function getDocument<T>(path: string) {
     const { db } = getFirebase();
-
     const firedoc = await getDoc(doc(db, path));
-
+    
     return <T> firedoc.data();
 }
 

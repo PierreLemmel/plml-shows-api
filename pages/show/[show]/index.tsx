@@ -3,7 +3,6 @@ import { AleasDropdownButton, DropdownOption } from "@/components/aleas/aleas-dr
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
 import DmxSlider from "@/components/dmx/dmx-slider";
 import { Scene, Track, useShowControl } from "@/lib/services/dmx/showControl";
-import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -92,7 +91,7 @@ const ShowPage = () => {
         router.push(`${router.asPath}/scenes/new`)
     }, [router]);
 
-    return <AleasMainLayout title={showName}>
+    return <AleasMainLayout title={showName} requireAuth>
         <div className="centered-row gap-4">
             <div className="centered-col gap-8">
                 <div className="centered-row gap-3">

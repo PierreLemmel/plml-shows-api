@@ -119,16 +119,10 @@ export default async function seedFixtureDefinitions() {
                 type: 'Barre LED',
                 modes: {
                     48: {
-                        [0]: {
-                            type: "ColorArray",
-                            size: 16
-                        }
+                        [0]: "ColorArray",
                     },
                     96: {
-                        [0]: {
-                            type: "ColorArray",
-                            size: 16
-                        }
+                        [0]: "ColorArray"
                     }
                 }
             },

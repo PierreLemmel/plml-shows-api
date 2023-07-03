@@ -1,5 +1,5 @@
 import React, { Dispatch, useEffect, useState } from 'react';
-import { doNothing, mergeClasses } from '../core/utils';
+import { doNothing, mergeClasses } from '../../lib/services/core/utils';
 
 interface MusicSignatureEditorProps extends React.HTMLAttributes<HTMLDivElement> {
   signature: string;

@@ -1,15 +1,15 @@
 import { AleasButton } from "@/components/aleas/aleas-buttons";
 import AleasSkeletonLoader from "@/components/aleas/aleas-skeleton-loader";
+import AleasSlider from "@/components/aleas/aleas-slider";
 import { replaceFirstElement } from "@/lib/services/core/arrays";
 import { Color } from "@/lib/services/core/types/rgbColor";
 import { Action, AsyncDipsatch } from "@/lib/services/core/types/utils";
-import { match, mergeClasses, withValue } from "@/lib/services/core/utils";
+import { mergeClasses, withValue } from "@/lib/services/core/utils";
 import { Chans, DmxRange } from "@/lib/services/dmx/dmx512";
 import { createDefaultValuesForFixture, FixtureInfo, Scene, SceneElement, SceneElementInfo, Show, toScene, useLightingPlanInfo, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
-import { Dispatch, useCallback, useEffect, useMemo, useState } from "react";
+import { Dispatch, Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { DndProvider, useDrag, useDrop, XYCoord } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import DmxSlider from "../dmx-slider";
 
 export interface SceneEditorProps {
     show: Show|undefined;
@@ -97,7 +97,7 @@ const SceneEditor = (props: SceneEditorProps) => {
         if (!sceneInfo || !workScene) {
             return;
         }
-        
+        console.log(element)
         const updatedElements = replaceFirstElement(sceneInfo.elements, sei => sei.fixture.id === element.fixture.id, element);
 
         const updatedSI = withValue(sceneInfo, "elements", updatedElements);
@@ -327,33 +327,46 @@ const SEFixtureCard = (props: SEFixtureCardProps) => {
         </div>
 
         {isOpen && <div className={mergeClasses(
-            "w-full flex flex-col items-stretch gap-2 py-3 px-4 rounded-b-md  ",
+            "w-full py-3 px-4 rounded-b-md",
+            "grid grid-cols-[auto_1fr_auto] gap-4 lg:gap-6 items-center",
+
+            // "w-full flex flex-col items-stretch gap-2 py-3 px-4 rounded-b-md",
             "bg-slate-800/60"
         )}>
             {orderedChans.map(chan => {
                 const { type, displayName } = chan;
 
-                return <div key={type} className="flex flex-row justify-between">
+                return <Fragment key={type}>
                     <div>{displayName}</div>
-                    {Chans.isNumberChannel(type) && <div>
-                        <DmxSlider
-                            orientation="horizontal"
-                            value={values[type]!}
-                            setValue={(val) => {
-                                const updatedValues = {...values}
-                                updatedValues[type] = val as DmxRange;
-                                const updated = withValue(element, "values", values);
+                    {Chans.isNumberChannel(type) && 
+                    <>
+                        <div>
+                            <AleasSlider 
+                                min={0}
+                                max={255}
+                                step={1}
+                                orientation="horizontal"
+                                value={values[type]!}
+                                setValue={val => {
+                                    const updatedValues = {...values}
+                                    updatedValues[type] = val as DmxRange;
+                                    const updated = withValue(element, "values", updatedValues);
 
-                                onValueChanged(updated);
-                            }}
-                        />
-                    </div>}
+                                    onValueChanged(updated);
+                                }}
+                                className=""
+                                thumbClassName=""
+                                trackClassName=""
+                            />
+                        </div>
+                        <div className="min-w-[2em]">{values[type]}</div>
+                    </>}
                     {Chans.isColorChannel(type) && <div>
                         {JSON.stringify(Color.getColorValue(values[type]!))}
                     </div>}
-                </div>
+                </Fragment>
             })}
-            <div className="flex flex-row items-center justify-end">
+            <div className="flex flex-row items-center justify-end col-span-3">
                 <AleasButton onClick={onRemove} size="Small">Retirer</AleasButton>
             </div>
         </div>}

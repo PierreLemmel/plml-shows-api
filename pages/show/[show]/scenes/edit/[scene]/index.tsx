@@ -43,7 +43,10 @@ const EditScene = () => {
     }, [showName, sceneName, show]);
 
 
-    return <AleasMainLayout title={(showName && sceneName) ? `${showName} - ${sceneName}` : 'Aléas'}>
+    return <AleasMainLayout
+        title={(showName && sceneName) ? `${showName} - ${sceneName}` : 'Aléas'}
+        requireAuth
+    >
         <SceneEditor
             show={show}
             scene={scene}
@@ -51,8 +54,5 @@ const EditScene = () => {
             onFinished={router.back} />
     </AleasMainLayout>
 }
-
-
-
 
 export default EditScene;

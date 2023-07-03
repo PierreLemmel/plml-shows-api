@@ -1,7 +1,11 @@
+import { useAuth } from "@/lib/services/api/firebase";
 import { mergeClasses } from "@/lib/services/core/utils";
+import { useRouter } from "next/router";
+import { useEffect } from "react";
 import AleasBackground from "./aleas-background";
 import AleasHead from "./aleas-head";
 import AleasNavbar from "./aleas-navbar";
+import AleasSpinningLoader from "./aleas-spinning-loader";
 import { AleasToastContainer } from "./aleas-toast-container";
 
 export interface AleasMainContainerProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -108,26 +112,22 @@ export interface AleasLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
     navbar?: boolean;
     toasts?: boolean;
     modal?: boolean;
+    requireAuth?: boolean;
 }
 
 export const AleasMainLayout = (props: AleasLayoutProps) => {
     const {
         children,
         title,
-        titleDisplay,
+        titleDisplay = true,
         description,
-        navbar,
-        toasts,
-        modal,
+        navbar = true,
+        toasts = false,
+        modal = false,
+        requireAuth = false,
         className,
         ...restProps
-     } = {
-        navbar: true,
-        titleDisplay: true,
-        toasts: false,
-        modal: false,
-        ...props
-     };
+    } = props;
 
     return <>
         <AleasHead {...{title, description}} />
@@ -144,17 +144,18 @@ export const AleasMainLayout = (props: AleasLayoutProps) => {
                 <div
                     className="w-full center-child flex-grow"
                 >
-                    <CoreLayoutContainer modal={modal}>
-                        {titleDisplay && title && <AleasTitle>
-                            {title}
-                        </AleasTitle>}
+                    <LoginWrapper requireAuth={requireAuth}>
+                        <CoreLayoutContainer modal={modal}>
+                            {titleDisplay && title && <AleasTitle>
+                                {title}
+                            </AleasTitle>}
 
-                        <div className="flex flex-col justify-evenly items-center flex-grow w-full">
-                            {children}
-                        </div>
+                            <div className="flex flex-col justify-evenly items-center flex-grow w-full">
+                                {children}
+                            </div>
 
-                    </CoreLayoutContainer>
-
+                        </CoreLayoutContainer>
+                    </LoginWrapper>
                 </div>
             </div>
 
@@ -162,4 +163,62 @@ export const AleasMainLayout = (props: AleasLayoutProps) => {
             
         </main>
     </>
+}
+
+export interface RequireLoginProps {
+    children: React.ReactNode;
+}
+
+const RequireLogin = (props: RequireLoginProps) => {
+    const { children } = props;
+
+    const router = useRouter();
+    const auth = useAuth();
+
+    const { user, initialized } = auth;
+
+    useEffect(() => {
+        if (initialized && !user) {
+            router.push({
+                pathname: "/login",
+                query: {
+                    redirectTo: router.asPath
+                }}
+            );
+        }
+    }, [initialized])
+
+    if (initialized) {
+        if (!user) {
+            
+            return <AleasMainContainer>
+                <div className="flex flex-col items-center justify-center h-full">
+                    <div className="text-2xl font-bold">Veuillez vous connecter</div>
+                    <AleasSpinningLoader />
+                </div>
+            </AleasMainContainer>;
+        }
+        else {
+            return <>{children}</>;
+        }
+    }
+    else {
+        return <AleasMainContainer>
+            <div className="flex flex-col items-center justify-center h-full">
+                <div className="text-2xl font-bold">Veuillez patienter</div>
+                <AleasSpinningLoader />
+            </div>
+        </AleasMainContainer>;
+    }
+}
+
+interface LoginWrapperProps {
+    children: React.ReactNode;
+    requireAuth: boolean;
+}
+
+const LoginWrapper = (props: LoginWrapperProps) => {
+    const { children, requireAuth } = props;
+
+    return requireAuth ? <RequireLogin>{children}</RequireLogin> : <>{children}</>;
 }

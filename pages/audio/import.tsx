@@ -7,12 +7,12 @@ import AleasTagsField from "@/components/aleas/aleas-tags-field";
 import AleasTextField from "@/components/aleas/aleas-textfield";
 import { toast } from "@/components/aleas/aleas-toast-container";
 import AleasAudioPlayer, { AudioPlayerRef } from "@/components/audio/aleas-audio-player";
-import { RequireLogin } from "@/lib/middlewares/requireLogin";
 import { importAudioClip } from "@/lib/services/api/audio";
 import { AudioClipInfo } from "@/lib/services/audio/audioControl";
-import MusicSignatureEditor from "@/lib/services/audio/music-signature-editor";
+import MusicSignatureEditor from "@/components/audio/music-signature-editor";
 import { match, mergeClasses } from "@/lib/services/core/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { musicCategories } from "@/lib/services/audio/audio";
 
 type DisplayState = "AudioImport"|"AudioEditSettings"|"AudioEditKeypoints";
 
@@ -30,6 +30,7 @@ const Import = () => {
             toast(`Fichier '${file.name}' importé`)
             setAudioFile(file);
             setDisplayState("AudioEditSettings")
+            setName(file.name);
         }
     }, [setAudioFile, setDisplayState])
 
@@ -50,7 +51,7 @@ const Import = () => {
     const sourceOptions = useMemo<DropdownOption<string>[]>(() => sources.map(source => ({ label: source, value: source })), [sources]);
     const [source, setSource] = useState<DropdownOption<string>>(sourceOptions[0]);
 
-    const categorieTags = useMemo(() => ["Relaxante", "Rage", "Contemplative", "Positive", "Beats"], []);
+    const categorieTags = useMemo(() => musicCategories, []);
 
     const reset = useCallback(() => {
         setName("");
@@ -72,6 +73,8 @@ const Import = () => {
             return;
         }
 
+        setIsImporting(true);
+
         try {
             const clipInfo: AudioClipInfo = {
                 duration: audioPlayerRef?.current?.duration ?? 0,
@@ -82,26 +85,39 @@ const Import = () => {
                 tags: []
             }
 
-            setIsImporting(true);
+            
             await importAudioClip(audioFile, name, clipInfo)
             toast("Fichier audio importé !");
-            setIsImporting(false);
+            
             reset();
         }
         catch (e) {
-            toast(e as string);
+            console.error(e);
+
+            if (typeof e === "string") {
+                toast(e);
+            }
+            else {
+                toast("Une erreur est survenue lors de l'import du fichier audio");
+            }
         }
+
+        setIsImporting(false);
     }, [audioFile, tempo, signature, source.value, categories, tags])
 
     const clearBtnEnabled = audioFile !== undefined;
-    const onClearClicked = useCallback(() => {
+    const onClearClicked = () => {
         reset();
         setAudioFile(undefined);
-    }, [reset]);
+    };
 
     const audioPlayerRef = useRef<AudioPlayerRef>(null);
 
-    return <AleasMainLayout title="Aléas - Import Audio" titleDisplay={false} toasts={true}>
+    return <AleasMainLayout
+        title="Aléas - Import Audio"
+        titleDisplay={false}
+        toasts requireAuth
+    >
         <div className="full flex flex-col items-stretch justify-between gap-8">
             <div className="text-center text-4xl flex-grow-0">Importer un fichier Audio</div>
             {match(displayState, {
@@ -185,8 +201,5 @@ const Label = ({ children }: { children: string }) => <div className="text-xl fo
     {children}
 </div>
 
-const WithinLogin = () => <RequireLogin>
-    <Import />
-</RequireLogin>
 
-export default WithinLogin;
+export default Import;

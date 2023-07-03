@@ -8,14 +8,15 @@ import { getDocument, setDocument, uploadFile } from "./firebase";
 export async function importAudioClip(file: File, name: string, clipInfo: AudioClipInfo) {
     name = name.trim();
     const { source } = clipInfo;
-    
-    const collectionPath = pathCombine("audio", source)
+
+    const collectionPath = pathCombine("audio", source.toLowerCase())
     const collection = await getDocument<AudioClipCollection>(collectionPath);
+
     if (collection.clips[name]) {
         throw `An audio clip called '${name}' already exists`;
     }
 
-    const folderPath = pathCombine('audio', source);
+    const folderPath = pathCombine('audio', source.toLowerCase());
     const { downloadUrl } = await uploadFile(folderPath, file, name);
 
     const data: AudioClipData = {
@@ -31,5 +32,5 @@ export async function importAudioClip(file: File, name: string, clipInfo: AudioC
         [name]: data
     }
 
-    await setDocument<AudioClipCollection>(collectionPath, newClips);
+    await setDocument<AudioClipCollection>(collectionPath, { clips: newClips });
 }

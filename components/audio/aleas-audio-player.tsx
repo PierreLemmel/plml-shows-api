@@ -28,13 +28,14 @@ const AleasAudioPlayer = (props: AudioPlayerProps, ref: Ref<AudioPlayerRef>) => 
     const [spectrumData, setSpectrumData] = useState<SpectrumData|null>(null);
 
     const audioRef = useRef<HTMLAudioElement>(null);
-
     useEffectAsync(async () => {
+
         const blob = await audioFile.arrayBuffer();
         const spectrum = await getSpectrumData(blob);
 
         setSpectrumData(spectrum);
-    }, [audioFile])    
+
+    }, [])
 
     const play = useCallback(() => audioRef.current?.play(), []);
     const pause = useCallback(() => audioRef.current?.pause(), []);

@@ -24,7 +24,7 @@ const NewScene = (props: NewSceneProps) => {
         }
     }, [showName, showControl]);
 
-    return <AleasMainLayout title={showName}>
+    return <AleasMainLayout title={showName} requireAuth>
         <div>{show?.name ?? "NO SHOW"}</div>
         <div>New Scene</div>
     </AleasMainLayout>
