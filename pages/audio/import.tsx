@@ -30,7 +30,7 @@ const Import = () => {
             toast(`Fichier '${file.name}' importé`)
             setAudioFile(file);
             setDisplayState("AudioEditSettings")
-            setName(file.name);
+            setName(file.name.split(".")[0]);
         }
     }, [setAudioFile, setDisplayState])
 
@@ -62,6 +62,7 @@ const Import = () => {
         setTags([]);
 
         setAuthor(undefined);
+        setDisplayState("AudioImport");
     }, []);
 
     useEffect(() => reset(), []);
@@ -90,6 +91,7 @@ const Import = () => {
             toast("Fichier audio importé !");
             
             reset();
+            setAudioFile(undefined);
         }
         catch (e) {
             console.error(e);
@@ -109,6 +111,7 @@ const Import = () => {
     const onClearClicked = () => {
         reset();
         setAudioFile(undefined);
+        setDisplayState("AudioImport");
     };
 
     const audioPlayerRef = useRef<AudioPlayerRef>(null);
