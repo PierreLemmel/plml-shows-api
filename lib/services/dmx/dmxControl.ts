@@ -1,6 +1,7 @@
 import { createContext, Dispatch, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createArray } from "../core/arrays";
 import { useInterval } from "../core/hooks";
-import { createArray, doNothing, returnZero } from "../core/utils";
+import { doNothing, returnZero } from "../core/utils";
 import { DmxWriteInterfaceState } from "./dmx512";
 import { useEnttecOpenDmx } from "./enttecOpenDmx";
 
@@ -129,8 +130,8 @@ export function useNewDmxControl(): DmxControlProps {
 
     }, 1000 / refreshRate, [writeState], writeState === "Opened");
 
-    const getValue = useCallback<GetDmxChan>((i: number) => Math.round(values[i]), []);
-    const getTarget = useCallback<GetDmxChan>((i: number) => Math.round(targets[i]), []);
+    const getValue = useCallback<GetDmxChan>((i: number) => Math.round(values[i]), [values]);
+    const getTarget = useCallback<GetDmxChan>((i: number) => Math.round(targets[i]), [targets]);
     const setTarget = useCallback<SetDmxChan>((i: number, val: number) => {
         
         const bounds = boundsRef.current;
@@ -144,7 +145,7 @@ export function useNewDmxControl(): DmxControlProps {
         }
 
         return targets[i] = Math.round(val);
-    }, []);
+    }, [targets]);
 
     const cleanTargets = useCallback(() => {
         const { min, max } = boundsRef.current;
@@ -152,7 +153,7 @@ export function useNewDmxControl(): DmxControlProps {
         for (let i = min; i < max; i++) {
             targets[i] = 0;
         }
-    }, [])
+    }, [targets])
 
     const clear = useCallback(() => {
         targets.fill(0);
@@ -161,7 +162,7 @@ export function useNewDmxControl(): DmxControlProps {
 
         boundsRef.current.min = 513;
         boundsRef.current.max = 0;
-    }, []);
+    }, [targets, values, output]);
 
     const { open, close } = {
         open: undefined,

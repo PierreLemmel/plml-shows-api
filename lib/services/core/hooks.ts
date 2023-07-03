@@ -2,11 +2,17 @@ import { DependencyList, useEffect, useMemo, useRef } from "react";
 import { currentTime } from "./utils";
 
 export const useEffectAsync = (effect: () => Promise<void>, deps?: DependencyList): void => {
+    deps ||= [];
+    
     useEffect(() => {
         (async () => {
             await effect();
         })();
-    }, deps);
+    }, deps); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+export const useEffectOnce = (effect: () => void): void => {
+    useEffect(effect, []); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 export interface IntervalCallbackProps {
@@ -21,7 +27,7 @@ export type IntervalCallback = (props: IntervalCallbackProps) => void;
 export const useInterval = (callback: IntervalCallback, ms: number, deps?: DependencyList, condition?: boolean): void => {
 
     deps ||= [];
-    const startTime = useMemo(() => currentTime(), deps);
+    const startTime = useMemo(() => currentTime(), deps); // eslint-disable-line react-hooks/exhaustive-deps
 
     const currentTimeRef = useRef<number>(currentTime())
 
@@ -45,7 +51,7 @@ export const useInterval = (callback: IntervalCallback, ms: number, deps?: Depen
             return () => clearInterval(interval);
         }
         
-    }, deps)
+    }, [ms, condition, startTime, ...deps])  // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 
@@ -60,5 +66,5 @@ export const useTimeout = (callback: () => void, ms: number, deps?: DependencyLi
             return () => clearTimeout(timeout);
         }
         
-    }, deps)
+    }, [ms, condition, ...deps]) // eslint-disable-line react-hooks/exhaustive-deps
 }

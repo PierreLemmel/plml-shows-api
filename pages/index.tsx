@@ -1,7 +1,7 @@
 import AleasBackground from '@/components/aleas/aleas-background';
 import { AleasButton } from '@/components/aleas/aleas-buttons';
 import AleasHead from '@/components/aleas/aleas-head'
-import { AleasMainContainer, AleasTitle } from '@/components/aleas/aleas-layout';
+import { AleasModalContainer, AleasTitle } from '@/components/aleas/aleas-layout';
 import Link from 'next/link';
 
 
@@ -10,7 +10,7 @@ const Home = () => <>
 	<main className="fullscreen relative overflow-hidden">
 		<AleasBackground />
 		<div className="full absolute top-0 center-child text-center">
-			<AleasMainContainer>
+			<AleasModalContainer>
 				<AleasTitle>
 					Aléas, Improvisation aléatoire
 				</AleasTitle>
@@ -32,7 +32,7 @@ const Home = () => <>
 				</div>
 				
 				<div>Réalisation technique : <a className="text-gray-400 underline" href="https://linktr.ee/plemmel" target="_blank" rel="noreferrer">Pierre Lemmel</a></div>
-			</AleasMainContainer>
+			</AleasModalContainer>
 		</div>
 	</main>
 </>

@@ -1,18 +1,22 @@
-import { mergeClasses } from '@/lib/services/core/utils';
-import { useEffect, useRef } from 'react';
+import { doNothing, mergeClasses } from '@/lib/services/core/utils';
+import { Dispatch, InputHTMLAttributes, useEffect, useRef } from 'react';
 
-interface AleasTextAreaProps extends React.HTMLAttributes<HTMLDivElement> {
+interface AleasTextAreaProps extends InputHTMLAttributes<HTMLTextAreaElement> {
     value: string;
-    onTextChange?: (value: string) => void;
+    onValueChange?: Dispatch<string>;
 }
 
 const AleasTextArea = (props: AleasTextAreaProps) => {
 
     const {
         value,
-        onTextChange,
-        className
-    } = props;
+        onValueChange,
+        className,
+        ...restProps
+    } = {
+        onValueChange: doNothing,
+        ...props
+    }
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -26,9 +30,7 @@ const AleasTextArea = (props: AleasTextAreaProps) => {
 
                 const newValue = currentValue.substring(0, selectionStart) + '\t' + currentValue.substring(selectionEnd);
 
-                if (onTextChange) {
-                    onTextChange(newValue);
-                }
+                onValueChange(newValue);
 
                 // Set the updated selection position after the tab indentation
                 textareaRef.current.selectionStart = selectionStart + 1;
@@ -36,27 +38,28 @@ const AleasTextArea = (props: AleasTextAreaProps) => {
             }
         };
 
-        if (textareaRef.current) {
-            textareaRef.current.addEventListener('keydown', handleTabKey);
-        }
+        const textAreaCurrentVal = textareaRef.current;
 
-        return () => {
-            if (textareaRef.current) {
-                textareaRef.current.removeEventListener('keydown', handleTabKey);
+        if (textAreaCurrentVal) {
+            textAreaCurrentVal.addEventListener('keydown', handleTabKey);
+
+            return () => {
+                textAreaCurrentVal.removeEventListener('keydown', handleTabKey);
             }
-        };
-    }, [onTextChange]);
+        }
+    }, [onValueChange]);
 
     return <textarea
         className={mergeClasses(
-            "w-full min-w-[30rem] min-h-[15rem] p-4 rounded-md resize-none",
+            "w-full min-w-[30rem] min-h-[15rem] px-3 py-1 rounded-md resize-none",
             "border border-gray-300 focus:outline-none focus:border-blue-500",
             "bg-slate-900/90",
             className
         )}
         ref={textareaRef}
         value={value}
-        onChange={(e) => onTextChange && onTextChange(e.target.value)}
+        onChange={(e) => onValueChange(e.target.value)}
+        {...restProps}
     />
 };
 

@@ -3,9 +3,9 @@ import AleasFileUpload from '@/components/aleas/aleas-file-upload';
 import AleasHead from '@/components/aleas/aleas-head'
 import AleasSlider from '@/components/aleas/aleas-slider';
 import AsciiArt, { AsciiArtRef, AsciiBitmapStats } from '@/components/ascii/ascii-art';
-import { inverseLerp } from '@/lib/services/core/mathf';
+import { inverseLerp } from '@/lib/services/core/maths';
 import { mean } from '@/lib/services/core/stats';
-import { RgbColor } from '@/lib/services/core/types';
+import { Color, RgbColor } from '@/lib/services/core/types/rgbColor';
 import { randomBool, sequence } from '@/lib/services/core/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -23,11 +23,11 @@ const TestAscii = () => {
 
 
 		if (gray < threshold) {
-			return RgbColor.black;
+			return Color.black;
 		}
 		else {
 			const framed = floor + (255 - floor) * inverseLerp(gray, min, max);
-			return RgbColor.grayLevel(framed);
+			return Color.grayLevel(framed);
 		}
 	}, [threshold, floor]);
 
@@ -41,7 +41,7 @@ const TestAscii = () => {
 
 	const [image, setImage] = useState<string|null>(null);
 
-	const onImageUpload = useCallback((files: FileList | null) => {
+	const onImageUpload = useCallback((files: File[] | null) => {
 		if (files && files.length > 0) {
 			const file = files[0];
 			

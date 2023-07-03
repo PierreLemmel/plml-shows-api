@@ -40,7 +40,7 @@ export function useEnttecOpenDmx(): DmxWriteInterface {
                 setState("Closed");
             }
         }
-    }, []);
+    }, [port]);
 
     useEffect(() => {
         const { serial } = navigator;
@@ -48,7 +48,7 @@ export function useEnttecOpenDmx(): DmxWriteInterface {
         serial?.addEventListener("connect", findPort)
 
         return () => serial?.removeEventListener("connect", findPort);
-    }, []);
+    }, [findPort]);
 
     useEffectAsync(findPort, []);
 

@@ -1,13 +1,14 @@
 import { GetStaticProps, InferGetStaticPropsType } from 'next';
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { randomInt, } from '@/lib/services/core/utils';
 import { motion } from 'framer-motion';
 import AleasBackground from '@/components/aleas/aleas-background';
 import { AleasButton, AleasRoundButton } from '@/components/aleas/aleas-buttons';
 import AleasHead from '@/components/aleas/aleas-head';
-import { AleasMainContainer, AleasTitle } from '@/components/aleas/aleas-layout';
-import { ToastContainer, toast } from 'react-toastify';
+import { AleasModalContainer, AleasTitle } from '@/components/aleas/aleas-layout';
 import { getBilletReducReviews, getBilletReducSettings } from '@/lib/services/api/billetreduc';
+import { AleasToastContainer, toast } from '@/components/aleas/aleas-toast-container';
+import { useEffectOnce } from '@/lib/services/core/hooks';
 
 interface BilletReducProps {
     reviews: string[],
@@ -42,8 +43,7 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
 
     const review = reviews[index];
 
-    const onRegenerate = () => {
-        
+    const onRegenerate = useCallback(() => {
         setFadeIn(false);
         fadeTimeout.current = setTimeout(() => {
             let newIndex = index;
@@ -55,9 +55,9 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
             setFadeIn(true);
         }, fadeDuration * 1000)
         
-    }
+    }, [fadeDuration, index, reviews.length]);
 
-    useEffect(onRegenerate, []);
+    useEffectOnce(onRegenerate);
 
     const onCopied = () => {
         navigator.clipboard.writeText(review)
@@ -89,7 +89,7 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                     type: 'spring'
                 }}
             >
-                <AleasMainContainer>
+                <AleasModalContainer>
                     <AleasTitle>
                         Générateur de critiques aléatoires
                     </AleasTitle>
@@ -138,7 +138,7 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                             </AleasButton>
                         </a>
                     </div>
-                </AleasMainContainer>
+                </AleasModalContainer>
             </motion.div>
             <div className="
                 absolute
@@ -170,7 +170,7 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                 }}
                 onClick={() => setShowHelp(false)}
             >
-                <AleasMainContainer onClick={e => e.stopPropagation()}>
+                <AleasModalContainer onClick={e => e.stopPropagation()}>
                     <AleasTitle>
                         Générateur de critiques aléatoires
                     </AleasTitle>
@@ -196,16 +196,9 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                     <AleasButton onClick={() => setShowHelp(false)}>
                         Ok
                     </AleasButton>
-                </AleasMainContainer>
+                </AleasModalContainer>
             </motion.div>
-            <ToastContainer
-                position="bottom-center"
-                theme='dark'
-                autoClose={2000}
-                hideProgressBar={true}
-                pauseOnFocusLoss={false}
-                pauseOnHover={false}
-            />
+            <AleasToastContainer />
             
         </main>
         

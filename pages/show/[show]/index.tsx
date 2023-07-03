@@ -1,9 +1,8 @@
 import { AleasButton } from "@/components/aleas/aleas-buttons";
-import { AleasDropdown, DropdownOption } from "@/components/aleas/aleas-dropdown";
+import { AleasDropdownButton, DropdownOption } from "@/components/aleas/aleas-dropdowns";
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
 import DmxSlider from "@/components/dmx/dmx-slider";
 import { Scene, Track, useShowControl } from "@/lib/services/dmx/showControl";
-import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -33,18 +32,18 @@ const ShowPage = () => {
         if (showControl.show?.name !== showName) {
             showControl.loadShow(showName);
         }
-    }, [showName]);
+    }, [showName, showControl]);
 
     useEffect(() => {
         if (currentTrack) {
             setTrack(currentTrack);
             setScene(currentTrack.scene)
         }
-    }, [])
+    }, [currentTrack])
 
     useEffect(() => {
         showControl.setMode("Show")
-    }, [])
+    }, [showControl]);
 
     const dropdownOptions: DropdownOption<Scene>[] = useMemo(() => show?.scenes.map(scene => {
         return {
@@ -73,7 +72,7 @@ const ShowPage = () => {
             const newTrack = controler.addTrack(scene);
             setTrack(newTrack);
         }
-    }, [track, controler]);
+    }, [controler, scene, clearCurrentTrack]);
 
     const stopBtnEnabled = track !== undefined;
     const onStopBtnClicked = useCallback(() => {
@@ -85,14 +84,14 @@ const ShowPage = () => {
         if (scene) {
             router.push(`${router.asPath}/scenes/edit/${scene.name}`);
         }
-    }, [scene]);
+    }, [scene, router]);
 
     const newBtnEnabled = true;
     const onNewSceneBtnClicked = useCallback(() => {
         router.push(`${router.asPath}/scenes/new`)
-    }, []);
+    }, [router]);
 
-    return <AleasMainLayout title={showName}>
+    return <AleasMainLayout title={showName} requireAuth>
         <div className="centered-row gap-4">
             <div className="centered-col gap-8">
                 <div className="centered-row gap-3">
@@ -101,7 +100,7 @@ const ShowPage = () => {
                         Scenes:
                     </div>
 
-                    <AleasDropdown
+                    <AleasDropdownButton
                         options={dropdownOptions}
                         value={selectedOption}
                         onSelectedOptionChanged={onDropdownSelectionChanged}

@@ -25,7 +25,7 @@ const StandardConsole = (props: StandardConsoleProps) => {
     const showControl = useShowControl();
     useEffect(() => {
         showControl.setMode("Console");
-    }, [])
+    }, [showControl])
 
     const [startIndex, setStartIndex] = useState(0);
 

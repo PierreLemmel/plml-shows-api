@@ -1,7 +1,7 @@
 import '@/styles/globals.css'
 import 'react-toastify/dist/ReactToastify.css';
 import type { AppProps } from 'next/app'
-import { AuthContext, UseNewAuth } from '@/lib/services/api/firebase';
+import { AuthContext, useNewAuth } from '@/lib/services/api/firebase';
 import { ShowControlContext, useNewShowControl } from '@/lib/services/dmx/showControl';
 import { DmxControlContext, useNewDmxControl } from '@/lib/services/dmx/dmxControl';
 import { ReactElement } from 'react';
@@ -24,7 +24,7 @@ interface WrapperProps {
 	children: ReactElement;
 }
 
-const AuthContextWrapper = ({ children }: WrapperProps) => <AuthContext.Provider value={UseNewAuth()}>
+const AuthContextWrapper = ({ children }: WrapperProps) => <AuthContext.Provider value={useNewAuth()}>
 	{children}
 </AuthContext.Provider>
 

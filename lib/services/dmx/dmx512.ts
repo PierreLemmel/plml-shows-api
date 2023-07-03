@@ -1,87 +1,7 @@
-import { clampByte } from "../core/mathf";
-import { IntRange, Named } from "../core/types";
-
-
-export class Color {
-
-    public readonly r: number;
-    public readonly g: number;
-    public readonly b: number;
-
-
-    private constructor(r: number, g: number, b: number) {
-        this.r = clampByte(r);
-        this.g = clampByte(g);
-        this.b = clampByte(b);
-    }
-
-
-    public static get red(): Color {
-        return Color.rgb(0xff, 0, 0);
-    }
-
-    public static get green(): Color {
-        return Color.rgb(0, 0xff, 0);
-    }
-
-    public static get blue(): Color {
-        return Color.rgb(0, 0, 0xff);
-    }
-
-    public static get white(): Color {
-        return Color.rgb(0xff, 0xff, 0xff);
-    }
-
-    public static get warmWhite(): Color {
-        return Color.rgb(255, 152, 52);
-    }
-
-    public static rgb(r: number, g: number, b: number): Color {
-        return new Color(r, g, b);
-    }
-
-    public static hsl(h: number, s: number, l: number): Color {
-
-        // Stolen from: https://stackoverflow.com/questions/2353211/hsl-to-rgb-color-conversion
-
-        let r, g, b;
-
-        if(s === 0){
-            r = g = b = l; // achromatic
-        }else{
-            const hue2rgb = function hue2rgb(p: number, q: number, t: number){
-                if(t < 0) t += 1;
-                if(t > 1) t -= 1;
-                if(t < 1/6) return p + (q - p) * 6 * t;
-                if(t < 1/2) return q;
-                if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-                return p;
-            }
-
-            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-            const p = 2 * l - q;
-            r = hue2rgb(p, q, h + 1/3);
-            g = hue2rgb(p, q, h);
-            b = hue2rgb(p, q, h - 1/3);
-        }
-
-        return new Color(
-            Math.round(r * 255),
-            Math.round(g * 255),
-            Math.round(b * 255)
-        );
-    }
-
-    public static lerp(from: Color, to: Color, a: number): Color {
-        const b = 1.0 - a;
-
-        return new Color(
-            a * from.r + b * to.r,
-            a * from.g + b * to.g,
-            a * from.b + b * to.b
-        );
-    }
-}
+import exp from "constants";
+import { clampByte } from "../core/maths";
+import { IntRange } from "../core/types/ranges";
+import { HasId, Named } from "../core/types/utils";
 
 
 export module Chans {
@@ -107,7 +27,14 @@ export module Chans {
     ] as const;
     export type ColorChannelType = typeof colorChannelTypes[number];
 
-    export type ChannelType = NumberChannelType | ColorChannelType | ColorArray | ValueArray | "UNUSED";
+    const channelTypes = [
+        ...numberChannelTypes,
+        ...colorChannelTypes,
+        "ColorArray",
+        "ValueArray",
+        "UNUSED"
+    ] as const;
+    export type ChannelType = typeof channelTypes[number];
 
     export interface ColorArray {
         readonly type: "ColorArray";
@@ -119,12 +46,97 @@ export module Chans {
         readonly size: number;
     }
 
+    export function isChannelType(type: string): type is ChannelType {
+        return channelTypes.includes(type as ChannelType);
+    }
+
     export function isNumberChannel(chan: ChannelType): chan is NumberChannelType {
         return numberChannelTypes.includes(chan as NumberChannelType);
     }
 
     export function isColorChannel(chan: ChannelType): chan is ColorChannelType {
         return colorChannelTypes.includes(chan as ColorChannelType);
+    }
+
+    export interface ChannelInfo {
+        displayName: string;
+        priority: number;
+    }
+
+    export const channelInfo: { [type in ChannelType]: ChannelInfo } = {
+        "Trad": {
+            displayName: "Trad",
+            priority: 0
+        },
+
+        "Dimmer": {
+            displayName: "Dimmer",
+            priority: 1
+        },
+        "Color": {
+            displayName: "Couleur",
+            priority: 2
+        },
+        
+        "White": {
+            displayName: "Blanc",
+            priority: 3
+        },
+        "Uv": {
+            displayName: "Uv",
+            priority: 4
+        },
+
+        "Cold": {
+            displayName: "Froid",
+            priority: 10
+        },
+        "Warm": {
+            displayName: "Chaud",
+            priority: 11
+        },
+        "Amber": {
+            displayName: "Ambre",
+            priority: 12
+        },
+
+        "Stroboscope": {
+            displayName: "Stroboscope",
+            priority: 20
+        },
+
+        "Pan": {
+            displayName: "Pan",
+            priority: 40
+        },
+        "Pan Fine": {
+            displayName: "Pan Fin",
+            priority: 41
+        },
+        "Tilt": {
+            displayName: "Tilt",
+            priority: 42
+        },
+        "Tilt Fine": {
+            displayName: "Tilt Fin",
+            priority: 43
+        },
+        
+
+        "ColorArray": {
+            displayName: "Matrice de couleurs",
+            priority: 50
+        },
+        "ValueArray": {
+            displayName: "Matrice de valeurs",
+            priority: 51
+        },
+
+
+        "UNUSED": {
+            displayName: "Non utilisé",
+            priority: 1000
+        },
     }
 }
 
@@ -190,7 +202,7 @@ export module Fixtures {
     }
     
     
-    export interface FixtureModelCollection extends Named {
+    export interface FixtureModelCollection extends Named, HasId {
     
         readonly fixtureModels: {
             readonly [shortName: string]: FixtureModelDefinition;
@@ -198,17 +210,18 @@ export module Fixtures {
     }
     
 
-    export interface Fixture extends Named {
+    export interface Fixture extends Named, HasId {
     
         readonly address: number;
         readonly model: string;
         readonly mode?: number;
         readonly remarks?: string;
+        readonly key: string;
     }
 }
 
 
-export interface StageLightingPlan extends Named {
+export interface StageLightingPlan extends Named, HasId {
 
     readonly fixtureCollection: string;
     readonly fixtures: {
@@ -242,4 +255,4 @@ export type DmxWriteInterface = UndetectedInterface|ClosedInterface|OpeningInter
 
 export type WriteInterfaceType = "None"|"EnttecOpenDmx";
 
-export type DmxRange = IntRange<0, 256>;
+export type DmxRange = IntRange<0, 256>

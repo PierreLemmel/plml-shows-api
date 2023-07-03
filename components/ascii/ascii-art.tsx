@@ -1,11 +1,11 @@
-//@see: https://dev.to/patopitaluga/ascii-art-pixel-art-in-js-2oij
-
 import { useInterval, useTimeout } from "@/lib/services/core/hooks";
-import { inverseLerp } from "@/lib/services/core/mathf";
+import { inverseLerp } from "@/lib/services/core/maths";
 import { mean, getStats, Stats } from "@/lib/services/core/stats";
-import { RgbColor } from "@/lib/services/core/types";
-import { createArray, flattenArray, mergeClasses } from "@/lib/services/core/utils";
+
+import { mergeClasses } from "@/lib/services/core/utils";
+import { createArray, flattenArray } from "@/lib/services/core/arrays";
 import { forwardRef, Ref, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { Color, RgbColor } from "@/lib/services/core/types/rgbColor";
 
 export interface AsciiArtProps extends React.HTMLAttributes<HTMLDivElement> {
     opacityCharset?: keyof typeof opacityCharMaps;
@@ -39,31 +39,31 @@ export type ColorTransformation = (color: RgbColor, stats: AsciiBitmapStats) => 
 
 const pixelColorTransformationMap = {
     'none': (color: RgbColor) => color,
-    'red': (color: RgbColor) => color.redComponent(),
+    'red': (color: RgbColor) => Color.rgb(color.r, 0, 0),
     'red-framed': (color: RgbColor, stats: AsciiBitmapStats) => {
 
         const { red: { min, max }} = stats;
         const framed = 255 * inverseLerp(color.r, min, max);
 
-        return new RgbColor(framed, 0, 0);
+        return Color.rgb(framed, 0, 0);
     },
-    'green': (color: RgbColor) => color.greenComponent(),
+    'green': (color: RgbColor) => Color.rgb (0, color.g, 0),
     'green-framed': (color: RgbColor, stats: AsciiBitmapStats) => {
 
         const { green: { min, max }} = stats;
         const framed = 255 * inverseLerp(color.g, min, max);
 
-        return new RgbColor(0, framed, 0);
+        return Color.rgb(0, framed, 0);
     },
-    'blue': (color: RgbColor) => color.blueComponent(),
+    'blue': (color: RgbColor) => Color.rgb(0, 0, color.b),
     'blue-framed': (color: RgbColor, stats: AsciiBitmapStats) => {
 
         const { blue: { min, max }} = stats;
         const framed = 255 * inverseLerp(color.b, min, max);
 
-        return new RgbColor(0, 0, framed);
+        return Color.rgb(0, 0, framed);
     },
-    'blackAndWhite': (color: RgbColor) => color.toGrayLevel(),
+    'blackAndWhite': (color: RgbColor) => Color.grayLevel(mean(color.r, color.g, color.b)),
     'blackAndWhite-framed': (color: RgbColor, stats: AsciiBitmapStats) => {
         
         const { gray: { min, max }} = stats;
@@ -71,16 +71,16 @@ const pixelColorTransformationMap = {
         const gray = mean(r, g, b);
 
         const framed = 255 * inverseLerp(gray, min, max);
-        return RgbColor.grayLevel(framed);
+        return Color.grayLevel(framed);
     },
 }
 
 const textColorTransformationMap = {
     ...pixelColorTransformationMap,
-    "fixed-white": () => RgbColor.white,
-    "fixed-red": () => RgbColor.red,
-    "fixed-green": () => RgbColor.green,
-    "fixed-blue": () => RgbColor.blue,
+    "fixed-white": () => Color.white,
+    "fixed-red": () => Color.red,
+    "fixed-green": () => Color.green,
+    "fixed-blue": () => Color.blue,
 }
 
 const defaultText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
@@ -257,7 +257,7 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
                 for (let col = 0; col < widthInChars; col++) {
 
                     const { data } = ctx.getImageData(col, row, 1, 1);
-                    pixels[col][row] = new RgbColor(data[0], data[1], data[2]);
+                    pixels[col][row] = Color.rgb(data[0], data[1], data[2]);
                 }
             }
 
@@ -273,7 +273,7 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
             setBitmap({ widthInChars, heightInChars, pixels, stats });
         }
 
-    }, [src, pixelSize, containerWidth, containerHeight, canvasWidth, canvasHeight])
+    }, [src, pixelSize, containerWidth, containerHeight, canvasWidth, canvasHeight, scale, imgLoaded])
 
     useEffect(() => {
         const canvas = canvasRef.current?.getContext('2d');
@@ -324,14 +324,14 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
                     const noise = noiseFunction(rawColor, row, col, time, bmpInfo)
                     
                     if (pixelsOpacity > 0) {
-                        const { r, g, b } = RgbColor.multiply(noise, pixelColorTransformer(rawColor, stats));
+                        const { r, g, b } = Color.multiply(noise, pixelColorTransformer(rawColor, stats));
 
                         canvas.fillStyle = `rgb(${r}, ${g}, ${b}, ${pixelsOpacity})`;
                         canvas.fillRect(x, y, pixelW, pixelH);
                     }
                     
                     if (textOpacity > 0) {
-                        const { r, g, b } = RgbColor.multiply(noise, textColorTransformer(rawColor, stats));
+                        const { r, g, b } = Color.multiply(noise, textColorTransformer(rawColor, stats));
 
                         canvas.fillStyle = `rgb(${r}, ${g}, ${b}, ${textOpacity})`;
 
@@ -354,7 +354,7 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
                 }
             }
         }
-    }, [containerWidth, containerHeight, bitmap, textMode, text, opacityCharset, backgroundColor, pixelColorTransformation, textColorTransformation, src, pixelSize, charSize, fontFamily, bold, italic, baseImageOpacity, pixelsOpacity, textOpacity, noiseFunction, time])
+    }, [containerWidth, containerHeight, bitmap, textMode, text, opacityCharset, backgroundColor, pixelColorTransformation, textColorTransformation, src, pixelSize, charSize, fontFamily, bold, italic, baseImageOpacity, pixelsOpacity, textOpacity, noiseFunction, time, letterTransformation, canvasWidth, canvasHeight, scale, imgLoaded])
 
     
 
@@ -366,7 +366,7 @@ const AsciiArt = (props: AsciiArtProps, ref: Ref<AsciiArtRef>) => {
                 }}/>
             </div>
             <canvas className="absolute top-0 left-0 full hidden" width={containerWidth} height={containerHeight} ref={imgCanvasRef} />
-            <img className="absolute top-0 left-0 hidden" src={src} ref={imgRef} />
+            <img className="absolute top-0 left-0 hidden" src={src} alt="" ref={imgRef} />
         </div>
     </div>
 }

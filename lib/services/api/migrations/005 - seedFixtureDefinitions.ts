@@ -1,6 +1,7 @@
+import { generateId } from "../../core/utils";
 import { Fixtures } from "../../dmx/dmx512";
 import { setDocument } from "../firebase";
-import { saveFixtureCollection } from "../showControlApi";
+import { createFixtureCollection } from "../showControlApi";
 
 
 export default async function seedFixtureDefinitions() {
@@ -8,6 +9,7 @@ export default async function seedFixtureDefinitions() {
     const name = "default"
 
     const coll: Fixtures.FixtureModelCollection = {
+        id: generateId(),
         name,
         fixtureModels: {
 
@@ -117,16 +119,10 @@ export default async function seedFixtureDefinitions() {
                 type: 'Barre LED',
                 modes: {
                     48: {
-                        [0]: {
-                            type: "ColorArray",
-                            size: 16
-                        }
+                        [0]: "ColorArray",
                     },
                     96: {
-                        [0]: {
-                            type: "ColorArray",
-                            size: 16
-                        }
+                        [0]: "ColorArray"
                     }
                 }
             },
@@ -257,5 +253,5 @@ export default async function seedFixtureDefinitions() {
     await setDocument("dmx/fixtures", {
         defaultCollection: name
     })
-    await saveFixtureCollection(coll);
+    await createFixtureCollection(coll);
 }
