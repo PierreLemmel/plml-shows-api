@@ -3,7 +3,6 @@ import { AleasButton } from "@/components/aleas/aleas-buttons";
 import AleasHead from "@/components/aleas/aleas-head";
 import { AleasModalContainer, AleasTitle } from "@/components/aleas/aleas-layout";
 import { padNumber } from "@/lib/services/core/utils";
-import { GetStaticProps, InferGetStaticPropsType } from "next";
 import { useCallback, useMemo, useRef, useState } from "react";
 
 export interface RandomTimerProps {
@@ -109,7 +108,7 @@ export default function RandomTimer(props: RandomTimerProps) {
             <div className="absolute top-0 left-0 full center-child">
                 <AleasModalContainer>
                     <AleasTitle>Random Timer</AleasTitle>
-                    <div className="text-red-500">THIS COMPONENT IS BROKEN I'LL FIX IT LATER</div>
+                    <div className="text-red-500">THIS COMPONENT IS BROKEN I&apos;LL FIX IT LATER</div>
 
                     <div className="centered-col">
                         {(isRunning && !isOver) && <>
