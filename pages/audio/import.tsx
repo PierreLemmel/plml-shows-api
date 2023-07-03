@@ -27,7 +27,7 @@ const Import = () => {
 
         if (files && files.length > 0) {
             const file = files[0];
-            toast(`Fichier '${file.name}' importé`)
+            toast.success(`Fichier '${file.name}' importé`)
             setAudioFile(file);
             setDisplayState("AudioEditSettings")
             setName(file.name.split(".")[0]);
@@ -35,7 +35,7 @@ const Import = () => {
     }, [setAudioFile, setDisplayState])
 
     const onUploadError = useCallback((files: File[]) => {
-        files.forEach(file => toast(`Impossible d'importer le fichier '${file.name}'`));
+        files.forEach(file => toast.warn(`Impossible d'importer le fichier '${file.name}'`));
     }, []);
 
     const [name, setName] = useState<string>("Music");
@@ -88,7 +88,7 @@ const Import = () => {
 
             
             await importAudioClip(audioFile, name, clipInfo)
-            toast("Fichier audio importé !");
+            toast.info("Fichier audio importé !");
             
             reset();
             setAudioFile(undefined);
@@ -97,10 +97,10 @@ const Import = () => {
             console.error(e);
 
             if (typeof e === "string") {
-                toast(e);
+                toast.error(e);
             }
             else {
-                toast("Une erreur est survenue lors de l'import du fichier audio");
+                toast.error("Une erreur est survenue lors de l'import du fichier audio");
             }
         }
 

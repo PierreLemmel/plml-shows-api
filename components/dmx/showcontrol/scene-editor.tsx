@@ -6,7 +6,7 @@ import { Color } from "@/lib/services/core/types/rgbColor";
 import { Action, AsyncDipsatch } from "@/lib/services/core/types/utils";
 import { mergeClasses, withValue } from "@/lib/services/core/utils";
 import { Chans, DmxRange } from "@/lib/services/dmx/dmx512";
-import { createDefaultValuesForFixture, FixtureInfo, Scene, SceneElement, SceneElementInfo, Show, toScene, useLightingPlanInfo, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
+import { createDefaultValuesForFixture, FixtureInfo, Scene, SceneElement, SceneElementInfo, Show, toScene, useLightingPlanInfo, useRealtimeScene, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
 import { Dispatch, Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { DndProvider, useDrag, useDrop, XYCoord } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -97,7 +97,7 @@ const SceneEditor = (props: SceneEditorProps) => {
         if (!sceneInfo || !workScene) {
             return;
         }
-        console.log(element)
+
         const updatedElements = replaceFirstElement(sceneInfo.elements, sei => sei.fixture.id === element.fixture.id, element);
 
         const updatedSI = withValue(sceneInfo, "elements", updatedElements);
@@ -121,6 +121,10 @@ const SceneEditor = (props: SceneEditorProps) => {
         setWorkScene(updatedScene);
         
     }, [workScene, sceneInfo])
+
+    const [playScene, setPlayScene] = useState(false);
+    const track = useRealtimeScene(workScene, playScene);
+    const playEnabled = workScene !== undefined && track !== undefined;
 
     return <div className={mergeClasses(
         "full flex flex-col items-stretch justify-between gap-8",
@@ -195,6 +199,9 @@ const SceneEditor = (props: SceneEditorProps) => {
             </AleasButton>
             <AleasButton onClick={onFinished}>
                 Retour
+            </AleasButton>
+            <AleasButton onClick={() => setPlayScene(curr => !curr)} disabled={!playEnabled}>
+                {playScene ? "Stop" : "Tester"}
             </AleasButton>
         </div> 
     </div>

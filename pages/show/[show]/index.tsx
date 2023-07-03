@@ -1,10 +1,13 @@
 import { AleasButton } from "@/components/aleas/aleas-buttons";
 import { AleasDropdownButton, DropdownOption } from "@/components/aleas/aleas-dropdowns";
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
+import AleasModalDialog from "@/components/aleas/aleas-modal-dialog";
+import AleasTextField from "@/components/aleas/aleas-textfield";
+import { toast } from "@/components/aleas/aleas-toast-container";
 import DmxSlider from "@/components/dmx/dmx-slider";
-import { Scene, Track, useShowControl } from "@/lib/services/dmx/showControl";
+import { createScene, Scene, useRealtimeScene, useShowControl } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 
 const ShowPage = () => {
@@ -18,7 +21,6 @@ const ShowPage = () => {
     const {
         master, setMaster,
         fade, setFade,
-        currentTrack
     } = controler;
 
     const router = useRouter();
@@ -26,7 +28,8 @@ const ShowPage = () => {
     const showName = router.query["show"] as string;
     
     const [scene, setScene] = useState<Scene>();
-    const [track, setTrack] = useState<Track>();
+    const [isPlaying, setIsPlaying] = useState(false);
+    const track = useRealtimeScene(scene, isPlaying);
 
     useEffect(() => {
         if (showControl.show?.name !== showName) {
@@ -34,12 +37,6 @@ const ShowPage = () => {
         }
     }, [showName, showControl]);
 
-    useEffect(() => {
-        if (currentTrack) {
-            setTrack(currentTrack);
-            setScene(currentTrack.scene)
-        }
-    }, [currentTrack])
 
     useEffect(() => {
         showControl.setMode("Show")
@@ -57,41 +54,59 @@ const ShowPage = () => {
         setScene(option.value);
     }
 
-    const clearCurrentTrack = useCallback(() => {
-        if (track && controler) {
-            controler.removeTrack(track);
-            setTrack(undefined)
-        }
-    }, [track, controler]);
 
-    const playBtnEnabled = scene !== undefined;
-    const onPlayBtnClicked = useCallback(() => {
 
-        if (scene && controler) {
-            clearCurrentTrack();
-            const newTrack = controler.addTrack(scene);
-            setTrack(newTrack);
-        }
-    }, [controler, scene, clearCurrentTrack]);
-
-    const stopBtnEnabled = track !== undefined;
-    const onStopBtnClicked = useCallback(() => {
-        clearCurrentTrack();
-    }, [clearCurrentTrack]);
+    const toggleBtnEnabled = isPlaying ? track !== null : scene !== undefined;
+    const onToggleBtnClicked = () => setIsPlaying(curr => !curr);
 
     const editBtnClicked = scene !== undefined;
-    const onEditBtnClicked = useCallback(() => {
+    const onEditBtnClicked = () => {
         if (scene) {
             router.push(`${router.asPath}/scenes/edit/${scene.name}`);
         }
-    }, [scene, router]);
+    };
 
     const newBtnEnabled = true;
-    const onNewSceneBtnClicked = useCallback(() => {
-        router.push(`${router.asPath}/scenes/new`)
-    }, [router]);
+    const [newModalOpened, setNewModalOpened] = useState(false);
+    const [newSceneName, setNewSceneName] = useState("");
 
-    return <AleasMainLayout title={showName} requireAuth>
+    const onNewSceneBtnClicked = () =>{
+        setNewSceneName("");
+        setNewModalOpened(true);
+    }
+
+    const onNewModalCancel = () => setNewModalOpened(false);
+
+    const onNewModalValidate = async () => {
+
+        if (!show) {
+            return;
+        }
+
+        const newScene = createScene(newSceneName);
+        await showControl.mutations.addScene(newScene);
+
+        router.push(`${router.asPath}/scenes/edit/${newSceneName}`);
+    }
+
+
+    const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+    const deleteBtnEnabled = scene !== undefined;
+    const onDeleteBtnClicked = () => setDeleteAlertOpen(true);
+    const onDeleteModalCancel = () => setDeleteAlertOpen(false);
+    const onDeleteModalConfirm = async () => {
+        if (!show || !scene) {
+            return;
+        }
+
+        const sceneName = scene.name;
+        await showControl.mutations.deleteScene(scene);
+        setDeleteAlertOpen(false);
+
+        toast.info(`La scène ${sceneName} a été supprimée`);
+    }
+
+    return <AleasMainLayout title={showName} requireAuth toasts>
         <div className="centered-row gap-4">
             <div className="centered-col gap-8">
                 <div className="centered-row gap-3">
@@ -108,33 +123,33 @@ const ShowPage = () => {
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-row items-center justify-center gap-3">
                     <AleasButton
-                        onClick={onPlayBtnClicked}
-                        disabled={!playBtnEnabled}
+                        onClick={onToggleBtnClicked}
+                        disabled={!toggleBtnEnabled}
                     >
-                        Play
-                    </AleasButton>
-
-                    <AleasButton
-                        onClick={onStopBtnClicked}
-                        disabled={!stopBtnEnabled}
-                    >
-                        Stop
+                        {isPlaying ? "Stop" : "Tester"}
                     </AleasButton>
 
                     <AleasButton
                         onClick={onEditBtnClicked}
                         disabled={!editBtnClicked}
                     >
-                        Edit
+                        Editer
                     </AleasButton>
 
                     <AleasButton
                         onClick={onNewSceneBtnClicked}
                         disabled={!newBtnEnabled}
                     >
-                        New scene
+                        Nouvelle scène
+                    </AleasButton>
+
+                    <AleasButton
+                        onClick={onDeleteBtnClicked}
+                        disabled={!deleteBtnEnabled}
+                    >
+                        Supprimer
                     </AleasButton>
                 </div>
                 
@@ -161,6 +176,31 @@ const ShowPage = () => {
                 <DmxSlider value={master} setValue={setMaster} sliderType="Percent" />
             </div>
         </div>
+
+        <AleasModalDialog
+            isOpen={newModalOpened}
+            onConfirm={onNewModalValidate}
+            onCancel={onNewModalCancel}
+            canValidate={newSceneName.length >= 4}
+        >
+            <div className="flex flex-col justify-center items-center gap-3 mb-10">
+                <div>Entrez un nom pour la nouvelle scène :</div>
+                <AleasTextField value={newSceneName} onValueChange={setNewSceneName} />
+            </div>
+        </AleasModalDialog>
+
+        <AleasModalDialog
+            isOpen={deleteAlertOpen}
+            onConfirm={onDeleteModalConfirm}
+            onCancel={onDeleteModalCancel}
+            confirmText="Oui"
+            cancelText="Non"
+        >
+            <div className="flex flex-col justify-center items-center gap-3 mb-10">
+                <div>Êtes-vous certain·e de vouloir supprimer la scène ?</div>
+            </div>
+        </AleasModalDialog>
+
     </AleasMainLayout>
 }
 
