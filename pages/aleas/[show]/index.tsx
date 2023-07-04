@@ -1,6 +1,7 @@
 import { AleasMainLayout } from "@/components/aleas/aleas-layout"
 import { useAleasRuntime } from "@/lib/services/aleas/aleas-runtime";
-import { getShow } from "@/lib/services/aleas/aleas-api";
+import { getShow } from "@/lib/services/api/show-control-api";
+
 import { useEffectAsync } from "@/lib/services/core/hooks";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
