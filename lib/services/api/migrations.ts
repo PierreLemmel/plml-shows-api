@@ -7,6 +7,7 @@ import seedRandomTimerDurations from "./migrations/004 - seedTimerDurations";
 import seedFixtureDefinitions from "./migrations/005 - seedFixtureDefinitions";
 import seedLightingPlans from "./migrations/006 - seedLightingPlans";
 import seedShows from "./migrations/007 - seedShows";
+import seedTremplinLightingPlan from "./migrations/008 - seedTremplinLightingPlan";
 
 
 const migrationHandlers: MigrationHandler[] = [
@@ -17,6 +18,7 @@ const migrationHandlers: MigrationHandler[] = [
     seedFixtureDefinitions,
     seedLightingPlans,
     seedShows,
+    seedTremplinLightingPlan,
 ];
 
 

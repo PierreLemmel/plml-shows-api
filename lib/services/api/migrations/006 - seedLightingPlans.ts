@@ -1,6 +1,6 @@
 import { generateId } from "../../core/utils";
 import { StageLightingPlan } from "../../dmx/dmx512";
-import { createLightingPlan } from "../showControlApi";
+import { createLightingPlan } from "../show-control-api";
 
 
 export default async function seedLightingPlans() {

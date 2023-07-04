@@ -1,12 +1,12 @@
 import { generateId } from "../../core/utils";
 import { StageLightingPlan } from "../../dmx/dmx512";
-import { createLightingPlan, createShow } from "../showControlApi";
+import { createLightingPlan, createShow } from "../show-control-api";
 
 
 export default async function seedTremplinLightingPlan() {
 
     const tremplinLP: StageLightingPlan = {
-        name: "Tremplin - Baladin",
+        name: "Tremplin - Baladins",
         id: generateId(),
         fixtureCollection: "default",
         fixtures: {
@@ -209,9 +209,9 @@ export default async function seedTremplinLightingPlan() {
     await createLightingPlan(tremplinLP);
 
     const tremplinShow = {
-        name: "Tremplin - Baladin",
+        name: "Tremplin - Baladins",
         id: generateId(),
-        lightingPlan: "Pierre - Light",
+        lightingPlan: "Tremplin - Baladins",
         scenes: []
     };
 

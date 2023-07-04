@@ -27,3 +27,7 @@ export type ValueAtPath<T, P extends string> = P extends keyof T
         ? ValueAtPath<T[K], R>
         : never
     : never;
+
+export interface MinMax {
+    min: number, max: number
+}

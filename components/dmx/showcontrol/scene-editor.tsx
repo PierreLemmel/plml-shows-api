@@ -6,8 +6,8 @@ import { replaceFirstElement, sorted } from "@/lib/services/core/arrays";
 import { Color, RgbColor } from "@/lib/services/core/types/rgbColor";
 import { Action, AsyncDipsatch } from "@/lib/services/core/types/utils";
 import { mergeClasses, withValue } from "@/lib/services/core/utils";
-import { Chans, DmxRange } from "@/lib/services/dmx/dmx512";
-import { createDefaultValuesForFixture, FixtureInfo, orderedFixtures, Scene, SceneElement, SceneElementInfo, Show, toScene, useLightingPlanInfo, useRealtimeScene, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
+import { Chans } from "@/lib/services/dmx/dmx512";
+import { createDefaultValuesForFixture, FixtureInfo, orderedFixtures, Scene, SceneElement, SceneElementInfo, SceneElementValues, Show, toScene, useLightingPlanInfo, useRealtimeScene, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
 import { Dispatch, Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { DndProvider, useDrag, useDrop, XYCoord } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -357,8 +357,12 @@ const SEFixtureCard = (props: SEFixtureCardProps) => {
                                 value={values[type]!}
                                 setValue={val => {
                                     const updatedValues = {...values}
-                                    updatedValues[type] = val as DmxRange;
-                                    const updated = withValue(element, "values", updatedValues);
+                                    updatedValues[type] = val;
+
+                                    const updated = {
+                                        ...element,
+                                        values: updatedValues
+                                    }
 
                                     onValueChanged(updated);
                                 }}
@@ -373,9 +377,12 @@ const SEFixtureCard = (props: SEFixtureCardProps) => {
                         <FoldableColorPicker
                             color={Color.getColorValue(values[type]!)}
                             onColorChange={color => {
-                                const updatedValues = {...values}
+                                const updatedValues: SceneElementValues = {...values}
                                 updatedValues[type] = color;
-                                const updated = withValue(element, "values", updatedValues);
+                                const updated = {
+                                    ...element,
+                                    values: updatedValues
+                                }
 
                                 onValueChanged(updated);
                             }}

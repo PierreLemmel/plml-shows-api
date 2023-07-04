@@ -1,11 +1,11 @@
 import { createContext, Dispatch, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { getFixtureCollection, getLightingPlan, getShow, createShow, updateShow } from "../api/showControlApi";
+import { getFixtureCollection, getLightingPlan, getShow, createShow, updateShow } from "../api/show-control-api";
 import { replaceFirstElement } from "../core/arrays";
 import { useEffectAsync, useInterval } from "../core/hooks";
 import { Color, RgbColor, RgbNamedColor } from "../core/types/rgbColor";
 import { HasId, Named } from "../core/types/utils";
 import { doNothing, doNothingAsync, generateId, notImplemented, notImplementedAsync } from "../core/utils";
-import { Chans, DmxRange, Fixtures, StageLightingPlan } from "./dmx512";
+import { Chans, Fixtures, StageLightingPlan } from "./dmx512";
 import { useDmxControl } from "./dmxControl";
 
 export interface Show extends Named, HasId {
@@ -19,7 +19,7 @@ export interface Scene extends Named, HasId {
 }
 
 export type SceneElementValues = Partial<{
-    [chan in Chans.NumberChannelType]: DmxRange;
+    [chan in Chans.NumberChannelType]: number;
 }> & Partial<{
     [chan in Chans.ColorChannelType]: RgbColor|RgbNamedColor;
 }>
@@ -689,7 +689,7 @@ export function useLightingPlanInfo(): LightingPlanInfo|null {
     }
 }
 
-export function useRealtimeScene(scene: Scene|undefined, isPlaying: boolean): Track|null {
+export function useRealtimeScene(scene: Scene|undefined, isPlaying: boolean = true, master: number = 1): Track|null {
 
     const {
         controler
@@ -730,7 +730,7 @@ export function useRealtimeScene(scene: Scene|undefined, isPlaying: boolean): Tr
             return;
         }
 
-        updateTrack(currTrack, { scene, enabled: isPlaying });
+        updateTrack(currTrack, { scene, enabled: isPlaying, master });
 
     }, [scene, isPlaying, tracks]);
 
