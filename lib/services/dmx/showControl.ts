@@ -663,23 +663,6 @@ export function useShowControl() {
     return useContext<ShowControlProps>(ShowControlContext);
 }
 
-function generateShowInfo(show: Show, lightingPlan: StageLightingPlan, fixtureCollection: Fixtures.FixtureModelCollection): ShowInfo {
-
-    throw new Error("Not implemented");
-    // const { scenes, name, id } = show;
-
-    // const lpInfo = useLightingPlanInfo();
-    // const sceneInfos = scenes.map(scene => generateSceneInfo(scene, lightingPlan, fixtureCollection));
-
-
-    // return {
-    //     name,
-    //     id,
-    //     scenes: sceneInfos,
-    //     lightingPlan: lpInfo!,
-    // }
-}
-
 export function useShowInfo(): ShowInfo|null {
 
     const {
@@ -690,8 +673,19 @@ export function useShowInfo(): ShowInfo|null {
 
     const result = useMemo(() => {
         if (show && lightingPlan && fixtureCollection) {
-            const info = generateShowInfo(show, lightingPlan, fixtureCollection);
-            return info;
+
+            const { scenes, name, id } = show;
+
+            const lpInfo = useLightingPlanInfo();
+            const sceneInfos = scenes.map(scene => generateSceneInfo(scene, lightingPlan, fixtureCollection));
+
+
+            return {
+                name,
+                id,
+                scenes: sceneInfos,
+                lightingPlan: lpInfo!,
+            }
         }
         else {
             return null;

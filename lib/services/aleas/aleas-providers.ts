@@ -58,40 +58,36 @@ export function useAleasProvider<T extends AleasProviderItem, U>(providers: T[],
     }
 }
 
-export interface AleasDurationItem extends AleasProviderItem {
+export interface AleasDurationItemInfo extends AleasProviderItem {
     duration: MinMax;
     fade: MinMax;
 }
 
-export interface AleasSceneItem extends AleasProviderItem {
+export interface AleasSceneItemInfo extends AleasProviderItem {
     scene: Scene;
 }
 
-export type AudioItemType = "FromCollection"|"NoAudio";
-interface AleasAudioItemBase<T extends AudioItemType> extends AleasProviderItem {
-    type: T;
-}
 
-export interface NoAudioItem extends AleasAudioItemBase<"NoAudio"> {
+export type AleasAudioItemInfo = AleasProviderItem & (
+    { type: "NoAudio"} |
+    { 
+        type: "FromCollection",
+        collection: AudioClipCollection,
+        volume: MinMax
+    }
+)
 
-}
-export interface AleasAudioCollectionItem extends AleasAudioItemBase<"FromCollection"> {
-    collection: AudioClipCollection;
-}
+export function useAleasDurationProvider(providers: AleasDurationItemInfo[]): AleasProvider<AleasDuration> {
 
-export type AleasAudioItem = NoAudioItem|AleasAudioCollectionItem;
-
-export function useAleasDurationProvider(providers: AleasDurationItem[]): AleasProvider<AleasDuration> {
-
-    const getRandomValue = useCallback((item: AleasDurationItem) => getRandomDuration(item.duration, item.fade), []);
+    const getRandomValue = useCallback((item: AleasDurationItemInfo) => getRandomDuration(item.duration, item.fade), []);
     const provider = useAleasProvider(providers, getRandomValue);
 
     return provider;
 }
 
-export function useAleasAudioProvider(providers: AleasAudioItem[]): AleasProvider<AudioClipData|null> {
+export function useAleasAudioProvider(providers: AleasAudioItemInfo[]): AleasProvider<AudioClipData|null> {
 
-    const getRandomValue = useCallback((item: AleasAudioItem) => {
+    const getRandomValue = useCallback((item: AleasAudioItemInfo) => {
 
         if (item.type === "NoAudio") {
             return null;
@@ -106,9 +102,9 @@ export function useAleasAudioProvider(providers: AleasAudioItem[]): AleasProvide
     return provider;
 }
 
-export function useAleasSceneProvider(providers: AleasSceneItem[]): AleasProvider<Scene> {
+export function useAleasSceneProvider(providers: AleasSceneItemInfo[]): AleasProvider<Scene> {
 
-    const getValue = useCallback((item: AleasSceneItem) => item.scene, []);
+    const getValue = useCallback((item: AleasSceneItemInfo) => item.scene, []);
     const provider = useAleasProvider(providers, getValue);
 
     return provider;

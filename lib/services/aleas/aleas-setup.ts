@@ -1,7 +1,7 @@
 import { HasId, MinMax, Named } from "../core/types/utils";
 import { randomRange } from "../core/utils";
 import { SceneInfo, ShowInfo, useShowInfo } from "../dmx/showControl";
-import { AleasProviderItem } from "./providers";
+import { AleasProviderItem } from "./aleas-providers";
 
 export interface IntroOutroSettings {
     scene: string;
@@ -56,7 +56,10 @@ export interface AleasShow extends Named, HasId {
 
 export interface AleasShowInfo extends Named, HasId {
     show: ShowInfo;
-    sceneInfo: SceneInfo[];
+    scenesInfo: SceneInfo[];
+
+    generation: AleasGenerationInfo;
+    providers: AleasProviderInfo;
 }
 
 export interface AleasGenerationInfo {
@@ -64,6 +67,9 @@ export interface AleasGenerationInfo {
     blackoutDuration: number;
 }
 
+export interface AleasProviderInfo {
+
+}
 
 export function getRandomDuration(duration: MinMax, fade: MinMax): AleasDuration {
 
@@ -78,13 +84,64 @@ export function getRandomDuration(duration: MinMax, fade: MinMax): AleasDuration
     }
 }
 
-// export function useAleasShowInfo(show: AleasShow): AleasShowInfo {
+function generateGenerationInfo(generation: AleasGenerationSettings): AleasGenerationInfo {
     
-//     const showInfo = useShowInfo();
-//     // const sceneInfo = useAleasSceneInfo(show);
+    const {
+        showDuration,
+        blackoutDuration
+    } = generation;
 
-//     return {
-//         show,
-//         sceneInfo
-//     }
-// }
+    return {
+        showDuration,
+        blackoutDuration
+    }
+}
+
+function generateProvidersInfo(providers: AleasProviderSettings): AleasProviderInfo {
+
+    const result: AleasProviderInfo = {
+    }
+
+    return result;
+}
+
+export function useAleasShowInfo(aleasShow: AleasShow|null): AleasShowInfo|null {
+    
+    if (!aleasShow) {
+        return null;
+    }
+
+    const {
+        name,
+        id,
+        showName,
+        generation,
+        providers
+    } = aleasShow;
+
+
+    const showInfo = useShowInfo();
+    
+
+    if (!showInfo) {
+        return null;
+    }
+    else {
+        if(showInfo.name !== showName) {
+            throw new Error("Show name mismatch");
+        }
+    }
+
+    const generationInfo = generateGenerationInfo(generation);
+    const providersInfo = generateProvidersInfo(providers);
+
+    const result: AleasShowInfo = {
+        show: showInfo,
+        generation: generationInfo,
+        providers: providersInfo,
+        scenesInfo: showInfo.scenes,
+        name, id
+    }
+    
+    return result;
+}

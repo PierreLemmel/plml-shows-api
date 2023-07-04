@@ -8,6 +8,7 @@ import { Action, AsyncDipsatch } from "@/lib/services/core/types/utils";
 import { mergeClasses, withValue } from "@/lib/services/core/utils";
 import { Chans } from "@/lib/services/dmx/dmx512";
 import { createDefaultValuesForFixture, FixtureInfo, orderedFixtures, Scene, SceneElement, SceneElementInfo, SceneElementValues, Show, toScene, useLightingPlanInfo, useRealtimeScene, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
+import { on } from "events";
 import { Dispatch, Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { DndProvider, useDrag, useDrop, XYCoord } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -49,35 +50,37 @@ const SceneEditor = (props: SceneEditorProps) => {
 
     const sceneInfo = useSceneInfo(workScene);
 
+    const onFixtureAdded = useCallback((fixture: FixtureInfo) => {
+console.log("Hey")
+        if (!workScene) {
+            return;
+        }
+        
+        const {
+            name,
+            model
+        } = fixture;
+
+        const seValues = createDefaultValuesForFixture(model);
+
+        const newSceneElement: SceneElement = {
+            fixture: name,
+            values: seValues,
+        }
+
+        const updated = [...workScene.elements, newSceneElement];
+        setWorkScene({
+            ...workScene,
+            elements: updated,
+        });
+    }, [workScene]);
+
     const [ , sceneDropZone] = useDrop<DndDragObject>({
         accept: [
             ItemTypes.LPCard,
             ItemTypes.SECard,
         ],
-        drop: (item) => {
-            if (!workScene) {
-                return;
-            }
-            
-            const { fixture } = item;
-            const {
-                name,
-                model
-            } = fixture;
-
-            const seValues = createDefaultValuesForFixture(model);
-
-            const newSceneElement: SceneElement = {
-                fixture: name,
-                values: seValues,
-            }
-
-            const updated = [...workScene.elements, newSceneElement];
-            setWorkScene({
-                ...workScene,
-                elements: updated,
-            });
-        },
+        drop: (item) => onFixtureAdded(item.fixture),
         collect: monitor => monitor.isOver(),
     })
 
@@ -151,6 +154,7 @@ const SceneEditor = (props: SceneEditorProps) => {
                                     key={fixture.id}
                                     fixture={fixture}
                                     enabled={enabled}
+                                    onAddClicked={onFixtureAdded}
                                 />;
                             })}
                         </div> :
@@ -221,6 +225,7 @@ interface DndCollectedProps {
 interface LPFixtureCardProps {
     fixture: FixtureInfo;
     enabled: boolean;
+    onAddClicked: (fixture: FixtureInfo) => void;
 }
 
 interface DndDropResult {
@@ -232,6 +237,7 @@ const LPFixtureCard = (props: LPFixtureCardProps) => {
     const {
         fixture,
         enabled,
+        onAddClicked,
     } = props;
     const { fullName } = fixture;
 
@@ -255,13 +261,18 @@ const LPFixtureCard = (props: LPFixtureCardProps) => {
     return <div
         className={mergeClasses(
             "rounded-md p-2 relative overflow-visible",
+            "flex flex-row items-center justify-between",
             (!enabled && "opacity-50"),
             enabled && (isDragging ? "hover:cursor-grabbing" : "hover:cursor-grab"),
             isDragging ? "bg-slate-600" : "bg-slate-800/80",
         )}
         ref={drag}
     >
-        {fullName}
+        <div>{fullName}</div>
+        <div className={mergeClasses(
+            "text-lg font-bold px-2",
+            "hover:scale-110 hover:cursor-pointer"
+        )} onClick={() => onAddClicked(fixture)}>+</div>
     </div>
 }
 
