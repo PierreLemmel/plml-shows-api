@@ -26,7 +26,7 @@ export function replaceFirstElement<T>(input: T[], predicate: ((elt: T) => boole
     return input;
 }
 
-export function sorted<T>(input: T[], compareFn: (a: T, b: T) => number): T[] {
+export function sorted<T>(input: T[], predicate: (elt: T) => number): T[] {
     const copy = [...input];
-    return copy.sort(compareFn);
+    return copy.sort((a, b) => predicate(a) - predicate(b));
 }

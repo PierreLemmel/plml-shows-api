@@ -108,6 +108,7 @@ export interface FixtureInfo extends Named, HasId {
     fullName: string;
     address: number;
     model: FixtureModelInfo;
+    order: number;
 }
 
 export type FixtureModelInfo = TradFixtureModelInfo|LedFixtureModelInfo;
@@ -261,6 +262,7 @@ export function computeFixtureInfo(fixtureName: string, lightingPlan: StageLight
         fullName,
         address,
         model: modelInfo,
+        order: fixture.order ?? 0
     }
 
     return fixtureInfo;
@@ -316,7 +318,6 @@ export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan,
 }
 
 const isTrack = (track: Track|TrackId): track is Track => {
-
     return typeof track === "object";
 }
 
@@ -341,7 +342,15 @@ export function toScene(sceneInfo: SceneInfo): Scene {
     return result;
 }
 
+export function orderedFixtures(lightingPlan: LightingPlanInfo): FixtureInfo[] {
+    const { fixtures } = lightingPlan;
 
+    const result = Object.values(fixtures).sort((a, b) => {
+        return a.order - b.order;
+    });
+
+    return result;
+}
 
 export type CreateTrackOptions = Partial<Omit<Track, "scene"|"id"|"info"|"rawValues">>
 export type UpdateTrackOptions = Partial<Omit<Track, "id"|"info"|"rawValues">>
