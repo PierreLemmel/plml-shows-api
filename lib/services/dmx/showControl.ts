@@ -671,14 +671,12 @@ export function useShowInfo(): ShowInfo|null {
         fixtureCollection
     } = useShowControl();
 
+    const lpInfo = useLightingPlanInfo();
     const result = useMemo(() => {
         if (show && lightingPlan && fixtureCollection) {
 
             const { scenes, name, id } = show;
-
-            const lpInfo = useLightingPlanInfo();
             const sceneInfos = scenes.map(scene => generateSceneInfo(scene, lightingPlan, fixtureCollection));
-
 
             return {
                 name,
@@ -690,7 +688,7 @@ export function useShowInfo(): ShowInfo|null {
         else {
             return null;
         }
-    }, [show, lightingPlan, fixtureCollection])
+    }, [show, lightingPlan, fixtureCollection, lpInfo])
 
     return result;
 }

@@ -1,7 +1,8 @@
+import { useEffect } from "react";
 import { HasId, MinMax, Named } from "../core/types/utils";
 import { randomRange } from "../core/utils";
 import { SceneInfo, ShowInfo, useShowInfo } from "../dmx/showControl";
-import { AleasProviderItem } from "./aleas-providers";
+import { AleasAudioItemInfo, AleasDurationItemInfo, AleasProviderItem, AleasSceneItemInfo } from "./aleas-providers";
 
 export interface IntroOutroSettings {
     scene: string;
@@ -68,7 +69,9 @@ export interface AleasGenerationInfo {
 }
 
 export interface AleasProviderInfo {
-
+    audio: AleasAudioItemInfo[];
+    scenes: AleasSceneItemInfo[];
+    duration: AleasDurationItemInfo[];
 }
 
 export function getRandomDuration(duration: MinMax, fade: MinMax): AleasDuration {
@@ -99,15 +102,22 @@ function generateGenerationInfo(generation: AleasGenerationSettings): AleasGener
 
 function generateProvidersInfo(providers: AleasProviderSettings): AleasProviderInfo {
 
+    const audio: AleasAudioItemInfo[] = [];
+    const scenes: AleasSceneItemInfo[] = [];
+    const duration: AleasDurationItemInfo[] = [];
+
     const result: AleasProviderInfo = {
+        audio,
+        scenes,
+        duration
     }
 
     return result;
 }
 
-export function useAleasShowInfo(aleasShow: AleasShow|null): AleasShowInfo|null {
-    
-    if (!aleasShow) {
+export function useAleasShowInfo(aleasShow: AleasShow|null, showInfo: ShowInfo|null): AleasShowInfo|null {
+
+    if (!aleasShow || !showInfo) {
         return null;
     }
 
@@ -119,17 +129,12 @@ export function useAleasShowInfo(aleasShow: AleasShow|null): AleasShowInfo|null 
         providers
     } = aleasShow;
 
-
-    const showInfo = useShowInfo();
-    
-
     if (!showInfo) {
         return null;
     }
-    else {
-        if(showInfo.name !== showName) {
-            throw new Error("Show name mismatch");
-        }
+
+    if(showInfo.name !== showName) {
+        throw new Error("Show name mismatch");
     }
 
     const generationInfo = generateGenerationInfo(generation);
