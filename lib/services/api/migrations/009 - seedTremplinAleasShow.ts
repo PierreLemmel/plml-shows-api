@@ -14,9 +14,9 @@ export default async function seedTremplinAleasShow() {
             audio: [
                 {
                     type: "FromCollection",
-                    collectionName: "aiva-001",
+                    collectionName: "aiva",
                     id: generateId(),
-                    name: "AIVA - All",
+                    name: "AIVA",
                     canChain: true,
                     active: true,
                     weight: 4,

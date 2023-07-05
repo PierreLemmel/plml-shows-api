@@ -1,10 +1,9 @@
 import { sum } from "@/lib/services/core/maths";
 import { HasId, MinMax, Named } from "@/lib/services/core/types/utils";
 import { generateId, randomElement, randomRange } from "@/lib/services/core/utils";
-import { type } from "os";
 import { useCallback, useMemo, useRef } from "react";
 import { AudioClipCollection, AudioClipData } from "../audio/audioControl";
-import { Scene } from "../dmx/showControl";
+import { Scene, SceneInfo } from "../dmx/showControl";
 import { AleasDuration, getRandomDuration } from "./aleas-setup";
 
 
@@ -64,7 +63,7 @@ export interface AleasDurationItemInfo extends AleasProviderItem {
 }
 
 export interface AleasSceneItemInfo extends AleasProviderItem {
-    scene: Scene;
+    scene: SceneInfo;
 }
 
 
@@ -102,7 +101,7 @@ export function useAleasAudioProvider(providers: AleasAudioItemInfo[]): AleasPro
     return provider;
 }
 
-export function useAleasSceneProvider(providers: AleasSceneItemInfo[]): AleasProvider<Scene> {
+export function useAleasSceneProvider(providers: AleasSceneItemInfo[]): AleasProvider<SceneInfo> {
 
     const getValue = useCallback((item: AleasSceneItemInfo) => item.scene, []);
     const provider = useAleasProvider(providers, getValue);

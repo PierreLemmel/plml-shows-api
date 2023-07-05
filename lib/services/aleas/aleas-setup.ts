@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { getAudioClipCollection } from "../api/audio";
 import { HasId, MinMax, Named } from "../core/types/utils";
 import { randomRange } from "../core/utils";
 import { SceneInfo, ShowInfo, useShowInfo } from "../dmx/showControl";
@@ -71,7 +72,7 @@ export interface AleasGenerationInfo {
 export interface AleasProviderInfo {
     audio: AleasAudioItemInfo[];
     scenes: AleasSceneItemInfo[];
-    duration: AleasDurationItemInfo[];
+    durations: AleasDurationItemInfo[];
 }
 
 export function getRandomDuration(duration: MinMax, fade: MinMax): AleasDuration {
@@ -100,16 +101,59 @@ function generateGenerationInfo(generation: AleasGenerationSettings): AleasGener
     }
 }
 
-function generateProvidersInfo(providers: AleasProviderSettings): AleasProviderInfo {
+function generateProvidersInfo(providers: AleasProviderSettings, showInfo: ShowInfo): AleasProviderInfo {
 
-    const audio: AleasAudioItemInfo[] = [];
-    const scenes: AleasSceneItemInfo[] = [];
-    const duration: AleasDurationItemInfo[] = [];
+    const {
+        audio: audioSettings,
+        scenes: sceneSettings,
+        durations: durationSettings
+    } = providers;
+    
+    const audio: AleasAudioItemInfo[] = audioSettings.map((item) => {
+        const { name, id, active, canChain, weight } = item;
+
+        if (item.type === "NoAudio") {
+            return {
+                name, id, active, canChain, weight,
+                type: "NoAudio"
+            }
+        }
+        else {
+            const { collectionName, volume } = item;
+            const collection = {
+                name: collectionName,
+                clips: {}
+            }
+            return {
+                name, id, active, canChain, weight,
+                collection, volume,
+                type: "FromCollection",
+            }
+        }
+    });
+    const scenes: AleasSceneItemInfo[] = sceneSettings
+        .map((item) => {
+            const scene = showInfo.scenes.find((scene) => scene.name === item.sceneName)!;
+
+            return {
+                item,
+                scene
+            }
+        })
+        .filter(({ item, scene }) => scene !== undefined)
+        .map(({ item, scene }) => {
+            const { name, id, active, canChain, weight } = item;
+            return {
+                name, id, active, canChain, weight,
+                scene
+            }
+        });
+    const durations: AleasDurationItemInfo[] = [...durationSettings];
 
     const result: AleasProviderInfo = {
         audio,
         scenes,
-        duration
+        durations
     }
 
     return result;
@@ -138,7 +182,7 @@ export function useAleasShowInfo(aleasShow: AleasShow|null, showInfo: ShowInfo|n
     }
 
     const generationInfo = generateGenerationInfo(generation);
-    const providersInfo = generateProvidersInfo(providers);
+    const providersInfo = generateProvidersInfo(providers, showInfo);
 
     const result: AleasShowInfo = {
         show: showInfo,
