@@ -1,7 +1,7 @@
 import { generateId } from "../../core/utils";
 import { Fixtures } from "../../dmx/dmx512";
 import { setDocument } from "../firebase";
-import { createFixtureCollection } from "../showControlApi";
+import { createFixtureCollection } from "../show-control-api";
 
 
 export default async function seedFixtureDefinitions() {

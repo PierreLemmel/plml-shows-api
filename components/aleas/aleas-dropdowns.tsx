@@ -80,7 +80,7 @@ export const AleasDropdownButton = (props: DropdownProps) => {
                 btnBackgroundClasses,
                 "z-10 origin-top-right absolute right-0 mt-2 w-48 rounded-md")
             }>
-                <div className="py-1 px-[0.1em]">
+                <div className="py-1 px-[0.1em] max-h-48 overflow-y-auto">
                     {options.map((option, i) => (
                     <div
                         key={i}
@@ -176,6 +176,7 @@ export const AleasDropdownInput = (props: DropdownProps) => {
                             key={i}
                             className={mergeClasses(
                                 "w-full text-left px-4 py-2",
+                                "max-h-48 overflow-y-auto",
                                 "hover:brightness-125 hover:bg-indigo-500/40 rounded-md"
                             )}
                             onClick={() => handleSelectOption(option)}

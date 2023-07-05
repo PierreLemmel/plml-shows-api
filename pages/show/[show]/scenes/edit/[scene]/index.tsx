@@ -1,16 +1,8 @@
-import { AleasButton } from "@/components/aleas/aleas-buttons";
 import { AleasMainLayout } from "@/components/aleas/aleas-layout";
-import AleasSkeletonLoader from "@/components/aleas/aleas-skeleton-loader";
 import SceneEditor from "@/components/dmx/showcontrol/scene-editor";
-import { mergeClasses } from "@/lib/services/core/utils";
-import { Fixtures, StageLightingPlan } from "@/lib/services/dmx/dmx512";
-import { createDefaultValuesForFixture, extractChannelsFromFixture, FixtureInfo, Scene, SceneElement, SceneElementInfo, useLightingPlanInfo, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
+import { Scene, useShowControl } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useState } from "react";
-import { DndProvider, useDrag, useDragLayer, useDrop, XYCoord } from 'react-dnd';
-import { HTML5Backend } from "react-dnd-html5-backend";
-
-
+import { useEffect, useState } from "react";
 
 const EditScene = () => {
 

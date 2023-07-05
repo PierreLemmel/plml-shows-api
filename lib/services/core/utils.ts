@@ -114,7 +114,11 @@ export function returnZero(...val: any[]) {
 }
 
 export function notImplemented<T>(): T {
-    throw "Not implemented";
+    throw new Error("Not implemented");
+}
+
+export function notImplementedAsync<T>(): Promise<T> {
+    throw new Error("Not implemented");
 }
 
 export function withValue<T, P extends Pathes<T>>(obj: T, path: P, value: ValueAtPath<T, P>): T {

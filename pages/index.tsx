@@ -23,6 +23,12 @@ const Home = () => <>
 						</AleasButton>
 					</Link>
 
+					<Link href="https://www.festivaloffavignon.com/programme/2023/aleas-s33308/">
+						<AleasButton>
+							Réservations
+						</AleasButton>
+					</Link>
+
 					<Link href="/billetreduc">
 						<AleasButton>
 							Générateur de critiques BilletReduc

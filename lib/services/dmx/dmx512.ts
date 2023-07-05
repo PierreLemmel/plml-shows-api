@@ -1,6 +1,3 @@
-import exp from "constants";
-import { clampByte } from "../core/maths";
-import { IntRange } from "../core/types/ranges";
 import { HasId, Named } from "../core/types/utils";
 
 
@@ -216,6 +213,7 @@ export module Fixtures {
         readonly model: string;
         readonly mode?: number;
         readonly remarks?: string;
+        readonly order?: number;
         readonly key: string;
     }
 }
@@ -254,5 +252,3 @@ export interface ClosingInterface extends WriteInterfaceBase<"Closing"> { }
 export type DmxWriteInterface = UndetectedInterface|ClosedInterface|OpeningInterface|OpenedInterface|ClosingInterface;
 
 export type WriteInterfaceType = "None"|"EnttecOpenDmx";
-
-export type DmxRange = IntRange<0, 256>

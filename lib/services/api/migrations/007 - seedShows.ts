@@ -1,7 +1,6 @@
 import { generateId } from "../../core/utils";
 import { Show } from "../../dmx/showControl";
-import { setDocument } from "../firebase";
-import { createShow } from "../showControlApi";
+import { createShow } from "../show-control-api";
 
 
 export default async function seedShows() {
