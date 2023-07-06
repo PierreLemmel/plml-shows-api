@@ -51,7 +51,7 @@ const SceneEditor = (props: SceneEditorProps) => {
     const sceneInfo = useSceneInfo(workScene);
 
     const onFixtureAdded = useCallback((fixture: FixtureInfo) => {
-console.log("Hey")
+
         if (!workScene) {
             return;
         }

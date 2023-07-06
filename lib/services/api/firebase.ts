@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { collection, doc, DocumentData, getDoc, getDocs, getFirestore, setDoc, WithFieldValue } from "firebase/firestore";
+import { collection, doc, DocumentData, getDoc, getDocs, getFirestore, initializeFirestore, setDoc, WithFieldValue } from "firebase/firestore";
 import { getDownloadURL, getStorage, list, ref, uploadBytes } from "firebase/storage";
 import { getAuth, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth"
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
@@ -24,9 +24,12 @@ function getFirebase(): FirebaseProps {
             messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
             appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
         };
-        
-        
+
         const app = initializeApp(firebaseConfig);
+
+        initializeFirestore(app, {
+            ignoreUndefinedProperties: true
+        })
         const db = getFirestore(app);
         const storage = getStorage(app);
         const auth = getAuth(app);

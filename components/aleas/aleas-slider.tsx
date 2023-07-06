@@ -1,10 +1,10 @@
-import { match, mergeClasses } from "@/lib/services/core/utils";
+import { doNothing, match, mergeClasses } from "@/lib/services/core/utils";
 import ReactSlider from "react-slider";
 
 
 export interface AleasSliderProps extends React.HTMLAttributes<HTMLDivElement> {
     value: number;
-    setValue: (val: number) => void;
+    setValue?: (val: number) => void;
     label?: string;
     orientation: "horizontal"|"vertical"
     step?: number;
@@ -21,7 +21,7 @@ const AleasSlider = (props: AleasSliderProps) =>{
         max,
         step,
         value,
-        setValue,
+        setValue = doNothing,
         orientation,
         invert,
         className,

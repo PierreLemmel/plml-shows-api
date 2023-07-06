@@ -34,3 +34,16 @@ export async function importAudioClip(file: File, name: string, clipInfo: AudioC
 
     await setDocument<AudioClipCollection>(collectionPath, { clips: newClips });
 }
+
+export async function getAudioClipCollection(name: string): Promise<AudioClipCollection> {
+    const path = pathCombine("audio", name.toLowerCase());
+    const result = await getDocument<AudioClipCollection>(path);
+
+    return result;
+}
+
+export async function getAudioClip(collectionName: string, clipName: string): Promise<AudioClipData> {
+
+    const collection = await getAudioClipCollection(collectionName);
+    return collection.clips[clipName];
+}
