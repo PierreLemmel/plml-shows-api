@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { getAudioClipCollection } from "../api/audio";
+import { useEffectAsync } from "../core/hooks";
 import { HasId, MinMax, Named } from "../core/types/utils";
 import { randomRange } from "../core/utils";
 import { SceneInfo, ShowInfo } from "../dmx/showControl";
@@ -23,6 +26,8 @@ export interface AleasDuration {
 export interface AleasGenerationSettings {
     showDuration: number;
     blackoutDuration: number;
+
+    splitThreshold: number;
 
     intro: IntroOutroSettings;
     outro: IntroOutroSettings;
@@ -63,7 +68,6 @@ export interface AleasShow extends Named, HasId {
 
 export interface AleasShowInfo extends Named, HasId {
     show: ShowInfo;
-    scenesInfo: SceneInfo[];
 
     generation: AleasGenerationInfo;
     providers: AleasProviderInfo;
@@ -82,7 +86,9 @@ export interface IntroOutroInfo {
 export interface AleasGenerationInfo {
     showDuration: number;
     blackoutDuration: number;
-
+    
+    splitThreshold: number;
+    
     intro: IntroOutroInfo;
     outro: IntroOutroInfo;
 }
@@ -112,7 +118,7 @@ function generateGenerationInfo(generation: AleasGenerationSettings): AleasGener
     return deepCopy;
 }
 
-function generateProvidersInfo(providers: AleasProviderSettings, showInfo: ShowInfo): AleasProviderInfo {
+async function generateProvidersInfo(providers: AleasProviderSettings, showInfo: ShowInfo): Promise<AleasProviderInfo> {
 
     const {
         audio: audioSettings,
@@ -120,7 +126,7 @@ function generateProvidersInfo(providers: AleasProviderSettings, showInfo: ShowI
         durations: durationSettings
     } = providers;
     
-    const audio: AleasAudioItemInfo[] = audioSettings.map((item) => {
+    const audio: AleasAudioItemInfo[] = await Promise.all(audioSettings.map(async (item) => {
         const { name, id, active, canChain, weight } = item;
 
         if (item.type === "NoAudio") {
@@ -131,17 +137,16 @@ function generateProvidersInfo(providers: AleasProviderSettings, showInfo: ShowI
         }
         else {
             const { collectionName, volume, duration, fadeDuration } = item;
-            const collection = {
-                name: collectionName,
-                clips: {}
-            }
+
+            const collection = await getAudioClipCollection(collectionName);
+            
             return {
                 name, id, active, canChain, weight,
                 collection, volume, duration, fadeDuration,
                 type: "FromCollection",
             }
         }
-    });
+    }));
     const scenes: AleasSceneItemInfo[] = sceneSettings
         .map((item) => {
             const scene = showInfo.scenes.find((scene) => scene.name === item.sceneName)!;
@@ -170,8 +175,19 @@ function generateProvidersInfo(providers: AleasProviderSettings, showInfo: ShowI
     return result;
 }
 
-export function useAleasShowInfo(aleasShow: AleasShow|null, showInfo: ShowInfo|null): AleasShowInfo|null {
+export  function useAleasShowInfo(aleasShow: AleasShow|null, showInfo: ShowInfo|null): AleasShowInfo|null {
 
+    const [aleasShowInfo, setAleasShowInfo] = useState<AleasShowInfo|null>(null);
+
+    useEffectAsync(async () => {
+        const result = await generateAleasShowInfo(aleasShow, showInfo);
+        setAleasShowInfo(result);
+    }, [aleasShow, showInfo]);
+
+    return aleasShowInfo;
+}
+
+async function generateAleasShowInfo(aleasShow: AleasShow|null, showInfo: ShowInfo|null): Promise<AleasShowInfo|null> {
     if (!aleasShow || !showInfo) {
         return null;
     }
@@ -193,13 +209,13 @@ export function useAleasShowInfo(aleasShow: AleasShow|null, showInfo: ShowInfo|n
     }
 
     const generationInfo = generateGenerationInfo(generation);
-    const providersInfo = generateProvidersInfo(providers, showInfo);
+    const providersInfo = await generateProvidersInfo(providers, showInfo);
 
     const result: AleasShowInfo = {
         show: showInfo,
         generation: generationInfo,
         providers: providersInfo,
-        scenesInfo: showInfo.scenes,
+        
         name, id
     }
     

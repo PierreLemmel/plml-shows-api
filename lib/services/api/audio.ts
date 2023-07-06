@@ -41,3 +41,9 @@ export async function getAudioClipCollection(name: string): Promise<AudioClipCol
 
     return result;
 }
+
+export async function getAudioClip(collectionName: string, clipName: string): Promise<AudioClipData> {
+
+    const collection = await getAudioClipCollection(collectionName);
+    return collection.clips[clipName];
+}

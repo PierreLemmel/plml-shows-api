@@ -1,7 +1,6 @@
 import { sum } from "@/lib/services/core/maths";
 import { HasId, MinMax, Named } from "@/lib/services/core/types/utils";
 import { generateId, randomElement, randomRange } from "@/lib/services/core/utils";
-import { useCallback, useMemo, useRef } from "react";
 import { AudioClipCollection, AudioClipData } from "../audio/audioControl";
 import { Scene, SceneInfo } from "../dmx/showControl";
 import { AleasDuration, getRandomDuration } from "./aleas-setup";
@@ -13,25 +12,33 @@ export interface AleasProviderItem extends Named, HasId {
     readonly canChain: boolean;
 }
 
-
-export interface AleasProvider<T> {
-    readonly nextValue: () => T;
+export interface ValueWithInfo<T> {
+    value: T;
+    info: {
+        provider: string;
+    }
 }
 
-export function useAleasProvider<T extends AleasProviderItem, U>(providers: T[], getValue: (elt: T) => U): AleasProvider<U> {
+export interface ProviderOptionsBase<T> {
+    filter?: (p:T) => boolean
+}
 
-    const excludeMapRef = useRef<Map<string, string|undefined>>(new Map());
+export interface AleasProvider<T> {
+    readonly nextValue: () => ValueWithInfo<T>
+}
 
-    const rootId = useMemo(generateId, []);
+function getProvider<T extends AleasProviderItem, U>(providers: T[], getValue: (elt: T) => U): AleasProvider<U> {
 
-    const getValueFromProviders = useCallback((providers: T[], collId: string): U => {
+    const excludeMap: Map<string, string|undefined> = new Map();
+
+    const rootId = generateId()
+
+    const getValueFromProviders = (providers: T[], collId: string): ValueWithInfo<U> => {
         
-        const excludeMap = excludeMapRef.current;
-
         const excludedId = excludeMap.get(collId);
-        const filtered = excludedId !== undefined ?
+        const filtered = (excludedId !== undefined ?
             providers.filter(p => p.id !== excludedId) : 
-            providers;
+            providers);
         
         const totalWeigth = sum(filtered.map(p => p.weight));
 
@@ -47,8 +54,13 @@ export function useAleasProvider<T extends AleasProviderItem, U>(providers: T[],
         excludeMap.set(collId, provider.canChain ? undefined : provider.id);
 
         const result = getValue(provider);
-        return result;
-    }, [getValue])
+        return {
+            value: result,
+            info: {
+                provider: provider.name
+            }
+        };
+    }
 
     const nextValue = () => getValueFromProviders(providers, rootId);
 
@@ -78,17 +90,17 @@ export type AleasAudioItemInfo = AleasProviderItem & (
     }
 )
 
-export function useAleasDurationProvider(providers: AleasDurationItemInfo[]): AleasProvider<AleasDuration> {
+export function getAleasDurationProvider(providers: AleasDurationItemInfo[]): AleasProvider<AleasDuration> {
 
-    const getRandomValue = useCallback((item: AleasDurationItemInfo) => getRandomDuration(item.duration, item.fade), []);
-    const provider = useAleasProvider(providers, getRandomValue);
+    const getRandomValue = (item: AleasDurationItemInfo) => getRandomDuration(item.duration, item.fade);
+    const provider = getProvider(providers, getRandomValue);
 
     return provider;
 }
 
-export function useAleasAudioProvider(providers: AleasAudioItemInfo[]): AleasProvider<AudioClipData|null> {
+export function getAleasAudioProvider(providers: AleasAudioItemInfo[]): AleasProvider<AudioClipData|null> {
 
-    const getRandomValue = useCallback((item: AleasAudioItemInfo) => {
+    const getRandomValue = (item: AleasAudioItemInfo) => {
 
         if (item.type === "NoAudio") {
             return null;
@@ -97,16 +109,16 @@ export function useAleasAudioProvider(providers: AleasAudioItemInfo[]): AleasPro
             const elts = Object.values(item.collection.clips);
             return randomElement(elts);
         }
-    }, []);
-    const provider = useAleasProvider(providers, getRandomValue);
+    };
+    const provider = getProvider(providers, getRandomValue);
 
     return provider;
 }
 
-export function useAleasSceneProvider(providers: AleasSceneItemInfo[]): AleasProvider<SceneInfo> {
+export function getAleasSceneProvider(providers: AleasSceneItemInfo[]): AleasProvider<SceneInfo> {
 
-    const getValue = useCallback((item: AleasSceneItemInfo) => item.scene, []);
-    const provider = useAleasProvider(providers, getValue);
+    const getValue = (item: AleasSceneItemInfo) => item.scene;
+    const provider = getProvider(providers, getValue);
 
     return provider;
 }
