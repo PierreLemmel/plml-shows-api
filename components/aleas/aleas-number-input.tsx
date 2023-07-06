@@ -1,30 +1,33 @@
-import { doNothing, mergeClasses } from "@/lib/services/core/utils";
+import { doNothing, match, mergeClasses } from "@/lib/services/core/utils";
 import { Dispatch, InputHTMLAttributes } from "react";
 
 interface AleasNumberInputProps extends InputHTMLAttributes<HTMLInputElement> {
     value: number;
     onValueChange?: Dispatch<number>;
+    inputSize?: "Normal" | "Small";
 }
 
 const AleasNumberInput = (props: AleasNumberInputProps) => {
     
     const {
         value,
-        onValueChange,
+        onValueChange = doNothing,
         className,
+        inputSize = "Normal",
         ...restProps
-    } = {
-        onValueChange: doNothing,
-        ...props
-    };
+    } = props;
 
     return <input
         type="number"
         
         className={mergeClasses(
-            "w-full min-w-[8rem] px-3 py-1 rounded-md resize-none",
+            "w-full px-3 py-1 rounded-md resize-none",
             "border border-gray-300 focus:outline-none focus:border-blue-500",
             "bg-slate-900/90",
+            match(inputSize, { 
+                "Normal": "min-w-[8em]",
+                "Small": "min-w-[3em]"
+            }),
             className
         )}
         min={0}

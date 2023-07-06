@@ -1,8 +1,6 @@
-import { useEffect } from "react";
-import { getAudioClipCollection } from "../api/audio";
 import { HasId, MinMax, Named } from "../core/types/utils";
 import { randomRange } from "../core/utils";
-import { SceneInfo, ShowInfo, useShowInfo } from "../dmx/showControl";
+import { SceneInfo, ShowInfo } from "../dmx/showControl";
 import { AleasAudioItemInfo, AleasDurationItemInfo, AleasProviderItem, AleasSceneItemInfo } from "./aleas-providers";
 
 export interface IntroOutroSettings {
@@ -11,6 +9,8 @@ export interface IntroOutroSettings {
 
     duration: MinMax;
     fadeDuration: MinMax;
+
+    volume: number;
 }
 
 
@@ -23,6 +23,9 @@ export interface AleasDuration {
 export interface AleasGenerationSettings {
     showDuration: number;
     blackoutDuration: number;
+
+    intro: IntroOutroSettings;
+    outro: IntroOutroSettings;
 }
 
 export type AleasAudioItemSettings = AleasProviderItem & ({
@@ -30,7 +33,9 @@ export type AleasAudioItemSettings = AleasProviderItem & ({
 }|{
     type: "FromCollection",
     collectionName: string,
-    volume: MinMax
+    volume: MinMax,
+    duration: MinMax,
+    fadeDuration: MinMax
 })
 
 export interface AleasSceneItemSettings extends AleasProviderItem {
@@ -64,9 +69,22 @@ export interface AleasShowInfo extends Named, HasId {
     providers: AleasProviderInfo;
 }
 
+export interface IntroOutroInfo {
+    scene: string;
+    audio: string;
+
+    duration: MinMax;
+    fadeDuration: MinMax;
+
+    volume: number;
+}
+
 export interface AleasGenerationInfo {
     showDuration: number;
     blackoutDuration: number;
+
+    intro: IntroOutroInfo;
+    outro: IntroOutroInfo;
 }
 
 export interface AleasProviderInfo {
@@ -90,15 +108,8 @@ export function getRandomDuration(duration: MinMax, fade: MinMax): AleasDuration
 
 function generateGenerationInfo(generation: AleasGenerationSettings): AleasGenerationInfo {
     
-    const {
-        showDuration,
-        blackoutDuration
-    } = generation;
-
-    return {
-        showDuration,
-        blackoutDuration
-    }
+    const deepCopy = structuredClone(generation);
+    return deepCopy;
 }
 
 function generateProvidersInfo(providers: AleasProviderSettings, showInfo: ShowInfo): AleasProviderInfo {
@@ -119,14 +130,14 @@ function generateProvidersInfo(providers: AleasProviderSettings, showInfo: ShowI
             }
         }
         else {
-            const { collectionName, volume } = item;
+            const { collectionName, volume, duration, fadeDuration } = item;
             const collection = {
                 name: collectionName,
                 clips: {}
             }
             return {
                 name, id, active, canChain, weight,
-                collection, volume,
+                collection, volume, duration, fadeDuration,
                 type: "FromCollection",
             }
         }
@@ -140,7 +151,7 @@ function generateProvidersInfo(providers: AleasProviderSettings, showInfo: ShowI
                 scene
             }
         })
-        .filter(({ item, scene }) => scene !== undefined)
+        .filter(({ scene }) => scene !== undefined)
         .map(({ item, scene }) => {
             const { name, id, active, canChain, weight } = item;
             return {

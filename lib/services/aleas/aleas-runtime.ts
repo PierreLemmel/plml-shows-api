@@ -1,10 +1,47 @@
+import { Timestamp } from "firebase/firestore";
 import { useState } from "react";
+import { AudioClipInfo } from "../audio/audioControl";
 import { useInterval } from "../core/hooks";
 import { Action } from "../core/types/utils";
-import { AleasShow } from "./aleas-setup";
+import { SceneInfo } from "../dmx/showControl";
+import { AleasShow, AleasShowInfo } from "./aleas-setup";
 
 
 export type AleasRuntimeState = "Stopped"|"BeforeShow"|"Show"|"AfterShow";
+
+export interface AleasShowRun {
+
+    show: AleasShowInfo;
+    
+    duration: number;
+    scenes: AleasShowRunScene[];
+
+    metadata: AleasShowRunMetadata;
+}
+
+export interface AleasShowRunMetadata {
+    created: Timestamp;
+
+    createdById: string;
+
+    started?: Timestamp;
+    ended?: Timestamp;
+
+    stopped?: Timestamp;
+}
+
+export interface AleasShowRunScene {
+    scene: SceneInfo;
+    timeWindow: TimeWindow;
+    audio: AudioClipInfo|null;
+}
+
+export interface TimeWindow {
+    startTime: number;
+    duration: number;
+    fadeIn: number;
+    fadeOut: number;
+}
 
 export interface AleasRuntimeProps {
     state: AleasRuntimeState;

@@ -72,7 +72,9 @@ export type AleasAudioItemInfo = AleasProviderItem & (
     { 
         type: "FromCollection",
         collection: AudioClipCollection,
-        volume: MinMax
+        volume: MinMax,
+        duration: MinMax,
+        fadeDuration: MinMax
     }
 )
 
