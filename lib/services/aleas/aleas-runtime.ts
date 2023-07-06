@@ -1,12 +1,12 @@
 import { Timestamp } from "firebase/firestore";
 import { get } from "http";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { getAudioClip } from "../api/audio";
-import { AudioClipData, AudioClipInfo } from "../audio/audioControl";
+import { AudioClipData, AudioClipInfo, useRealtimeAudio } from "../audio/audioControl";
 import { IntervalCallbackProps, useInterval } from "../core/hooks";
 import { Action, MinMax } from "../core/types/utils";
 import { randomRange } from "../core/utils";
-import { SceneInfo } from "../dmx/showControl";
+import { Scene, SceneInfo, toScene, useRealtimeScene } from "../dmx/showControl";
 import { getAleasAudioProvider, getAleasDurationProvider, getAleasSceneProvider } from "./aleas-providers";
 import { AleasShow, AleasShowInfo } from "./aleas-setup";
 
@@ -40,7 +40,10 @@ export interface AleasShowRunScene {
     type: AleasShowRunSceneType;
     scene: SceneInfo;
     timeWindow: TimeWindow;
-    audio: AudioClipData|null;
+    audio: {
+        data: AudioClipData,
+        window: TimeWindow
+    }|null;
 
     metadata: AleasShowRunSceneMetadata;
 }
@@ -114,7 +117,10 @@ async function generateScenes(showInfo: AleasShowInfo): Promise<AleasShowRunScen
         type: "Intro",
         scene: showInfo.show.scenes.find(s => s.name === introSceneName)!,
         timeWindow: introTimeWindow,
-        audio: introAudioClip,
+        audio: {
+            data: introAudioClip,
+            window: introTimeWindow
+        },
         metadata: {}
     }
     
@@ -131,7 +137,10 @@ async function generateScenes(showInfo: AleasShowInfo): Promise<AleasShowRunScen
         type: "Outro",
         scene: showInfo.show.scenes.find(s => s.name === outroSceneName)!,
         timeWindow: outroTimeWindow,
-        audio: outroAudioClip,
+        audio: {
+            data: outroAudioClip,
+            window: outroTimeWindow,
+        },
         metadata: {}
     }
     
@@ -149,7 +158,7 @@ async function generateScenes(showInfo: AleasShowInfo): Promise<AleasShowRunScen
         const MAX_ATTEMPS = 100;
         let durationResult;
         do {
-            durationResult = durationProvider.nextValue();
+            durationResult = durationProvider.nextValue({});
         }
         while (durationResult.value.duration > remaining && attemps++ < MAX_ATTEMPS);
 
@@ -161,8 +170,10 @@ async function generateScenes(showInfo: AleasShowInfo): Promise<AleasShowRunScen
             done = true;
         }
         
-        const audioResult = audioProvider.nextValue();
-        const sceneResult = sceneProvider.nextValue();
+        const audioResult = audioProvider.nextValue({
+            duration: durationResult.value.duration
+        });
+        const sceneResult = sceneProvider.nextValue({});
 
         const timeWindow = {
             startTime: time,
@@ -225,7 +236,11 @@ export interface AleasRuntime {
     currentScene: AleasShowRunScene|null;
     sceneMaster: number;
 
+    currentAudio: AudioClipData|null;
+    audioVolume: number;
+
     currentTime: number;
+    setCurrentTime: (time: number) => void;
 
     play: Action;
     startShow: Action;
@@ -233,23 +248,92 @@ export interface AleasRuntime {
     stop: Action;
 }
 
+type IsInTimeWindowResult = { isBetween: true, factor: number } | { isBetween: false};
+function isInTimeWindow(time: number, window: TimeWindow): IsInTimeWindowResult {
+
+    if (time >= window.startTime && time <= window.startTime + window.duration) {
+
+        let factor = 1;
+        if (time < window.startTime + window.fadeIn) {
+            factor = (time - window.startTime) / window.fadeIn;
+        }
+        else {
+            const startOfFadeOut = window.startTime + window.duration - window.fadeOut;
+            if (time > startOfFadeOut) {
+                factor = 1 - (time - startOfFadeOut) / window.fadeOut;
+            }
+        }
+
+        return {
+            isBetween: true,
+            factor
+        };
+    }
+    else {
+        return { isBetween: false };
+    }
+}
+
 export function useAleasRuntime(run: AleasShowRun|null): AleasRuntime|null {
 
     const [state, setState] = useState<AleasRuntimeState>("Stopped");
+    
     const [currentScene, setCurrentScene] = useState<AleasShowRunScene|null>(null);
-    const [time, setTime] = useState<number>(0);
     const [sceneMaster, setSceneMaster] = useState<number>(1);
+    
+    const [currentAudio, setCurrentAudio] = useState<AudioClipData|null>(null);
+    const [audioVolume, setAudioVolume] = useState<number>(1);
+    
+    const [time, setTime] = useState<number>(0);
+    const setCurrentTime = useCallback((time: number) => {
+
+    }, [])
+
+    const realTimeScene = useMemo<Scene|undefined>(() => currentScene ?
+        toScene(currentScene.scene) : undefined, [currentScene])
+    useRealtimeScene(realTimeScene, true, sceneMaster);
+
+    const realTimeAudio = useMemo<AudioClipData|undefined>(() => currentScene?.audio ? currentScene.audio.data : undefined, [currentScene]);
+    useRealtimeAudio(realTimeAudio, true, audioVolume);
 
     const play = () => setState("BeforeShow")
     const startShow = () => setState("Show");
     const stopShow = () => setState("BeforeShow");
     const stop = () => setState("Stopped");
 
-    useInterval((props: IntervalCallbackProps) => {
-        const { time } = props;
+    const scenes = useMemo(() => run ? run.scenes : [], [run]);
 
-        setTime(time);
-    }, 1000 / 30, [])
+    useInterval((props: IntervalCallbackProps) => {
+        const { ellapsed } = props;
+
+        const t = ellapsed / 1000;
+
+        const findCurrScene = scenes.map(s => ({
+            sceneInWindow: isInTimeWindow(t, s.timeWindow),
+            scene: s
+        })).find(s => s.sceneInWindow.isBetween) as { sceneInWindow: { isBetween: true, factor: number }, scene: AleasShowRunScene }|undefined;
+
+        const currScene = findCurrScene?.scene || null;
+        const sMaster = findCurrScene?.sceneInWindow.factor || 0;
+        
+
+        setCurrentScene(currScene);
+        setSceneMaster(sMaster);
+
+        if (currScene?.audio) {
+
+            const audioInWindow = isInTimeWindow(t, currScene.audio.window);
+            if (audioInWindow.isBetween) {
+                setCurrentAudio(currScene.audio.data);
+                setAudioVolume(audioInWindow.factor);
+            }
+        }
+        else {
+            setCurrentAudio(null);
+        }
+
+        setTime(ellapsed / 1000);
+    }, 1000 / 30, [scenes, state], state === "Show");
 
     if (!run) {
         return null;
@@ -262,6 +346,10 @@ export function useAleasRuntime(run: AleasShowRun|null): AleasRuntime|null {
 
         currentScene,
         currentTime: time,
+        setCurrentTime,
+
+        currentAudio,
+        audioVolume,
         sceneMaster,
 
         play,
@@ -270,4 +358,3 @@ export function useAleasRuntime(run: AleasShowRun|null): AleasRuntime|null {
         stop
     }
 }
-

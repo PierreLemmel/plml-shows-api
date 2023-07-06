@@ -1,4 +1,6 @@
 import { Timestamp } from "firebase/firestore";
+import { useEffect, useMemo } from "react";
+import { useEffectAsync } from "../core/hooks";
 import { resample } from "../core/maths";
 
 export interface SpectrumData {
@@ -50,6 +52,33 @@ export interface AudioClipCollection {
     }
 }
 
-export async function getFileDuration(file: File) {
-    
+export function useRealtimeAudio(audioData: AudioClipData|undefined, isPlaying: boolean, volume: number) {
+
+    const audioElt = useMemo<HTMLAudioElement|null>(() => audioData ? new Audio(audioData.url):null, [audioData]);
+
+    useEffect(() => {
+        const capturedAudioElt = audioElt;
+
+        return () => {
+            capturedAudioElt?.pause();
+        }
+    }, [audioElt])
+
+    useEffectAsync(async () => {
+        if (audioElt) {
+
+            if (isPlaying) {
+                await audioElt.play();
+            }
+            else {
+                await audioElt.pause();
+            }
+        }
+    }, [audioElt, isPlaying]);
+
+    useEffect(() => {
+        if (audioElt) {
+            audioElt.volume = volume;
+        }
+    }, [audioElt, volume]);
 }

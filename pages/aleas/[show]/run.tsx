@@ -7,10 +7,9 @@ import { AleasShow, useAleasShowInfo } from "@/lib/services/aleas/aleas-setup";
 import { useAuth } from "@/lib/services/api/firebase";
 import { useEffectAsync } from "@/lib/services/core/hooks";
 import { match } from "@/lib/services/core/utils";
-import { Scene, toScene, useRealtimeScene, useShowControl, useShowInfo } from "@/lib/services/dmx/showControl";
-import { create } from "domain";
+import { useShowControl, useShowInfo } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
-import { use, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const AleasShowRun = () => {
 
@@ -91,6 +90,12 @@ const RuntimeDisplay = (props: RuntimeDisplayProps) => {
         },
 
         currentTime,
+        currentScene,
+        sceneMaster,
+
+        currentAudio,
+        audioVolume,
+
         state,
 
         play,
@@ -99,8 +104,6 @@ const RuntimeDisplay = (props: RuntimeDisplayProps) => {
         stop,
     } = runtime;
 
-    const realTimeScene = useMemo<Scene|undefined>(() => runtime.currentScene ? toScene(runtime.currentScene.scene) : undefined, [runtime.currentScene])
-    useRealtimeScene(realTimeScene);
 
     return <div className="full flex flex-col items-center justify-center">
         {match(state, {
@@ -124,13 +127,20 @@ const RuntimeDisplay = (props: RuntimeDisplayProps) => {
                     <AleasButton onClick={stop}>Stop</AleasButton>
                 </div>
             </div>,
-            "Show": <div className="flex flex-col gap-4 items-center">
+            "Show": <div className="flex flex-col gap-1 items-center">
                 <div className="text-4xl">Aléas</div>
                 <div>Spectacle en cours</div>
-                <div>Temps : {currentTime.toFixed(2)}</div>
-                <div>Restant : {(duration - currentTime).toFixed(2)}</div>
-                <div>Scène actuelle : {runtime.currentScene?.scene.name}</div>
-                <div className="flex flex-rox gap-4">
+
+                <div className="mt-3">Temps : {currentTime.toFixed(2)}s</div>
+                <div>Restant : {(duration - currentTime).toFixed(2)}s</div>
+                
+                <div className="mt-3">Scène actuelle : {currentScene?.scene.name ?? "Blackout"}</div>
+                {currentScene && <div>Master : {(sceneMaster * 100).toFixed(1)}%</div>}
+                
+                <div className="mt-3">Musique actuelle : {currentAudio?.name ?? "-"}</div>
+                {currentAudio && <div>Volume : {(audioVolume * 100).toFixed(1)}%</div>}
+                
+                <div className="flex flex-rox gap-4 mt-6">
                     <AleasButton onClick={startShow}>Go !</AleasButton>
                     <AleasButton onClick={stop}>Stop</AleasButton>
                 </div>
