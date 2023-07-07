@@ -29,6 +29,12 @@ const Home = () => <>
 						</AleasButton>
 					</Link>
 
+					<Link href="https://www.proarti.fr/collect/project/aleas-1/0">
+						<AleasButton>
+							Nous soutenir
+						</AleasButton>
+					</Link>
+
 					<Link href="/billetreduc">
 						<AleasButton>
 							Générateur de critiques BilletReduc
