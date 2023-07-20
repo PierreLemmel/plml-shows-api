@@ -1,4 +1,4 @@
-import { DependencyList, useEffect, useMemo, useRef } from "react";
+import { DependencyList, useCallback, useEffect, useMemo, useRef } from "react";
 import { currentTime } from "./utils";
 
 export const useEffectAsync = (effect: () => Promise<void>, deps?: DependencyList): void => {
@@ -67,4 +67,8 @@ export const useTimeout = (callback: () => void, ms: number, deps?: DependencyLi
         }
         
     }, [ms, condition, ...deps]) // eslint-disable-line react-hooks/exhaustive-deps
+}
+
+export const useConstant = <T>(val: T) => {
+    return useMemo(() => val, []);
 }

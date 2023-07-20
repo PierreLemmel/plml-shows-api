@@ -1,26 +1,9 @@
 import { Timestamp } from "firebase/firestore";
 import { getDocument, setDocument } from "./firebase";
-import addEnabledToCompletions from "./migrations/001 - addEnabledToCompletions";
-import seedCompletions from "./migrations/002 - seedCompletions";
-import multipleReviewsDataSet from "./migrations/003 - multipleReviewsDataset";
-import seedRandomTimerDurations from "./migrations/004 - seedTimerDurations";
-import seedFixtureDefinitions from "./migrations/005 - seedFixtureDefinitions";
-import seedLightingPlans from "./migrations/006 - seedLightingPlans";
-import seedShows from "./migrations/007 - seedShows";
-import seedTremplinLightingPlan from "./migrations/008 - seedTremplinLightingPlan";
-import seedTremplinAleasShow from "./migrations/009 - seedTremplinAleasShow";
 
 
 const migrationHandlers: MigrationHandler[] = [
-    addEnabledToCompletions,
-    seedCompletions,
-    multipleReviewsDataSet,
-    seedRandomTimerDurations,
-    seedFixtureDefinitions,
-    seedLightingPlans,
-    seedShows,
-    seedTremplinLightingPlan,
-    seedTremplinAleasShow,
+    
 ];
 
 

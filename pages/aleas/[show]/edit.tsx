@@ -612,12 +612,22 @@ interface BlockProps {
     title: string
 }
 
-const Block = ({ children, title }: BlockProps) => <div className="w-full p-2 flex flex-col items-stretch">
-    <div className="text-2xl mb-2 text-center">{title}</div>
-    <div className="">
-        {children}
-    </div>
-</div>
+const Block = ({ children, title }: BlockProps) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return <div
+        className={mergeClasses(
+            "w-full p-2 flex flex-col items-stretch",
+            "hover:cursor-pointer"
+        )}
+        onClick={() => setIsOpen(!isOpen)}
+    >
+        <div className="text-2xl mb-2 text-center">{title}</div>
+        {isOpen && <div className="">
+            {children}
+        </div>}
+    </div>;
+}
 
 const Label = ({ children }: { children: string }) => <div className="min-w-[8em]">{children}</div>
 
