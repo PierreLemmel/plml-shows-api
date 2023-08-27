@@ -1,10 +1,11 @@
 import { randomUUID } from "crypto";
 import { backOff } from "exponential-backoff";
 import { Timestamp } from "firebase/firestore";
-import { Configuration, OpenAIApi } from "openai";
+import { Completion } from "openai/resources";
 import { flattenArray } from "../core/arrays";
 import { randomRange } from "../core/utils";
 import { getDocument, setDocument } from "./firebase";
+import { createOpenAI } from "./openai";
 
 const reviewsDocPath = "billetreduc/reviews";
 const staticReviewsDocPath = "billetreduc/static-reviews";
@@ -112,12 +113,7 @@ export async function regenerateBilletReducData(collectionName: string): Promise
     const completionData = await getCompletionData();
     const { model, completions } = completionData;
 
-    const configuration = new Configuration({
-		organization: process.env.OPENAI_ORGANIZATION_ID,
-		apiKey: process.env.OPENAI_API_KEY,
-	});
-
-	const openai = new OpenAIApi(configuration);
+	const openai = createOpenAI();
 
     const results: string[][] = [];
 
@@ -153,7 +149,8 @@ export async function regenerateBilletReducData(collectionName: string): Promise
             try {
                 await backOff(async () => {
 
-                    const completionResult = await openai.createCompletion({
+                    openai
+                    const completionResult = await openai.completions.create({
                         prompt,
                         model,
                         temperature: randomRange(0.65, 0.95),
@@ -165,7 +162,7 @@ export async function regenerateBilletReducData(collectionName: string): Promise
                         user
                     });
         
-                    const { choices } = completionResult.data;
+                    const { choices } = completionResult;
 
                     results.push(choices.map(choice => choice.text!));
                     
@@ -222,4 +219,10 @@ export async function regenerateBilletReducData(collectionName: string): Promise
     await setDocument<ReviewsData>(pathToReviewCollection(collectionName), result);
 
     return result;
+}
+
+export async function foo() {
+    const openai = createOpenAI();
+
+    
 }

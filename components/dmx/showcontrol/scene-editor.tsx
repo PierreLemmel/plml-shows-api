@@ -409,12 +409,12 @@ const SEFixtureCard = (props: SEFixtureCardProps) => {
     </div>
 }
 
-interface AleasFolableColorPickerProps {
+interface AleasFoldableColorPickerProps {
     color: RgbColor;
     onColorChange: Dispatch<RgbColor>;
 }
 
-const FoldableColorPicker = (props: AleasFolableColorPickerProps) => {
+const FoldableColorPicker = (props: AleasFoldableColorPickerProps) => {
 
     const { color } = props;
 
