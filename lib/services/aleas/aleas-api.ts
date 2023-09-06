@@ -1,4 +1,3 @@
-import { async } from "@firebase/util";
 import { getDocument, setDocument } from "../api/firebase";
 import { pathCombine } from "../core/files";
 import { AleasCodeFile } from "./aleas-code-display";
