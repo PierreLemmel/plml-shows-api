@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { collection, doc, DocumentData, getDoc, getDocs, getFirestore, initializeFirestore, setDoc, WithFieldValue } from "firebase/firestore";
+import { collection, doc, DocumentData, getDoc, deleteDoc, getDocs, getFirestore, initializeFirestore, setDoc, WithFieldValue } from "firebase/firestore";
 import { getDownloadURL, getStorage, list, ref, uploadBytes } from "firebase/storage";
 import { getAuth, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth"
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
@@ -60,6 +60,19 @@ export async function setDocument<T extends WithFieldValue<DocumentData>>(path: 
     );
 }
 
+export async function deleteDocument(path: string) {
+    const { db } = getFirebase();
+    await deleteDoc(doc(db, path));
+}
+
+export async function renameDocument<T extends WithFieldValue<DocumentData>>(oldPath: string, newPath: string, deleteOld: boolean = true) {
+    const data = await getDocument<T>(oldPath);
+    await setDocument<T>(newPath, data);
+
+    if (deleteOld) {
+        await deleteDocument(oldPath);
+    }
+}
 
 export async function listDocuments(path: string) {
     const { db } = getFirebase();
@@ -156,4 +169,8 @@ export const useNewAuth = () => {
 
 export function useAuth() {
     return useContext(AuthContext);
+}
+
+export function toFirebaseKey(input: string) {
+    return input.replace(/\s/g, "").toLowerCase();
 }

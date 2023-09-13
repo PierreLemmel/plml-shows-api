@@ -113,6 +113,7 @@ export const AleasDropdownInput = (props: DropdownProps) => {
         onSelectedOptionChanged,
         placeholder,
         disabled,
+        className,
         value
     } = {
         disabled: false,
@@ -131,62 +132,62 @@ export const AleasDropdownInput = (props: DropdownProps) => {
         <div className={mergeClasses(
             "relative inline-block text-left cursor-pointer",
             "w-full min-w-[8rem]",
+            className
         )}>
-                <div
-                    className={mergeClasses(
-                        "flex flex-row justify-between items-center",
-                        "text-center font-bold text-white",
-                        inputBackgroundClasses,
-                        "transition duration-300",
-                        disabled ? inputDisabledClasses : inputEnabledClasses,
-                        "w-full rounded-md",
-                        "sm:text-base",
-                        "px-3 py-2 "
-                    )}
-                    onClick={() => setIsOpen(!isOpen)}
-                >
-                {value ? value.label : placeholder}
-                <svg
-                    className={mergeClasses(
-                        "-mr-1 ml-2 h-5 w-5",
-                        isOpen && "-scale-y-100",
-                        "transition-transform duration-300 ease-in-out"
-                    )}
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                >
-                    <path
-                        fillRule="evenodd"
-                        d="M6.293 7.293a1 1 0 011.414 0L10 9.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                    />
-                </svg>
-            </div>
-
-            {isOpen && (
-                <div className={mergeClasses(
+            <div
+                className={mergeClasses(
+                    "flex flex-row justify-between items-center",
+                    "text-center font-bold text-white",
                     inputBackgroundClasses,
-                    "z-10 origin-top-right absolute right-0 mt-2 w-full rounded-md")
-                }>
-                    <div className="py-1 px-[0.1em]">
-                        {options.map((option, i) => (
-                        <div
-                            key={i}
-                            className={mergeClasses(
-                                "w-full text-left px-4 py-2",
-                                "max-h-48 overflow-y-auto",
-                                "hover:brightness-125 hover:bg-indigo-500/40 rounded-md"
-                            )}
-                            onClick={() => handleSelectOption(option)}
-                        >
-                            {option.label}
-                        </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+                    "transition duration-300",
+                    disabled ? inputDisabledClasses : inputEnabledClasses,
+                    "w-full rounded-md",
+                    "sm:text-base",
+                    "px-3 py-2 "
+                )}
+                onClick={() => setIsOpen(!isOpen)}
+            >
+            {value ? value.label : placeholder}
+            <svg
+                className={mergeClasses(
+                    "-mr-1 ml-2 h-5 w-5",
+                    isOpen && "-scale-y-100",
+                    "transition-transform duration-300 ease-in-out"
+                )}
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+            >
+                <path
+                    fillRule="evenodd"
+                    d="M6.293 7.293a1 1 0 011.414 0L10 9.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                />
+            </svg>
         </div>
-    );
+
+        {isOpen && (
+            <div className={mergeClasses(
+                inputBackgroundClasses,
+                "z-10 origin-top-right absolute right-0 mt-2 w-full rounded-md")
+            }>
+                <div className="py-1 px-[0.1em]">
+                    {options.map((option, i) => (
+                    <div
+                        key={i}
+                        className={mergeClasses(
+                            "w-full text-left px-4 py-2",
+                            "max-h-48 overflow-y-auto",
+                            "hover:brightness-125 hover:bg-indigo-500/40 rounded-md"
+                        )}
+                        onClick={() => handleSelectOption(option)}
+                    >
+                        {option.label}
+                    </div>
+                    ))}
+                </div>
+            </div>
+        )}
+    </div>);
 };

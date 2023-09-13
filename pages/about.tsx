@@ -1,6 +1,6 @@
-import AleasBackground from "@/components/aleas/aleas-background";
-import AleasHead from "@/components/aleas/aleas-head";
-import { AleasMainContainer, AleasModalContainer, AleasTitle } from "@/components/aleas/aleas-layout"
+import AleasBackground from "@/components/aleas-components/aleas-background";
+import AleasHead from "@/components/aleas-components/aleas-head";
+import { AleasMainContainer, AleasModalContainer, AleasTitle } from "@/components/aleas-components/aleas-layout"
 import Link from "next/link";
 import Image from "next/image";
 

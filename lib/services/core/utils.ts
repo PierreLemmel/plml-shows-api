@@ -104,6 +104,12 @@ export function match<T extends string, U>(val: T, choices: Patterns<T, U>): U {
     }
 }
 
+type FunctionReturnType<F extends (...args: any) => any> = ReturnType<F>;
+
+function isPromise<T extends (...args: any) => any>(fn: T): boolean {
+  const returnType = (null as unknown) as FunctionReturnType<T>;
+  return returnType.prototype instanceof Promise;
+}
 
 export async function doNothingAsync(...val: any[]) { }
 

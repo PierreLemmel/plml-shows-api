@@ -1,4 +1,4 @@
-import { AleasMainLayout } from '@/components/aleas/aleas-layout';
+import { AleasMainLayout } from '@/components/aleas-components/aleas-layout';
 import DmxSlider from '@/components/dmx/dmx-slider';
 import DmxToggle from '@/components/dmx/dmx-toggle';
 import StandardConsole from '@/components/dmx/standard-console';

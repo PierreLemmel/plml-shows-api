@@ -1,4 +1,5 @@
-import { CompletionsData, getCompletionData } from "@/lib/services/api/billetreduc";
+import { getCompletionData } from "@/lib/services/api/billetreduc";
+import { CompletionsData } from "@/lib/services/generation/text-gen";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<CompletionsData>) {

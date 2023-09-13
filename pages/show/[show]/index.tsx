@@ -1,9 +1,9 @@
-import { AleasButton } from "@/components/aleas/aleas-buttons";
-import { AleasDropdownButton, DropdownOption } from "@/components/aleas/aleas-dropdowns";
-import { AleasMainLayout } from "@/components/aleas/aleas-layout";
-import AleasModalDialog from "@/components/aleas/aleas-modal-dialog";
-import AleasTextField from "@/components/aleas/aleas-textfield";
-import { toast } from "@/components/aleas/aleas-toast-container";
+import { AleasButton } from "@/components/aleas-components/aleas-buttons";
+import { AleasDropdownButton, DropdownOption } from "@/components/aleas-components/aleas-dropdowns";
+import { AleasMainLayout } from "@/components/aleas-components/aleas-layout";
+import AleasModalDialog from "@/components/aleas-components/aleas-modal-dialog";
+import AleasTextField from "@/components/aleas-components/aleas-textfield";
+import { toast } from "@/components/aleas-components/aleas-toast-container";
 import DmxSlider from "@/components/dmx/dmx-slider";
 import { createScene, Scene, useRealtimeScene, useShowControl } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";

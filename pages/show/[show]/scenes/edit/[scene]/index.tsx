@@ -1,4 +1,4 @@
-import { AleasMainLayout } from "@/components/aleas/aleas-layout";
+import { AleasMainLayout } from "@/components/aleas-components/aleas-layout";
 import SceneEditor from "@/components/dmx/showcontrol/scene-editor";
 import { Scene, useShowControl } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
