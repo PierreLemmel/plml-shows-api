@@ -4,7 +4,9 @@ import { Dispatch, InputHTMLAttributes } from "react";
 interface AleasNumberInputProps extends InputHTMLAttributes<HTMLInputElement> {
     value: number;
     onValueChange?: Dispatch<number>;
-    inputSize?: "Normal" | "Small";
+    inputSize?: "Normal" | "Small" | "Tiny";
+    min?: number;
+    max?: number;
 }
 
 const AleasNumberInput = (props: AleasNumberInputProps) => {
@@ -14,6 +16,8 @@ const AleasNumberInput = (props: AleasNumberInputProps) => {
         onValueChange = doNothing,
         className,
         inputSize = "Normal",
+        min = 0,
+        max = undefined,
         ...restProps
     } = props;
 
@@ -21,18 +25,20 @@ const AleasNumberInput = (props: AleasNumberInputProps) => {
         type="number"
         
         className={mergeClasses(
-            "w-full px-3 py-1 rounded-md resize-none",
+            "px-3 py-1 rounded-md resize-none",
             "border border-gray-300 focus:outline-none focus:border-blue-500",
             "bg-slate-900/90",
             match(inputSize, { 
-                "Normal": "min-w-[8em]",
-                "Small": "min-w-[3em]"
+                "Normal": "w-full min-w-[8em]",
+                "Small": "w-full min-w-[3em]",
+                "Tiny": "w-[4.2em]"
             }),
             className
         )}
-        min={0}
-        value={value}
         onChange={(e) => onValueChange(Number(e.target.value))}
+        min={min}
+        max={max}
+        value={value}
         {...restProps}
     />
 }

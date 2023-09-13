@@ -1,6 +1,6 @@
 import { match, mergeClasses } from "@/lib/services/core/utils";
 import ReactSlider from "react-slider";
-import AleasSlider from "../aleas/aleas-slider";
+import AleasSlider from "../aleas-components/aleas-slider";
 import DmxButton from "./dmx-button";
 
 export type SliderType = "DmxRange"|"Percent"|"Value"

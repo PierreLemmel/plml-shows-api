@@ -1,11 +1,11 @@
-import { AleasButton } from "@/components/aleas/aleas-buttons";
-import AleasCheckbox from "@/components/aleas/aleas-checkbox";
-import { AleasMainLayout } from "@/components/aleas/aleas-layout"
-import AleasMinMaxEditor from "@/components/aleas/aleas-minmax-editor";
-import AleasNumberInput from "@/components/aleas/aleas-number-input";
-import AleasSkeletonLoader from "@/components/aleas/aleas-skeleton-loader";
-import AleasSlider from "@/components/aleas/aleas-slider";
-import { toast } from "@/components/aleas/aleas-toast-container";
+import { AleasButton } from "@/components/aleas-components/aleas-buttons";
+import AleasCheckbox from "@/components/aleas-components/aleas-checkbox";
+import { AleasMainLayout } from "@/components/aleas-components/aleas-layout"
+import AleasMinMaxEditor from "@/components/aleas-components/aleas-minmax-editor";
+import AleasNumberInput from "@/components/aleas-components/aleas-number-input";
+import AleasSkeletonLoader from "@/components/aleas-components/aleas-skeleton-loader";
+import AleasSlider from "@/components/aleas-components/aleas-slider";
+import { toast } from "@/components/aleas-components/aleas-toast-container";
 import { getAleasShow, updateAleasShow } from "@/lib/services/aleas/aleas-api";
 import { AleasAudioItemInfo, AleasDurationItemInfo, AleasSceneItemInfo } from "@/lib/services/aleas/aleas-providers";
 import { AleasShow, AleasShowInfo, useAleasShowInfo } from "@/lib/services/aleas/aleas-setup";

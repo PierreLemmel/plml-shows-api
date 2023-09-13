@@ -1,6 +1,6 @@
-import { AleasButton } from "@/components/aleas/aleas-buttons";
-import { AleasMainLayout } from "@/components/aleas/aleas-layout";
-import { toast } from "@/components/aleas/aleas-toast-container";
+import { AleasButton } from "@/components/aleas-components/aleas-buttons";
+import { AleasMainLayout } from "@/components/aleas-components/aleas-layout";
+import { toast } from "@/components/aleas-components/aleas-toast-container";
 import { createAleasRun, getAleasShow } from "@/lib/services/aleas/aleas-api";
 import { AleasRuntime, AleasShowRun, generateAleasShowRun, useAleasRuntime } from "@/lib/services/aleas/aleas-runtime";
 import { AleasShow, useAleasShowInfo } from "@/lib/services/aleas/aleas-setup";

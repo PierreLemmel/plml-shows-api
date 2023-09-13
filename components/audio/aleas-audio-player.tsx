@@ -3,7 +3,7 @@ import { useEffectAsync } from "@/lib/services/core/hooks";
 import { formatMinuteSeconds } from "@/lib/services/core/time";
 import { mergeClasses } from "@/lib/services/core/utils";
 import { forwardRef, Ref, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
-import AleasSpinningLoader from "../aleas/aleas-spinning-loader";
+import AleasSpinningLoader from "../aleas-components/aleas-spinning-loader";
 import WaveformProgress from "./waveform-progress";
 
 export interface AudioPlayerProps extends React.HTMLAttributes<HTMLDivElement> {

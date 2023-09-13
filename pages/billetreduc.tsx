@@ -2,12 +2,12 @@ import { GetStaticProps, InferGetStaticPropsType } from 'next';
 import { useCallback, useEffect, useRef, useState } from "react";
 import { randomInt, } from '@/lib/services/core/utils';
 import { motion } from 'framer-motion';
-import AleasBackground from '@/components/aleas/aleas-background';
-import { AleasButton, AleasRoundButton } from '@/components/aleas/aleas-buttons';
-import AleasHead from '@/components/aleas/aleas-head';
-import { AleasModalContainer, AleasTitle } from '@/components/aleas/aleas-layout';
+import AleasBackground from '@/components/aleas-components/aleas-background';
+import { AleasButton, AleasRoundButton } from '@/components/aleas-components/aleas-buttons';
+import AleasHead from '@/components/aleas-components/aleas-head';
+import { AleasModalContainer, AleasTitle } from '@/components/aleas-components/aleas-layout';
 import { getBilletReducReviews, getBilletReducSettings } from '@/lib/services/api/billetreduc';
-import { AleasToastContainer, toast } from '@/components/aleas/aleas-toast-container';
+import { AleasToastContainer, toast } from '@/components/aleas-components/aleas-toast-container';
 import { useEffectOnce } from '@/lib/services/core/hooks';
 
 interface BilletReducProps {

@@ -1,5 +1,5 @@
-import { AleasButton } from "@/components/aleas/aleas-buttons";
-import { AleasMainLayout } from "@/components/aleas/aleas-layout";
+import { AleasButton } from "@/components/aleas-components/aleas-buttons";
+import { AleasMainLayout } from "@/components/aleas-components/aleas-layout";
 import { useAuth } from "@/lib/services/api/firebase";
 import { useRouter } from "next/router";
 import { useCallback, useMemo } from "react";

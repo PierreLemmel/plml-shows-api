@@ -1,11 +1,11 @@
-import { AleasButton } from "@/components/aleas/aleas-buttons";
-import { AleasDropdownInput, DropdownOption } from "@/components/aleas/aleas-dropdowns";
-import { AleasMainLayout } from "@/components/aleas/aleas-layout";
-import AleasTextArea from "@/components/aleas/aleas-textarea";
-import AleasTextField from "@/components/aleas/aleas-textfield";
-import { toast } from "@/components/aleas/aleas-toast-container";
+import { AleasButton } from "@/components/aleas-components/aleas-buttons";
+import { AleasDropdownInput, DropdownOption } from "@/components/aleas-components/aleas-dropdowns";
+import { AleasMainLayout } from "@/components/aleas-components/aleas-layout";
+import AleasTextArea from "@/components/aleas-components/aleas-textarea";
+import AleasTextField from "@/components/aleas-components/aleas-textfield";
+import { toast } from "@/components/aleas-components/aleas-toast-container";
 import { createAleasCodeFile } from "@/lib/services/aleas/aleas-api";
-import { AleasCodeFile, AleasCodeLanguage } from "@/lib/services/aleas/aleas-code-display";
+import { AleasCodeFile, AleasCodeLanguage } from "@/lib/services/aleas/misc/aleas-code-display";
 import { useConstant } from "@/lib/services/core/hooks";
 import { useCallback, useMemo, useState } from "react";
 

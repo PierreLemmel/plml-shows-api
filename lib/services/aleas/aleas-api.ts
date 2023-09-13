@@ -1,6 +1,6 @@
 import { getDocument, setDocument } from "../api/firebase";
 import { pathCombine } from "../core/files";
-import { AleasCodeFile } from "./aleas-code-display";
+import { AleasCodeFile } from "./misc/aleas-code-display";
 import { AleasShowRun } from "./aleas-runtime";
 import { AleasShow } from "./aleas-setup";
 

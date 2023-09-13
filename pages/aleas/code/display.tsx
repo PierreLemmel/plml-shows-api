@@ -1,5 +1,5 @@
 import { getAleasCodeFiles } from "@/lib/services/aleas/aleas-api";
-import { AleasCodeFile } from "@/lib/services/aleas/aleas-code-display";
+import { AleasCodeFile } from "@/lib/services/aleas/misc/aleas-code-display";
 import { useEffectAsync } from "@/lib/services/core/hooks";
 import { MinMax } from "@/lib/services/core/types/utils";
 import { mergeClasses, randomRange } from "@/lib/services/core/utils";

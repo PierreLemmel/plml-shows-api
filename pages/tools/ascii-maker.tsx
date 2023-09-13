@@ -1,7 +1,7 @@
-import { AleasButton } from '@/components/aleas/aleas-buttons';
-import AleasFileUpload from '@/components/aleas/aleas-file-upload';
-import AleasHead from '@/components/aleas/aleas-head'
-import AleasSlider from '@/components/aleas/aleas-slider';
+import { AleasButton } from '@/components/aleas-components/aleas-buttons';
+import AleasFileUpload from '@/components/aleas-components/aleas-file-upload';
+import AleasHead from '@/components/aleas-components/aleas-head'
+import AleasSlider from '@/components/aleas-components/aleas-slider';
 import AsciiArt, { AsciiArtRef, AsciiBitmapStats } from '@/components/ascii/ascii-art';
 import { inverseLerp } from '@/lib/services/core/maths';
 import { mean } from '@/lib/services/core/stats';

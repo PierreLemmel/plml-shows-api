@@ -1,7 +1,7 @@
-import { AleasButton } from "@/components/aleas/aleas-buttons";
-import AleasColorPicker from "@/components/aleas/aleas-color-picker";
-import AleasSkeletonLoader from "@/components/aleas/aleas-skeleton-loader";
-import AleasSlider from "@/components/aleas/aleas-slider";
+import { AleasButton } from "@/components/aleas-components/aleas-buttons";
+import AleasColorPicker from "@/components/aleas-components/aleas-color-picker";
+import AleasSkeletonLoader from "@/components/aleas-components/aleas-skeleton-loader";
+import AleasSlider from "@/components/aleas-components/aleas-slider";
 import { replaceFirstElement, sorted } from "@/lib/services/core/arrays";
 import { Color, RgbColor } from "@/lib/services/core/types/rgbColor";
 import { Action, AsyncDipsatch } from "@/lib/services/core/types/utils";
