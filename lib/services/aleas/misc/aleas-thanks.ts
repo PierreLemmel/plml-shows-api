@@ -49,10 +49,12 @@ export async function getThanksMessages(): Promise<ThanksMessagesCollection[]> {
 
     const { currentCollections } = await getDocument<ThanksMessagesCollectionRoot>(collectionsDocPath);
 
-    const result = await Promise.all(currentCollections.map(async collectionName => {
-        const pathToMessagesCollection = pathCombine(generatedCollectionsPath, collectionName);
-        return await getDocument<ThanksMessagesCollection>(pathToMessagesCollection);
-    }));
+    const result = await Promise.all(currentCollections.map(getThanksMessagesCollection));
     
     return result;
+}
+
+export async function getThanksMessagesCollection(collectionName: string) : Promise<ThanksMessagesCollection> {
+    const pathToMessagesCollection = pathCombine(generatedCollectionsPath, collectionName);
+    return await getDocument<ThanksMessagesCollection>(pathToMessagesCollection);
 }
