@@ -23,15 +23,9 @@ const Home = () => <>
 						</AleasButton>
 					</Link>
 
-					<Link href="https://www.festivaloffavignon.com/programme/2023/aleas-s33308/">
+					<Link href="https://www.billetreduc.com/326448/evt.htm">
 						<AleasButton>
 							Réservations
-						</AleasButton>
-					</Link>
-
-					<Link href="https://www.proarti.fr/collect/project/aleas-1/0">
-						<AleasButton>
-							Nous soutenir
 						</AleasButton>
 					</Link>
 
