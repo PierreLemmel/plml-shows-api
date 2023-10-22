@@ -4,19 +4,18 @@ import { Dispatch, InputHTMLAttributes } from "react";
 interface AleasTextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
     value: string;
     onValueChange?: Dispatch<string>;
+    onEditDone?: Dispatch<string>;
 }
 
 const AleasTextField = (props: AleasTextFieldProps) => {
 
     const {
         value,
-        onValueChange,
+        onValueChange = doNothing,
+        onEditDone = doNothing,
         className,
         ...restProps
-    } = {
-        onValueChange: doNothing,
-        ...props
-    };
+    } = props;
 
     return <input
         type="text"

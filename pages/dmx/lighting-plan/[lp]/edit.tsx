@@ -51,8 +51,7 @@ const LightingPlanEdit = () => {
     }, [lightingPlan])
 
     return <AleasMainLayout
-        title={lpName || "Lighting Plan Edit"}
-        description={`Lighting Plan Edit - ${lpName}`}
+        description={`Lighting Plan Edit - ${lightingPlan?.name ?? ""}`}
         toasts
         requireAuth
         navbar
