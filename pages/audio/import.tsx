@@ -49,7 +49,7 @@ const Import = () => {
 
     const sources = useMemo(() => ["AIVA", "Soundraw", "Human"], []);
     const sourceOptions = useMemo<DropdownOption<string>[]>(() => sources.map(source => ({ label: source, value: source })), [sources]);
-    const [source, setSource] = useState<DropdownOption<string>>(sourceOptions[0]);
+    const [source, setSource] = useState<string>("Human");
 
     const categorieTags = useMemo(() => musicCategories, []);
 
@@ -81,7 +81,7 @@ const Import = () => {
                 duration: audioPlayerRef?.current?.duration ?? 0,
                 tempo,
                 signature,
-                source: source.value,
+                source,
                 categories: [],
                 tags: []
             }
@@ -105,7 +105,7 @@ const Import = () => {
         }
 
         setIsImporting(false);
-    }, [audioFile, tempo, signature, source.value, categories, tags])
+    }, [audioFile, tempo, signature, source, categories, tags])
 
     const clearBtnEnabled = audioFile !== undefined;
     const onClearClicked = () => {
@@ -155,11 +155,11 @@ const Import = () => {
                                 <Label>Source :</Label>
                                 <AleasDropdownInput
                                     value={source}
-                                    onSelectedOptionChanged={setSource}
+                                    onValueChanged={setSource}
                                     options={sourceOptions}
                                 />
 
-                                {source?.value === "Human" && <>
+                                {source === "Human" && <>
                                     <Label>Auteur :</Label>
                                     <AleasTextField value={author || ""} onValueChange={setAuthor} />
                                 </>}

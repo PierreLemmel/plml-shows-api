@@ -142,7 +142,7 @@ export const AleasMainLayout = (props: AleasLayoutProps) => {
                 {navbar && <AleasNavbar />}
 
                 <div
-                    className="w-full center-child flex-grow"
+                    className="w-full max-h-[90%] center-child flex-grow"
                 >
                     <LoginWrapper requireAuth={requireAuth}>
                         <CoreLayoutContainer modal={modal}>

@@ -169,15 +169,21 @@ export module Fixtures {
         return tradFixtureTypes.includes(type as TradFixtureType);
     }
     
-    export interface LedFixtureModelDefinition extends Named {
+    export interface FixtureModelDefinitionBase extends Named {
+        shortName: string;
+    }
+
+    export interface ChannelsDefinition {
+        readonly [position: number]: Chans.ChannelType;
+    }
+
+    export interface LedFixtureModelDefinition extends FixtureModelDefinitionBase {
     
         readonly manufacturer?: string;
         readonly type: LedFixtureType;
 
         readonly modes: {
-            readonly [chanCount: number]: {
-                readonly [position: number]: Chans.ChannelType;
-            };
+            readonly [chanCount: number]: ChannelsDefinition;
         }
     }
 
@@ -185,7 +191,7 @@ export module Fixtures {
         readonly [position: number]: Chans.ChannelType;
     }
 
-    export interface TradFixtureModelDefinition extends Named {
+    export interface TradFixtureModelDefinition extends FixtureModelDefinitionBase {
 
         readonly manufacturer?: string;
         readonly type: TradFixtureType;
@@ -193,10 +199,6 @@ export module Fixtures {
     }
 
     export type FixtureModelDefinition = LedFixtureModelDefinition|TradFixtureModelDefinition;
-
-    export interface ChannelDefinition extends Named {
-        readonly type: Chans.ChannelType;
-    }
     
     
     export interface FixtureModelCollection extends Named, HasId {
@@ -205,7 +207,6 @@ export module Fixtures {
             readonly [shortName: string]: FixtureModelDefinition;
         }
     }
-    
 
     export interface Fixture extends Named, HasId {
     

@@ -4,7 +4,7 @@ import { replaceFirstElement } from "../core/arrays";
 import { useEffectAsync, useInterval } from "../core/hooks";
 import { Color, RgbColor, RgbNamedColor } from "../core/types/rgbColor";
 import { HasId, Named } from "../core/types/utils";
-import { doNothing, doNothingAsync, generateId, notImplemented, notImplementedAsync } from "../core/utils";
+import { doNothing, doNothingAsync, generateId, match, notImplemented, notImplementedAsync } from "../core/utils";
 import { Chans, Fixtures, StageLightingPlan } from "./dmx512";
 import { useDmxControl } from "./dmxControl";
 
@@ -29,24 +29,15 @@ export type SceneElement = {
     values: SceneElementValues;
 };
 
-export function extractChannelsFromFixture(model: FixtureModelInfo): (Chans.NumberChannelType|Chans.ColorChannelType)[] {
+export function extractChannels(channelsInfo: ChannelsInfo): (Chans.NumberChannelType|Chans.ColorChannelType)[] {
 
-    if (Fixtures.isLed(model.type)) {
-        const ledModel = model as LedFixtureModelInfo;
-        const channels = Object.values(ledModel.channels).filter(chan => Chans.isNumberChannel(chan) || Chans.isColorChannel(chan)) as (Chans.NumberChannelType|Chans.ColorChannelType)[];
+    const channels = Object.values(channelsInfo).filter(chan => Chans.isNumberChannel(chan) || Chans.isColorChannel(chan)) as (Chans.NumberChannelType|Chans.ColorChannelType)[];
 
-        return channels;
-    }
-    else if (Fixtures.isTrad(model.type)) {
-        return ["Trad"];
-    }
-    else {
-        throw 'Unknown fixture type';
-    }
+    return channels;
 }
 
-export function createDefaultValuesForFixture(model: FixtureModelInfo): SceneElementValues {
-    const channels = extractChannelsFromFixture(model);
+export function initializeValuesForChannels(channelsInfo: ChannelsInfo): SceneElementValues {
+    const channels = extractChannels(channelsInfo);
 
     const values: SceneElementValues = {};
 
@@ -107,24 +98,48 @@ export interface SceneInfo extends Named, HasId {
 export interface FixtureInfo extends Named, HasId {
     fullName: string;
     address: number;
+    mode?: number;
     model: FixtureModelInfo;
+    channels: ChannelsInfo;
     order: number;
+}
+
+export interface FixtureModelCollectionInfo extends Named, HasId {
+    fixtures: {
+        [shortName: string]: FixtureModelInfo
+    }
+}
+
+export function listFixtureModels(fixtureCollection: FixtureModelCollectionInfo): FixtureModelInfo[] {
+    const { fixtures } = fixtureCollection;
+
+    const result = Object.values(fixtures);
+
+    return result;
 }
 
 export type FixtureModelInfo = TradFixtureModelInfo|LedFixtureModelInfo;
 
-export interface TradFixtureModelInfo {
+export interface FixtureModelInfoBase extends Named {
+    shortName: string;
+}
+
+export interface TradFixtureModelInfo extends FixtureModelInfoBase {
     manufacturer?: string;
     type: Fixtures.TradFixtureType;
     power?: number;
 }
 
-export interface LedFixtureModelInfo {
+export interface ChannelsInfo {
+    [position: number]: Chans.ChannelType;
+}
+
+export interface LedFixtureModelInfo extends FixtureModelInfoBase {
     manufacturer?: string;
     type: Fixtures.LedFixtureType;
-    channels: {
-        [position: number]: Chans.ChannelType;
-    }
+    modes: {
+        [chanCount: number]: ChannelsInfo;
+    };
 }
 
 export interface SceneElementInfo {
@@ -145,183 +160,252 @@ export interface ShowInfo extends Named, HasId {
     scenes: SceneInfo[];
 }
 
-export function computeDmxValues(fixtureName: string, values: SceneElementValues, lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): number[] {
-    const fixture = lightingPlan.fixtures[fixtureName];
+
+export module Mappings {
+    export function computeDmxValues(fixtureName: string, values: SceneElementValues, lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): number[] {
+        const fixture = lightingPlan.fixtures[fixtureName];
+            const {
+                mode,
+                model: modelName
+            } = fixture;
+    
+            const modelDefinition = fixtures.fixtureModels[modelName];
+            const { type } = modelDefinition;
+    
+            let computedValues: number[];
+            if (Fixtures.isTrad(type)) {
+                const trad = values["Trad"];
+    
+                computedValues = [trad ?? 0];
+            }
+            else if (Fixtures.isLed(type)){
+                const ledModelDefinition = modelDefinition as Fixtures.LedFixtureModelDefinition;
+    
+                const {
+                    modes,
+                } = ledModelDefinition;
+    
+                if (!mode) {
+                    throw "Mode should be defined for LED fixture"
+                }
+    
+                computedValues = new Array(mode).fill(0);
+    
+                const channels = modes[mode]
+                const chanMap = new Map<Chans.ChannelType, number>()
+    
+                Object.entries(channels).forEach(([k, v]) => {
+                    chanMap.set(v, Number.parseInt(k))
+                });
+    
+                for (const chan in values) {
+                    const chanType = <Chans.ChannelType>chan;
+                    const chanAddr = chanMap.get(chanType);
+    
+                    if (chanAddr === undefined) {
+                        continue;
+                    }
+    
+                    if (Chans.isNumberChannel(chanType)) {
+                        const val = values[chanType]!;
+                        computedValues[chanAddr] = val;
+                    }
+                    else if (Chans.isColorChannel(chanType)) {
+                        
+                        const val = values[chanType]!;
+    
+                        const color = typeof val === 'string' ? Color.named(val) : val;
+                        const { r, g, b } = color;
+    
+                        computedValues[chanAddr] = r;
+                        computedValues[chanAddr + 1] = g;
+                        computedValues[chanAddr + 2] = b;
+                    }
+                    else {
+                        throw `Unsupported channel type: '${chan}'`;
+                    }
+                }
+            }
+            else {
+                throw `Unsupported type: '${type}`;
+            }
+    
+            return computedValues;
+    }
+    
+    export function computeFixtureInfo(fixture: Fixtures.Fixture, fixturesCollection: Fixtures.FixtureModelCollection): FixtureInfo {
+    
         const {
+            id,
+            address,
             mode,
-            model: modelName
+            model: modelName,
+            name: fullName
         } = fixture;
-
-        const modelDefinition = fixtures.fixtureModels[modelName];
+    
+        const modelDefinition = fixturesCollection.fixtureModels[modelName];
+        const modelInfo = computeFixtureModelInfo(modelDefinition);
+        const channelInfo = computeFixtureChannelsInfo(modelDefinition, mode);
+    
+        const fixtureInfo: FixtureInfo = {
+            id,
+            name: fullName,
+            fullName,
+            address,
+            mode,
+            model: modelInfo,
+            channels: channelInfo,
+            order: fixture.order ?? 0
+        }
+    
+        return fixtureInfo;
+    }
+    
+    export function computeFixtureModelInfo(modelDefinition: Fixtures.FixtureModelDefinition): FixtureModelInfo {
         const { type } = modelDefinition;
-
-        let computedValues: number[];
+    
+        let modelInfo: FixtureModelInfo;
+    
         if (Fixtures.isTrad(type)) {
-            const trad = values["Trad"];
-
-            computedValues = [trad ?? 0];
+            modelInfo = {
+                ...(modelDefinition as Fixtures.TradFixtureModelDefinition)
+            }
         }
         else if (Fixtures.isLed(type)){
+    
             const ledModelDefinition = modelDefinition as Fixtures.LedFixtureModelDefinition;
-
+    
             const {
                 modes,
+                ...remainingProps
             } = ledModelDefinition;
-
-            if (!mode) {
-                throw "Mode should be defined for LED fixture"
-            }
-
-            computedValues = new Array(mode).fill(0);
-
-            const channels = modes[mode]
-            const chanMap = new Map<Chans.ChannelType, number>()
-
-            Object.entries(channels).forEach(([k, v]) => {
-                chanMap.set(v, Number.parseInt(k))
+    
+            const modesInfo: LedFixtureModelInfo["modes"] = {};        
+    
+            Object.entries(modes).forEach(([chanCountStr, channels]) => {
+    
+                const chanCount = Number.parseInt(chanCountStr);
+                modesInfo[chanCount] = mapToChannelInfo(channels);
             });
-
-            for (const chan in values) {
-                const chanType = <Chans.ChannelType>chan;
-                const chanAddr = chanMap.get(chanType);
-
-                if (chanAddr === undefined) {
-                    continue;
-                }
-
-                if (Chans.isNumberChannel(chanType)) {
-                    const val = values[chanType]!;
-                    computedValues[chanAddr] = val;
-                }
-                else if (Chans.isColorChannel(chanType)) {
-                    
-                    const val = values[chanType]!;
-
-                    const color = typeof val === 'string' ? Color.named(val) : val;
-                    const { r, g, b } = color;
-
-                    computedValues[chanAddr] = r;
-                    computedValues[chanAddr + 1] = g;
-                    computedValues[chanAddr + 2] = b;
-                }
-                else {
-                    throw `Unsupported channel type: '${chan}'`;
-                }
+    
+            modelInfo = {
+                modes: modesInfo,
+                ...remainingProps
             }
         }
         else {
             throw `Unsupported type: '${type}`;
         }
-
-        return computedValues;
-}
-
-export function computeFixtureInfo(fixtureName: string, lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): FixtureInfo {
-
-    const fixture = lightingPlan.fixtures[fixtureName];
-    const {
-        id,
-        address,
-        mode,
-        model: modelName,
-        name: fullName
-    } = fixture;
-
-    const modelDefinition = fixtures.fixtureModels[modelName];
-    const { type } = modelDefinition;
-
-    let modelInfo: FixtureModelInfo;
-
-    if (Fixtures.isTrad(type)) {
-        modelInfo = {
-            ...(modelDefinition as Fixtures.TradFixtureModelDefinition)
-        }
-    }
-    else if (Fixtures.isLed(type)){
-        const ledModelDefinition = modelDefinition as Fixtures.LedFixtureModelDefinition;
-
-        const {
-            manufacturer,
-            modes,
-        } = ledModelDefinition;
-
-        if (!mode) {
-            throw "Mode should be defined for LED fixture"
-        }
-
-        const channels = modes[mode]
-
-        modelInfo = {
-            type,
-            manufacturer,
-            channels
-        }
-    }
-    else {
-        throw `Unsupported type: '${type}`;
-    }
-
-
-    const fixtureInfo: FixtureInfo = {
-        id,
-        name: fixtureName,
-        fullName,
-        address,
-        model: modelInfo,
-        order: fixture.order ?? 0
-    }
-
-    return fixtureInfo;
-}
-
-export function computeLightingPlanInfo(lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): LightingPlanInfo {
-    const fixturesInfo: {
-        [shortName: string]: FixtureInfo;
-    } = {};
-
-    Object.entries(lightingPlan.fixtures).forEach(([k, v]) => {
-        const fixtureInfo = computeFixtureInfo(k, lightingPlan, fixtures);
-        fixturesInfo[k] = fixtureInfo;
-    });
-
-    const result: LightingPlanInfo = {
-        fixtures: fixturesInfo
-    }
-
-    return result;
-}
-
-export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): SceneInfo {
     
-    const { name, id } = scene;
-    const elements: SceneElementInfo[] = scene.elements.map(se => {
-
-        const {
-            fixture: fixtureName,
-            values
-        } = se;
-
-
-        const fixtureInfo = computeFixtureInfo(fixtureName, lightingPlan, fixtures);
-        const computedValues = computeDmxValues(fixtureName, values, lightingPlan, fixtures);
-
-        const sei: SceneElementInfo = {
-            fixture: fixtureInfo,
-            values,
-            rawValues: computedValues
-        }
-
-        return sei;
-    });
-    
-    const result : SceneInfo = {
-        id,
-        name,
-        elements
+        return modelInfo;
     }
 
-    return result;
+    function mapToChannelInfo(channels: Fixtures.ChannelsDefinition): ChannelsInfo {
+        return { ...channels };
+    }
+
+    export function computeFixtureChannelsInfo(modelDefinition: Fixtures.FixtureModelDefinition, mode?: number): ChannelsInfo {
+        const { type } = modelDefinition;
+    
+        if (Fixtures.isTrad(type)) {
+            return {
+                0: "Trad"
+            }
+        }
+        else if (Fixtures.isLed(type)){
+    
+            if (!mode) {
+                throw "Expected mode for Led fixture"
+            }
+    
+            const ledModelDefinition = modelDefinition as Fixtures.LedFixtureModelDefinition;
+    
+            const {
+                modes,
+            } = ledModelDefinition;
+
+            if(!modes[mode]) {
+                throw `Mode '${mode}' not found for model '${modelDefinition.name}'`;
+            }
+    
+            return mapToChannelInfo(modes[mode]);
+        }
+        else {
+            throw `Unsupported type: '${type}`;
+        }
+    }
+    
+    export function computeLightingPlanInfo(lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): LightingPlanInfo {
+        const fixturesInfo: {
+            [shortName: string]: FixtureInfo;
+        } = {};
+    
+        Object.entries(lightingPlan.fixtures).forEach(([fixtureName, fixtureValue]) => {
+            const fixtureInfo = computeFixtureInfo(fixtureValue, fixtures);
+            fixturesInfo[fixtureName] = fixtureInfo;
+        });
+    
+        const result: LightingPlanInfo = {
+            fixtures: fixturesInfo
+        }
+    
+        return result;
+    }
+    
+    export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan, fixtureModels: Fixtures.FixtureModelCollection): SceneInfo {
+        
+        const { name, id } = scene;
+        const elements: SceneElementInfo[] = scene.elements.map(se => {
+    
+            const {
+                fixture: fixtureName,
+                values
+            } = se;
+    
+            const fixture = lightingPlan.fixtures[fixtureName];
+            const fixtureInfo = computeFixtureInfo(fixture, fixtureModels);
+            const computedValues = computeDmxValues(fixtureName, values, lightingPlan, fixtureModels);
+    
+            const sei: SceneElementInfo = {
+                fixture: fixtureInfo,
+                values,
+                rawValues: computedValues
+            }
+    
+            return sei;
+        });
+        
+        const result : SceneInfo = {
+            id,
+            name,
+            elements
+        }
+    
+        return result;
+    }
+    
+    export function computeFixtureModelCollectionInfo(fixtureModelCollection: Fixtures.FixtureModelCollection): FixtureModelCollectionInfo {
+        
+        const {
+            name,
+            id,
+            fixtureModels
+        } = fixtureModelCollection;
+    
+        const fixtures: { [shortName: string]: FixtureModelInfo } = {}
+    
+        Object.entries(fixtureModels).forEach(([shortName, model]) => {
+            fixtures[shortName] = computeFixtureModelInfo(model);
+        })
+    
+        return {
+            name,
+            id,
+            fixtures
+        };
+    }
 }
+
 
 const isTrack = (track: Track|TrackId): track is Track => {
     return typeof track === "object";
@@ -404,7 +488,7 @@ export function useNewShowControl(): ShowControlProps {
         const { fixture, values: seValues } = se;
 
         const { address } = lightingPlan.fixtures[fixture];
-        const values = computeDmxValues(fixture, seValues, lightingPlan, fixtureCollection);
+        const values = Mappings.computeDmxValues(fixture, seValues, lightingPlan, fixtureCollection);
 
         return {
             address,
@@ -676,7 +760,7 @@ export function useShowInfo(): ShowInfo|null {
         if (show && lightingPlan && fixtureCollection) {
 
             const { scenes, name, id } = show;
-            const sceneInfos = scenes.map(scene => generateSceneInfo(scene, lightingPlan, fixtureCollection));
+            const sceneInfos = scenes.map(scene => Mappings.generateSceneInfo(scene, lightingPlan, fixtureCollection));
 
             return {
                 name,
@@ -702,7 +786,7 @@ export function useSceneInfo(scene: Scene|undefined): SceneInfo|null {
 
     const result = useMemo(() => {
         if (scene && lightingPlan && fixtureCollection) {
-            const info = generateSceneInfo(scene, lightingPlan, fixtureCollection);
+            const info = Mappings.generateSceneInfo(scene, lightingPlan, fixtureCollection);
             return info;
         }
         else {
@@ -721,12 +805,31 @@ export function useLightingPlanInfo(): LightingPlanInfo|null {
     } = useShowControl();
 
     if (lightingPlan && fixtureCollection) {
-        const info = computeLightingPlanInfo(lightingPlan, fixtureCollection);
+        const info = Mappings.computeLightingPlanInfo(lightingPlan, fixtureCollection);
         return info;
     }
     else {
         return null;
     }
+}
+
+export function useFixtureCollectionInfo(): FixtureModelCollectionInfo|null {
+
+    const {
+        fixtureCollection,
+    } = useShowControl();
+
+    const result = useMemo(() => {
+        if (fixtureCollection) {
+            const info = Mappings.computeFixtureModelCollectionInfo(fixtureCollection);
+            return info;
+        }
+        else {
+            return null;
+        }
+    }, [fixtureCollection])
+
+    return result;
 }
 
 export function useRealtimeScene(scene: Scene|undefined, isPlaying: boolean = true, master: number = 1): Track|null {
@@ -776,4 +879,25 @@ export function useRealtimeScene(scene: Scene|undefined, isPlaying: boolean = tr
 
     
     return track;
+}
+
+export function useFixtureInfo(fixture: Fixtures.Fixture|undefined): FixtureInfo|null {
+
+    const [fi, setFI] = useState<FixtureInfo|null>(null);
+    const {
+        fixtureCollection
+    } = useShowControl();
+
+    useEffect(() => {
+        
+        if (fixture && fixtureCollection) {
+            const newFI = Mappings.computeFixtureInfo(fixture, fixtureCollection);
+            setFI(newFI)
+        }
+        else {
+            setFI(null);
+        }
+    }, [fixture, fixtureCollection])
+
+    return fi;
 }

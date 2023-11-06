@@ -7,7 +7,7 @@ import { Color, RgbColor } from "@/lib/services/core/types/rgbColor";
 import { Action, AsyncDipsatch } from "@/lib/services/core/types/utils";
 import { mergeClasses, withValue } from "@/lib/services/core/utils";
 import { Chans } from "@/lib/services/dmx/dmx512";
-import { createDefaultValuesForFixture, FixtureInfo, orderedFixtures, Scene, SceneElement, SceneElementInfo, SceneElementValues, Show, toScene, useLightingPlanInfo, useRealtimeScene, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
+import { initializeValuesForChannels, FixtureInfo, orderedFixtures, Scene, SceneElement, SceneElementInfo, SceneElementValues, Show, toScene, useLightingPlanInfo, useRealtimeScene, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
 import { on } from "events";
 import { Dispatch, Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { DndProvider, useDrag, useDrop, XYCoord } from "react-dnd";
@@ -61,7 +61,7 @@ const SceneEditor = (props: SceneEditorProps) => {
             model
         } = fixture;
 
-        const seValues = createDefaultValuesForFixture(model);
+        const seValues = initializeValuesForChannels(model);
 
         const newSceneElement: SceneElement = {
             fixture: name,

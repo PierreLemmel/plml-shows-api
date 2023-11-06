@@ -2,6 +2,7 @@ import { AleasButton } from "@/components/aleas-components/aleas-buttons";
 import { AleasDropdownButton, DropdownOption } from "@/components/aleas-components/aleas-dropdowns";
 import AleasFoldableComponent from "@/components/aleas-components/aleas-foldable-component";
 import AleasNumberInput from "@/components/aleas-components/aleas-number-input";
+import AleasSkeletonLoader from "@/components/aleas-components/aleas-skeleton-loader";
 import AleasSlider from "@/components/aleas-components/aleas-slider";
 import AleasTextField from "@/components/aleas-components/aleas-textfield";
 import { updateLightingPlan } from "@/lib/services/api/show-control-api";
@@ -9,8 +10,8 @@ import { sorted } from "@/lib/services/core/arrays";
 import { AsyncDipsatch } from "@/lib/services/core/types/utils";
 import { mergeClasses, withValue } from "@/lib/services/core/utils";
 import { Fixtures, StageLightingPlan } from "@/lib/services/dmx/dmx512";
-import { useShowControl } from "@/lib/services/dmx/showControl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { FixtureModelInfo, listFixtureModels, useFixtureCollectionInfo, useFixtureInfo } from "@/lib/services/dmx/showControl";
+import { use, useCallback, useEffect, useMemo, useState } from "react";
 import { DndProvider } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 
@@ -78,8 +79,7 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
     const canReset = workLightingPlan !== undefined && modified;
 
     return <div className={mergeClasses(
-        "",
-        "flex flex-col gap-6 w-full h-full overflow-y-auto justify-center items-stretch"
+        "flex flex-col gap-6 w-full h-full overflow-y-auto justify-start items-stretch",
     )}>
         <div className="w-full text-center text-4xl">{workLightingPlan?.name}</div>
         <div className="flex flex-col gap-2 items-stretch justify-evenly">
@@ -116,69 +116,91 @@ interface FixtureEditProps {
 const FixtureEdit = (props: FixtureEditProps) => {
     const {
         fixture,
-        updateFixture
+        updateFixture,
     } = props;
 
-    const {
-        name
-    } = fixture;
+    const fixtureCollection = useFixtureCollectionInfo();
+    const fixtureInfo = useFixtureInfo(fixture);
 
-    const {
-        fixtureCollection
-    } = useShowControl();
+    const onAdressChanged = async (address: number) => updateFixture(withValue(fixture, "address", address))
 
-    const onAdressChanged = useCallback(async (address: number) => updateFixture(withValue(fixture, "address", address)), [fixture])
+    const onNameChanged = async (name: string) => updateFixture(withValue(fixture, "name", name))
 
-    const onNameChanged = useCallback(async (name: string) => updateFixture(withValue(fixture, "name", name)), [fixture])
+    const onModelChanged = async (model: string) => updateFixture(withValue(fixture, "model", model))
 
-    const onModelChanged = useCallback(async (model: string) => updateFixture(withValue(fixture, "model", model)), [fixture])
+    const modelOptions: DropdownOption<FixtureModelInfo>[] = useMemo(() => {
+        if (!fixtureCollection) {
+            return []
+        }
 
-    const modelOptions: DropdownOption<string>[] = useMemo(() => ["test 1", "test 2"]
-        .map(str => {
-            return { 
-                label: str,
-                value: str
-            }
-        })
-    ,
+        const result = listFixtureModels(fixtureCollection)
+            .map(model => ({
+                label: model.name,
+                value: model
+            }));
+
+        return result;
+    },
     [fixtureCollection])
 
-    return <AleasFoldableComponent title={fixture.name}>
-        <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-3">
-            <div>Nom :</div>
-            <AleasTextField
-                value={name}
-                onValueChange={onNameChanged}
-            />
+    const onModelOptionSelected = useCallback((newModel: FixtureModelInfo) => {
+        onModelChanged(newModel.shortName);
+    },[])
 
-            <div>Adresse :</div>
-            <div className="w-full flex flex-row items-center justify-center gap-3">
-                <AleasSlider
-                    className="flex-grow"
-                    value={fixture.address}
-                    setValue={onAdressChanged}
-                    orientation="horizontal"
-                    min={1} max={512}
+    if (fixtureInfo) {
+
+        const {
+            name,
+            model,
+            mode
+        } = fixtureInfo;
+
+        return <AleasFoldableComponent title={name}>
+            <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-6 gap-y-3">
+                <FixtureEditLabel>Nom :</FixtureEditLabel>
+                <AleasTextField
+                    value={name}
+                    onValueChange={onNameChanged}
                 />
-                <AleasNumberInput
-                    value={fixture.address}
-                    onValueChange={onAdressChanged}
-                    inputSize="Tiny"
-                    min={1} max={512}
+
+                <FixtureEditLabel>Adresse :</FixtureEditLabel>
+                <div className="w-full flex flex-row items-center justify-center gap-3">
+                    <AleasSlider
+                        className="flex-grow"
+                        value={fixture.address}
+                        setValue={onAdressChanged}
+                        orientation="horizontal"
+                        min={1} max={512}
+                    />
+                    <AleasNumberInput
+                        value={fixture.address}
+                        onValueChange={onAdressChanged}
+                        inputSize="Tiny"
+                        min={1} max={512}
+                    />
+                </div>
+
+                <FixtureEditLabel>Modèle :</FixtureEditLabel>
+                <AleasDropdownButton
+                    options={modelOptions}
+                    value={model}
+                    onValueChanged={onModelOptionSelected}
+                    idFunction={(model?: FixtureModelInfo) => model?.shortName}
+                    size="Small"
                 />
             </div>
-
-            <div>Modèle :</div>
-            <AleasDropdownButton
-                options={modelOptions}
-                onSelectedOptionChanged={(option: DropdownOption<any>) => onModelChanged(option.value)}/>
-        </div>
-    </AleasFoldableComponent>
+        </AleasFoldableComponent>
+    } 
+    else {
+        return <AleasSkeletonLoader lines={1} />
+    }
 }
 
 const WithinContext = (props: LightingPlanEditorProps) => <DndProvider backend={HTML5Backend}>
     <LightingPlanEditor {...props} />
 </DndProvider>
+
+const FixtureEditLabel = ({ children }: { children: string }) => <div className="flex flex-row items-center justify-end">{children}</div>
 
 export default WithinContext;
 
