@@ -136,9 +136,9 @@ export function withValue<T, P extends Pathes<T>>(obj: T, path: P, value: ValueA
     return result;
 }
 
-type ValuesMap<T> = { [P in Pathes<T>]: ValueAtPath<T, P> }
+export type ValuesMap<T> = Partial<{ [P in Pathes<T>]: ValueAtPath<T, P> }>
 
-export function withValues<T>(obj: T, values: Partial<ValuesMap<T>>): T {
+export function withValues<T>(obj: T, values: ValuesMap<T>): T {
 
     const result = structuredClone(obj);
 

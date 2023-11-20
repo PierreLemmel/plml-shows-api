@@ -1,8 +1,10 @@
 import { initializeApp } from "firebase/app";
-import { collection, doc, DocumentData, getDoc, deleteDoc, getDocs, getFirestore, initializeFirestore, setDoc, WithFieldValue } from "firebase/firestore";
+import { collection, doc, DocumentData, getDoc, deleteDoc, getDocs, getFirestore, initializeFirestore, setDoc, updateDoc, WithFieldValue } from "firebase/firestore";
 import { getDownloadURL, getStorage, list, ref, uploadBytes } from "firebase/storage";
 import { getAuth, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth"
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { Pathes } from "../core/types/utils";
+import { ValuesMap } from "../core/utils";
 
 interface FirebaseProps {
     app: ReturnType<typeof initializeApp>;
@@ -57,6 +59,34 @@ export async function setDocument<T extends WithFieldValue<DocumentData>>(path: 
         doc(db, path),
         data,
         { merge }
+    );
+}
+
+export async function updateDocument<T extends WithFieldValue<DocumentData>>(path: string, values: Partial<T>) {
+    const { db } = getFirebase();
+    
+    const entries = Object.entries(values);
+
+    if (entries.length < 1) {
+        throw "updateDocument requires at least two values";
+    }
+    
+    const [firstField, firstValue] = entries[0];
+
+    const moreFieldsAndValues: unknown[] = new Array((entries.length - 1) * 2);
+
+    for (let i = 0; i < entries.length - 1; i++) {
+        const [field, value] = entries[i + 1];
+
+        moreFieldsAndValues[i * 2] = field;
+        moreFieldsAndValues[i * 2 + 1] = value;
+    }
+
+    await updateDoc(
+        doc(db, path),
+        firstField,
+        firstValue,
+        ...moreFieldsAndValues
     );
 }
 

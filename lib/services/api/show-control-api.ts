@@ -1,7 +1,7 @@
 import { Named } from "../core/types/utils";
 import { Fixtures, StageLightingPlan } from "../dmx/dmx512";
 import { Show } from "../dmx/showControl";
-import { getDocument, setDocument, toFirebaseKey } from "./firebase";
+import { getDocument, setDocument, toFirebaseKey, updateDocument } from "./firebase";
 
 
 export async function getShow(name: string) {
@@ -32,7 +32,8 @@ export async function createLightingPlan(plan: StageLightingPlan) {
 
 export async function updateLightingPlan(plan: Partial<StageLightingPlan> & Named) {
     const sanitized = toFirebaseKey(plan.name);
-    await setDocument<StageLightingPlan>(`dmx/lighting-plans/public/${sanitized}`, plan);
+    
+    await updateDocument<StageLightingPlan>(`dmx/lighting-plans/public/${sanitized}`, plan);
 }
 
 export async function getFixtureCollection(name: string) {

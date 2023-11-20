@@ -101,6 +101,7 @@ export interface FixtureInfo extends Named, HasId {
     mode?: number;
     model: FixtureModelInfo;
     channels: ChannelsInfo;
+    key: string;
     order: number;
 }
 
@@ -240,7 +241,9 @@ export module Mappings {
             address,
             mode,
             model: modelName,
-            name: fullName
+            name: fullName,
+            order,
+            key
         } = fixture;
     
         const modelDefinition = fixturesCollection.fixtureModels[modelName];
@@ -255,7 +258,8 @@ export module Mappings {
             mode,
             model: modelInfo,
             channels: channelInfo,
-            order: fixture.order ?? 0
+            order,
+            key
         }
     
         return fixtureInfo;

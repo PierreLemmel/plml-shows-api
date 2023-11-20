@@ -8,7 +8,7 @@ export interface HasId {
 
 export type Action = () => void;
 export type AsyncAction = () => Promise<void>;
-export type AsyncDipsatch<T> = (elt: T) => Promise<void>;
+export type AsyncDispatch<T> = (elt: T) => Promise<void>;
 
 
 type Keys<T> = keyof T & (string);
