@@ -131,12 +131,27 @@ export function withValue<T, P extends Pathes<T>>(obj: T, path: P, value: ValueA
     
     const result = structuredClone(obj);
 
-    const str = path as string;
-
-    const parts = str.split(".");
-    const lastPart = parts.pop()!;
-    const lastObj: any = parts.reduce((prev: any, curr) => prev[curr], result as any)
-    lastObj[lastPart] = value;
+    setValueAtPath(result, path as string, value)
 
     return result;
+}
+
+type ValuesMap<T> = { [P in Pathes<T>]: ValueAtPath<T, P> }
+
+export function withValues<T>(obj: T, values: Partial<ValuesMap<T>>): T {
+
+    const result = structuredClone(obj);
+
+    Object.entries(values).forEach(([path, val]) => {
+        setValueAtPath(result, path as string, val)
+    })
+
+    return result;
+}
+
+function setValueAtPath(obj: any, path: string, value: any) {
+    const parts = path.split(".");
+    const lastPart = parts.pop()!;
+    const lastObj: any = parts.reduce((prev: any, curr) => prev[curr], obj)
+    lastObj[lastPart] = value;
 }

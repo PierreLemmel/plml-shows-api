@@ -8,9 +8,9 @@ import AleasTextField from "@/components/aleas-components/aleas-textfield";
 import { updateLightingPlan } from "@/lib/services/api/show-control-api";
 import { sorted } from "@/lib/services/core/arrays";
 import { AsyncDipsatch } from "@/lib/services/core/types/utils";
-import { mergeClasses, withValue } from "@/lib/services/core/utils";
+import { mergeClasses, withValue, withValues } from "@/lib/services/core/utils";
 import { Fixtures, StageLightingPlan } from "@/lib/services/dmx/dmx512";
-import { FixtureModelInfo, listFixtureModels, useFixtureCollectionInfo, useFixtureInfo } from "@/lib/services/dmx/showControl";
+import { FixtureModelInfo, LedFixtureModelInfo, listFixtureModels, TradFixtureModelInfo, useFixtureCollectionInfo, useFixtureInfo } from "@/lib/services/dmx/showControl";
 import { use, useCallback, useEffect, useMemo, useState } from "react";
 import { DndProvider } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
@@ -56,7 +56,24 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
 
         setModified(true);
 
-    }, [lightingPlan])
+    }, [workLightingPlan])
+
+    const deleteFixture = useCallback(async (key: string) => {
+        if (!workLightingPlan) {
+            return;
+        }
+
+        const newFixtures = {
+            ...workLightingPlan.fixtures,
+        };
+
+        delete newFixtures[key];
+
+        const newLP = withValue(workLightingPlan, "fixtures", newFixtures);
+        setWorkLightingPlan(newLP);
+
+        setModified(true);
+    }, [workLightingPlan])
 
     const save = async () => {
         if (workLightingPlan) {
@@ -87,6 +104,7 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
                 key={`${fixture.key}-${fixture.id}`}
                 fixture={fixture}
                 updateFixture={async fixture => updateFixture(fixture.key, fixture)}
+                deleteFixture={async fixture => deleteFixture(fixture.key)}
             />)}
         </div>
         <div className="flex flex-row gap-2 items-center justify-center">
@@ -111,6 +129,7 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
 interface FixtureEditProps {
     fixture: Fixtures.Fixture;
     updateFixture: AsyncDipsatch<Fixtures.Fixture>;
+    deleteFixture: AsyncDipsatch<Fixtures.Fixture>;
 }
 
 const FixtureEdit = (props: FixtureEditProps) => {
@@ -126,7 +145,18 @@ const FixtureEdit = (props: FixtureEditProps) => {
 
     const onNameChanged = async (name: string) => updateFixture(withValue(fixture, "name", name))
 
-    const onModelChanged = async (model: string) => updateFixture(withValue(fixture, "model", model))
+    const onModelChanged = async (data: {
+        model: string,
+        mode?: number
+    }) => {
+        const { model, mode } = data;
+        return updateFixture(withValues(fixture, {
+            "model": model,
+            "mode": mode
+        }));
+    }
+
+    const onModeChanged = async (mode: number) => updateFixture(withValue(fixture, "mode", mode))
 
     const modelOptions: DropdownOption<FixtureModelInfo>[] = useMemo(() => {
         if (!fixtureCollection) {
@@ -143,9 +173,30 @@ const FixtureEdit = (props: FixtureEditProps) => {
     },
     [fixtureCollection])
 
+    const modeOptions = useMemo<DropdownOption<number>[]>(() => {
+
+        if (fixtureInfo) {
+            const modes: DropdownOption<number>[] = getValueAccordingToModelType<number[]>(fixtureInfo.model, modes => modes, [])
+                .map(mode => ({
+                    label: mode.toString(),
+                    value: mode
+                }));
+            return modes;
+        }
+        else {
+            return [];
+        }
+
+    }, [fixtureInfo]);
+
     const onModelOptionSelected = useCallback((newModel: FixtureModelInfo) => {
-        onModelChanged(newModel.shortName);
-    },[])
+        
+        const shortName = newModel.shortName;
+
+        const mode: number|undefined = getValueAccordingToModelType(newModel, modes => Math.min(...modes), undefined)
+
+        onModelChanged({ model: shortName, mode });
+    }, [])
 
     if (fixtureInfo) {
 
@@ -156,7 +207,7 @@ const FixtureEdit = (props: FixtureEditProps) => {
         } = fixtureInfo;
 
         return <AleasFoldableComponent title={name}>
-            <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-6 gap-y-3">
+            <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-6 gap-y-3 items-center">
                 <FixtureEditLabel>Nom :</FixtureEditLabel>
                 <AleasTextField
                     value={name}
@@ -188,11 +239,49 @@ const FixtureEdit = (props: FixtureEditProps) => {
                     idFunction={(model?: FixtureModelInfo) => model?.shortName}
                     size="Small"
                 />
+
+                {mode ? <>
+                    <FixtureEditLabel>Mode :</FixtureEditLabel>
+                    <AleasDropdownButton
+                        options={modeOptions}
+                        value={mode}
+                        onValueChanged={onModeChanged}
+                        size="Small"
+                    />
+                    <div>{mode}</div>
+                </> : <div className="col-span-2"></div>}
             </div>
         </AleasFoldableComponent>
     } 
     else {
         return <AleasSkeletonLoader lines={1} />
+    }
+}
+
+function getValueAccordingToModelType<T>(model: FixtureModelInfo, valueOnLeds: (modes: number[]) => T, valueOnTrad: T) {
+    const {
+        shortName,
+        type
+    } = model;
+
+    if (Fixtures.isLed(type)) {
+        const ledModel = model as LedFixtureModelInfo;
+        const chanCounts = Object
+            .keys(ledModel.modes)
+            .map(k => Number.parseInt(k));
+
+        if (chanCounts.length === 0) {
+            throw `Fixture model '${shortName}' has no mode`;
+        }
+
+        const result: T = valueOnLeds(chanCounts);
+        return result;
+    }
+    else if (Fixtures.isTrad(type)){
+        return valueOnTrad;
+    }
+    else {
+        throw `Fixture model '${shortName}' has unexpected type '${type}'`;
     }
 }
 
@@ -203,6 +292,3 @@ const WithinContext = (props: LightingPlanEditorProps) => <DndProvider backend={
 const FixtureEditLabel = ({ children }: { children: string }) => <div className="flex flex-row items-center justify-end">{children}</div>
 
 export default WithinContext;
-
-
-
