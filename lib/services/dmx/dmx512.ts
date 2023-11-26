@@ -214,7 +214,6 @@ export module Fixtures {
         readonly model: string;
         readonly mode?: number;
         readonly remarks?: string;
-        readonly order: number;
         readonly key: string;
     }
 }
@@ -223,9 +222,7 @@ export module Fixtures {
 export interface StageLightingPlan extends Named, HasId {
 
     readonly fixtureCollection: string;
-    readonly fixtures: {
-        [shortName: string]: Fixtures.Fixture;
-    }
+    readonly fixtures: Fixtures.Fixture[];
 }
 
 export type DmxWriteInterfaceState = "Undetected"|"Closed"|"Opening"|"Opened"|"Closing"

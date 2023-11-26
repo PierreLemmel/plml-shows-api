@@ -32,3 +32,15 @@ export function sorted<T>(input: T[], predicate: (elt: T) => number): T[] {
     const copy = [...input];
     return copy.sort((a, b) => predicate(a) - predicate(b));
 }
+
+export function excludeIndex<T>(array: T[],  index: number) {
+    return array.filter((_, i) => i !== index);
+}
+
+export function insertAt<T>(input: T[], index: number, elt: T) {
+    return [
+        ...input.slice(0, index),
+        elt,
+        ...input.slice(index)
+    ];
+}
