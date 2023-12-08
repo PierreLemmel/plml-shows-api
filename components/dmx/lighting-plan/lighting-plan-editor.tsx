@@ -2,13 +2,13 @@ import { AleasButton, AleasIconButton } from "@/components/aleas-components/alea
 import { AleasDropdownButton, DropdownOption } from "@/components/aleas-components/aleas-dropdowns";
 import AleasFoldableComponent from "@/components/aleas-components/aleas-foldable-component";
 import AleasNumberInput from "@/components/aleas-components/aleas-number-input";
-import AleasPopoverTextInput from "@/components/aleas-components/aleas-popover-inputs";
+import { AleasPopoverTextInput } from "@/components/aleas-components/aleas-popover-inputs";
 import AleasSkeletonLoader from "@/components/aleas-components/aleas-skeleton-loader";
 import AleasSlider from "@/components/aleas-components/aleas-slider";
 import { updateLightingPlan } from "@/lib/services/api/show-control-api";
 import { excludeIndex, insertAt } from "@/lib/services/core/arrays";
 import { AsyncDispatch } from "@/lib/services/core/types/utils";
-import { generateId, mergeClasses, withValue, withValues } from "@/lib/services/core/utils";
+import { generateId, incrementId, mergeClasses, mergeConditions, withValue, withValues } from "@/lib/services/core/utils";
 import { Validators } from "@/lib/services/core/validation";
 import { Fixtures, StageLightingPlan } from "@/lib/services/dmx/dmx512";
 import { FixtureModelInfo, LedFixtureModelInfo, listFixtureModels, TradFixtureModelInfo, useFixtureCollectionInfo, useFixtureInfo } from "@/lib/services/dmx/showControl";
@@ -50,6 +50,15 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
 
     const workFixtures = workLightingPlan?.fixtures ?? [];
 
+    const idAlreadyUsed = useCallback((index: number) => ((id: string) => {
+        if (!workLightingPlan) {
+            return false;
+        }
+
+        const used = workLightingPlan.fixtures.some((f, i) => f.key === id && i !== index);
+        return used;
+    }), [workLightingPlan])
+
     const updateFixture = useCallback(async (index: number, fixture: Fixtures.Fixture) => {
         if (!workLightingPlan) {
             return;
@@ -88,11 +97,18 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
 
         const newId = generateId();
 
+        let newKey = incrementId(fixture.key);
+
+        const checkIfExists = idAlreadyUsed(-1);
+        while (checkIfExists(newKey)) {
+            newKey = incrementId(newKey);
+        }
+
         const newFixture: Fixtures.Fixture = {
             ...fixture,
             name: `${fixture.name} (copie)`,
             id: newId,
-            key: newId,
+            key: incrementId(fixture.key),
         }
 
         const newFixtures = insertAt(workLightingPlan.fixtures, index + 1, newFixture);
@@ -111,9 +127,10 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
         }
 
         const id = generateId();
+        const key = generateId({ type: "LettersOnly" });
         const newFixture: Fixtures.Fixture = {
             id,
-            key: id,
+            key,
             address: 1,
             name: "Nouveau projecteur",
             model: "generic",
@@ -171,11 +188,11 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
         <div className="flex flex-col gap-2 items-stretch justify-evenly">
             {workFixtures.map((fixture, i) => <FixtureEdit
                 key={`Fixture-${i}`}
-                index={i}
                 fixture={fixture}
                 updateFixture={async fixture => await updateFixture(i, fixture)}
                 deleteFixture={async fixture => await deleteFixture(i)}
                 duplicateFixture={async fixture => await duplicateFixture(i, fixture)}
+                idAlreadyUsed={idAlreadyUsed(i)}
             />)}
         </div>
         <div className="flex flex-row gap-2 items-center justify-center">
@@ -187,6 +204,11 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
                 Sauvegarder
             </AleasButton>
             <AleasButton
+                hasConfirmation={true}
+                confirmationOptions={{
+                    title: "Réinitialiser",
+                    message: "Êtes-vous sûr de vouloir réinitialiser le plan de feu ?"
+                }}
                 onClick={reset}
                 disabled={!canReset}
                 spinning={working}
@@ -215,20 +237,20 @@ interface DndDropResult {
 }
 
 interface FixtureEditProps {
-    index: number;
     fixture: Fixtures.Fixture;
     updateFixture: AsyncDispatch<Fixtures.Fixture>;
     deleteFixture: AsyncDispatch<Fixtures.Fixture>;
     duplicateFixture: AsyncDispatch<Fixtures.Fixture>;
+    idAlreadyUsed: (name: string) => boolean;
 }
 
 const FixtureEdit = (props: FixtureEditProps) => {
     const {
-        index,
         fixture,
         updateFixture,
         deleteFixture,
         duplicateFixture,
+        idAlreadyUsed
     } = props;
 
     const [
@@ -271,6 +293,7 @@ const FixtureEdit = (props: FixtureEditProps) => {
         }
 
         const result = listFixtureModels(fixtureCollection)
+            .sort((a, b) => a.name.localeCompare(b.name))
             .map(model => ({
                 label: model.name,
                 value: model
@@ -340,9 +363,9 @@ const FixtureEdit = (props: FixtureEditProps) => {
                             }}
                             title="Renommer"
                             initialValue={name}
-                            validationFunction={Validators.strings.lengthBetween(3, 50)}
+                            canValidate={Validators.strings.lengthBetween(3, 50)}
                         >
-
+                            Indiquer un nouveau nom (entre 3 et 50 caractères)
                         </AleasPopoverTextInput>
                         <FixtureEditLabel>Adresse :</FixtureEditLabel>
                         <div className="w-full flex flex-row items-center justify-center gap-3">
@@ -399,9 +422,13 @@ const FixtureEdit = (props: FixtureEditProps) => {
                             }}
                             title="Renommer"
                             initialValue={key}
-                            validationFunction={Validators.strings.lengthBetween(3, 12)}
-                        ></AleasPopoverTextInput>
-
+                            canValidate={mergeConditions(
+                                Validators.strings.regex(/^[a-zA-Z]([a-zA-Z0-9_\-]){2,11}$/),
+                                id => !idAlreadyUsed(id)
+                            )}
+                        >
+                            L'identifiant doit être unique, commencer par une lettre et contenir entre 3 et 12 caractères alphanumériques, tirets et underscores
+                        </AleasPopoverTextInput>
                     </div>
                     <div className="w-full flex flex-row gap-3 items-center justify-center">
                         <AleasButton
@@ -412,6 +439,11 @@ const FixtureEdit = (props: FixtureEditProps) => {
                             Dupliquer
                         </AleasButton>
                         <AleasButton
+                            hasConfirmation={true}
+                            confirmationOptions={{
+                                title: "Supprimer",
+                                message: "Êtes-vous sûr de vouloir supprimer cet appareil ?",
+                            }}
                             className="px-5"
                             size="Small"
                             onClick={async () => await deleteFixture(fixture)}

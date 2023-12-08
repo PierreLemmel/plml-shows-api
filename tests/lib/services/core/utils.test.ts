@@ -1,4 +1,4 @@
-import { withValue, withValues } from "@/lib/services/core/utils";
+import { incrementId, withValue, withValues } from "@/lib/services/core/utils";
 
 global.structuredClone = global.structuredClone ?? jest.fn(val => {
     return JSON.parse(JSON.stringify(val));
@@ -159,4 +159,38 @@ describe("withValues", () => {
             });
         }).not.toThrow();
     })
+})
+
+describe("incrementId", () => {
+    it("should increment an id without number with '-01'", () => {
+        expect(incrementId("test")).toBe("test-01");
+    });
+
+    it("should increment a simple id with a number", () => {
+        expect(incrementId("id-test42")).toBe("id-test43");
+    });
+
+    it("should increment a simple id with a number and a space", () => {
+        expect(incrementId("id-test 42")).toBe("id-test 43");
+    });
+
+    it("should increment tens", () => {
+        expect(incrementId("test-9")).toBe("test-10");
+    });
+
+    it("should deal with zeros", () => {
+        expect(incrementId("test-001")).toBe("test-002");
+    });
+
+    it("should deal with and increment", () => {
+        expect(incrementId("test-009")).toBe("test-010");
+    });
+
+    it("should not modify number in the middle of the string", () => {
+        expect(incrementId("test-2-id-4")).toBe("test-2-id-5");
+    });
+
+    it("should deal with special case where it ends with '0'", () => {
+        expect(incrementId("test")).toBe("test-01");
+    });
 })

@@ -31,3 +31,5 @@ export type ValueAtPath<T, P extends string> = P extends keyof T
 export interface MinMax {
     min: number, max: number
 }
+
+export type ValueOrFunction<TArgs, TResult> = TResult | ((args: TArgs) => TResult);

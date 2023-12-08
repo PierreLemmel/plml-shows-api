@@ -1,3 +1,4 @@
+import { ValueOrFunction } from '@/lib/services/core/types/utils';
 import React, { useEffect, useState } from 'react';
 import AleasModalDialog from './aleas-modal-dialog';
 import AleasTextField from './aleas-textfield';
@@ -9,10 +10,10 @@ interface AleasPopoverTextInputProps {
 	children?: React.ReactNode;
 	onCancel: () => void;
 	onConfirm: (value: string) => void;
-	validationFunction?: (value: string) => boolean;
+	canValidate?: ValueOrFunction<string, boolean>;
 }
 
-const AleasPopoverTextInput = (props: AleasPopoverTextInputProps) => {
+export const AleasPopoverTextInput = (props: AleasPopoverTextInputProps) => {
 
 	const {
 		isOpen,
@@ -21,7 +22,7 @@ const AleasPopoverTextInput = (props: AleasPopoverTextInputProps) => {
 		initialValue,
 		onCancel,
 		onConfirm,
-		validationFunction = () => true,
+		canValidate = true,
 	} = props;
 
 	const [value, setValue] = useState('');
@@ -30,17 +31,17 @@ const AleasPopoverTextInput = (props: AleasPopoverTextInputProps) => {
 		setValue(initialValue || '');
 	}, [initialValue, isOpen])
 
-	const canValidate = validationFunction(value);
+	const canValidateValue = typeof canValidate === 'function' ? canValidate(value) : canValidate;
 
 	return <AleasModalDialog
 		isOpen={isOpen}
-		canValidate={canValidate}
+		canValidate={canValidateValue}
 		onCancel={onCancel}
 		onConfirm={() => onConfirm(value)}
 		confirmText="Ok"
 		cancelText="Annuler"
 	>
-		<div className="full flex flex-col gap-2 mb-5">		
+		<div className="full flex flex-col gap-2 mb-6 items-stretch w-100 max-w-[50vw]">		
 			{title && <div className="text-lg font-bold">{title}</div>}
 			{children && <div>{children}</div>}
 			<AleasTextField
@@ -51,4 +52,43 @@ const AleasPopoverTextInput = (props: AleasPopoverTextInputProps) => {
 	</AleasModalDialog>
 };
 
-export default AleasPopoverTextInput;
+
+interface AleasConfirmDialogProps {
+	isOpen: boolean;
+	title?: string;
+	message?: string;
+	onConfirm: () => void;
+	onCancel: () => void;
+	canConfirm?: ValueOrFunction<void, boolean>;
+	confirmText?: string;
+	cancelText?: string;
+}
+  
+export const AleasConfirmDialog = (props: AleasConfirmDialogProps) => {
+	const {
+		isOpen,
+		title,
+		message,
+		onConfirm,
+		onCancel,
+		canConfirm = true,
+		confirmText="Ok",
+		cancelText="Annuler",
+	} = props;
+  
+	const canConfirmValue = typeof canConfirm === 'function' ? canConfirm() : canConfirm;
+  
+	return <AleasModalDialog
+		isOpen={isOpen}
+		canValidate={canConfirmValue}
+		onCancel={onCancel}
+		onConfirm={onConfirm}
+		confirmText={confirmText}
+		cancelText={cancelText}
+	>
+		<div className="full flex flex-col gap-2 mb-6 items-stretch w-100 max-w-[50vw]">
+			{title && <div className="text-lg font-bold">{title}</div>}
+			{message && <div>{message}</div>}
+		</div>
+	</AleasModalDialog>
+};

@@ -1,5 +1,6 @@
 import { match, mergeClasses } from "@/lib/services/core/utils";
-import React from "react";
+import React, { useState } from "react";
+import { AleasConfirmDialog } from "./aleas-popover-inputs";
 
 const sharedClasses = mergeClasses(
     "centered-row text-center font-bold text-white",
@@ -15,13 +16,31 @@ const disabledSharedClasses=`brightness-50 cursor-not-allowed`
 
 export type ButtonSize = "Normal"|"Small"
 
-interface ButtonProps extends React.HTMLAttributes<HTMLDivElement> {
+interface BaseButtonProps extends React.HTMLAttributes<HTMLDivElement> {
     disabled?: boolean;
     spinning?: boolean;
     size?: ButtonSize;
+    onClick?: () => void;
 }
 
-export const AleasButton = (props: ButtonProps) => {
+type ButtonProps = BaseButtonProps & (WithoutConfirmationOptions | WithConfirmationOptions)
+
+type WithoutConfirmationOptions = {
+    hasConfirmation?: false;
+    confirmationOptions?: never;
+}
+
+type WithConfirmationOptions = {
+    hasConfirmation: true;
+    confirmationOptions: {
+        title?: string;
+        message?: string;
+        confirmText?: string;
+        cancelText?: string;
+    }
+}
+
+const AleasBaseButton = (props: BaseButtonProps) => {
     
     const {
         disabled = false,
@@ -39,9 +58,9 @@ export const AleasButton = (props: ButtonProps) => {
 
     return <div
         {...restProps}
-        onClick={e => {
+        onClick={() => {
             if (!disabled && !spinning && onClick) {
-                onClick(e)
+                onClick()
             }
         }}
         className={mergeClasses(
@@ -69,6 +88,64 @@ export const AleasButton = (props: ButtonProps) => {
     </div>
 }
 
+const AleasButtonWithConfirmation = (props: BaseButtonProps & WithConfirmationOptions) => {
+
+    const {
+        confirmationOptions: {
+            title,
+            message,
+            confirmText,
+            cancelText
+        },
+        onClick = () => {},
+        ...buttonProps
+    } = props;
+
+    const [confirmOpen, setConfirmOpen] = useState(false);
+
+    const onMainButtonClick = () => {
+        setConfirmOpen(true);
+    }
+
+    const onConfirmButtonClick = () => {
+        setConfirmOpen(false);
+        onClick();
+    }
+
+    const onCancelButtonClick = () => {
+        setConfirmOpen(false);
+    }
+
+    return <div>
+        <AleasBaseButton
+            onClick={onMainButtonClick}
+            {...buttonProps}
+        />
+        <AleasConfirmDialog
+            title={title}
+            message={message}
+            isOpen={confirmOpen}
+            onConfirm={onConfirmButtonClick}
+            onCancel={onCancelButtonClick}
+            confirmText={confirmText}
+            cancelText={cancelText}
+        ></AleasConfirmDialog>
+    </div>
+}
+
+
+export const AleasButton = (props: ButtonProps) => {
+
+    if (props.hasConfirmation) {
+        return <AleasButtonWithConfirmation {...props} />
+    }
+    else {
+        return <AleasBaseButton {...props} />
+    }
+};
+
+
+
 export const AleasRoundButton = (props: ButtonProps) => {
 
     const {
@@ -82,9 +159,9 @@ export const AleasRoundButton = (props: ButtonProps) => {
 
     return <div
         {...restProps}
-        onClick={e => {
+        onClick={() => {
             if (!disabled && onClick) {
-                onClick(e)
+                onClick()
             }
         }}
         className={mergeClasses(
