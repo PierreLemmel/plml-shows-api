@@ -32,15 +32,6 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
     const [modified, setModified] = useState<boolean>(false);
     const [working, setWorking] = useState<boolean>(false)
 
-
-    const [ , sceneDropZone] = useDrop<DndDragObject>({
-        accept: [
-            ItemTypes.FixtureCard
-        ],
-        drop: (item) => console.log(item),
-        collect: monitor => monitor.isOver(),
-    })
-
     useEffect(() => {
         const clone = structuredClone(lightingPlan);
         setWorkLightingPlan(clone);
@@ -173,7 +164,6 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
         className={mergeClasses(
             "flex flex-col gap-6 w-full h-full overflow-y-auto justify-start items-stretch",
         )}
-        ref={sceneDropZone}
     >
         <div className="w-full text-center text-4xl">{workLightingPlan?.name}</div>
         <div className="flex flex-row justify-end pr-1">
@@ -252,6 +242,15 @@ const FixtureEdit = (props: FixtureEditProps) => {
         duplicateFixture,
         idAlreadyUsed
     } = props;
+
+    const [ , sceneDropZone] = useDrop<DndDragObject>({
+        accept: [
+            ItemTypes.FixtureCard
+        ],
+        drop: (item, monitor) => console.log({ item, foo: monitor }),
+        collect: monitor => monitor.isOver(),
+        hover: (item, monitor) => console.log({ item, monitor })
+    })
 
     const [
         { isDragging },
@@ -340,7 +339,8 @@ const FixtureEdit = (props: FixtureEditProps) => {
             mode
         } = fixtureInfo;
 
-        return <div ref={drag}>
+        return <div ref={drag} className={isDragging ? "" : undefined}>
+            {isDragging && <div className="full bg-red-400">Drag</div>}
             <AleasFoldableComponent title={name}>
                 <div className="flex flex-col w-full gap-6">
                     <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-6 gap-y-3 items-center">

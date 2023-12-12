@@ -97,6 +97,7 @@ const AleasButtonWithConfirmation = (props: BaseButtonProps & WithConfirmationOp
             confirmText,
             cancelText
         },
+        hasConfirmation,
         onClick = () => {},
         ...buttonProps
     } = props;
@@ -129,18 +130,23 @@ const AleasButtonWithConfirmation = (props: BaseButtonProps & WithConfirmationOp
             onCancel={onCancelButtonClick}
             confirmText={confirmText}
             cancelText={cancelText}
-        ></AleasConfirmDialog>
+        />
     </div>
 }
 
 
 export const AleasButton = (props: ButtonProps) => {
 
-    if (props.hasConfirmation) {
-        return <AleasButtonWithConfirmation {...props} />
+    const {
+        hasConfirmation,
+        ...restProps
+    } = props;
+
+    if (hasConfirmation) {
+        return <AleasButtonWithConfirmation {...props} hasConfirmation />
     }
     else {
-        return <AleasBaseButton {...props} />
+        return <AleasBaseButton {...restProps} />
     }
 };
 
