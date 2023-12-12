@@ -44,3 +44,23 @@ export function insertAt<T>(input: T[], index: number, elt: T) {
         ...input.slice(index)
     ];
 }
+
+
+export function arraySwap<T>(array: T[], index1: number, index2: number) {
+    const temp = array[index1];
+    array[index1] = array[index2];
+    array[index2] = temp;
+}
+
+export function arrayMove<T>(array: T[], fromIndex: number, toIndex: number) {
+
+    const element = array.splice(fromIndex, 1)[0];
+    array.splice(toIndex, 0, element);
+
+    return array;
+}
+
+export function toArrayMoved<T>(array: T[], fromIndex: number, toIndex: number) {
+    const copy = [...array];
+    return arrayMove(copy, fromIndex, toIndex);
+}

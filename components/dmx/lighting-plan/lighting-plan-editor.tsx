@@ -6,13 +6,13 @@ import { AleasPopoverTextInput } from "@/components/aleas-components/aleas-popov
 import AleasSkeletonLoader from "@/components/aleas-components/aleas-skeleton-loader";
 import AleasSlider from "@/components/aleas-components/aleas-slider";
 import { updateLightingPlan } from "@/lib/services/api/show-control-api";
-import { excludeIndex, insertAt } from "@/lib/services/core/arrays";
+import { arrayMove, arraySwap, excludeIndex, insertAt } from "@/lib/services/core/arrays";
 import { AsyncDispatch } from "@/lib/services/core/types/utils";
 import { generateId, incrementId, mergeClasses, mergeConditions, withValue, withValues } from "@/lib/services/core/utils";
 import { Validators } from "@/lib/services/core/validation";
 import { Fixtures, StageLightingPlan } from "@/lib/services/dmx/dmx512";
-import { FixtureModelInfo, LedFixtureModelInfo, listFixtureModels, TradFixtureModelInfo, useFixtureCollectionInfo, useFixtureInfo } from "@/lib/services/dmx/showControl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { FixtureModelInfo, LedFixtureModelInfo, listFixtureModels, useFixtureCollectionInfo, useFixtureInfo } from "@/lib/services/dmx/showControl";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 
@@ -30,16 +30,53 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
 
     const [workLightingPlan, setWorkLightingPlan] = useState<StageLightingPlan>();
     const [modified, setModified] = useState<boolean>(false);
-    const [working, setWorking] = useState<boolean>(false)
+    const [working, setWorking] = useState<boolean>(false);
 
+    
     useEffect(() => {
         const clone = structuredClone(lightingPlan);
         setWorkLightingPlan(clone);
-
+        
         setModified(false);
     }, [lightingPlan])
-
+    
     const workFixtures = workLightingPlan?.fixtures ?? [];
+    const swappedFixtures = workFixtures.map((fixture, i) => ({
+        fixture,
+        i
+    }));
+    
+    const [swapIndexes, setSwapIndexes] = useState<{ from: number, to: number }|null>(null);
+    if (swapIndexes) {
+        const { from, to } = swapIndexes;
+        arrayMove(swappedFixtures, from, to);
+    }
+
+    const onFixtureDrop = useCallback(() => {
+        if (!workLightingPlan || !swapIndexes) {
+            return;
+        }
+
+        const { from, to } = swapIndexes;
+        
+        if (from !== to) {
+            const newFixtures = [...workLightingPlan.fixtures];
+            arrayMove(newFixtures, from, to);
+
+            const newLP = withValue(workLightingPlan, "fixtures", newFixtures);
+            setWorkLightingPlan(newLP);
+
+            setModified(true);
+        }
+
+        console.log("Drop")
+        setSwapIndexes(null);
+    }, [workLightingPlan, swapIndexes]);
+
+    const onFixtureDragHover = useCallback((from: number, to: number) => {
+        
+        setSwapIndexes({ from, to });
+    }, [workLightingPlan]);
 
     const idAlreadyUsed = useCallback((index: number) => ((id: string) => {
         if (!workLightingPlan) {
@@ -176,14 +213,26 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
             </AleasButton>
         </div>
         <div className="flex flex-col gap-2 items-stretch justify-evenly">
-            {workFixtures.map((fixture, i) => <FixtureEdit
-                key={`Fixture-${i}`}
-                fixture={fixture}
-                updateFixture={async fixture => await updateFixture(i, fixture)}
-                deleteFixture={async fixture => await deleteFixture(i)}
-                duplicateFixture={async fixture => await duplicateFixture(i, fixture)}
-                idAlreadyUsed={idAlreadyUsed(i)}
-            />)}
+            {swappedFixtures.map((fixtureWithIndex) => {
+
+                const {
+                    fixture,
+                    i
+                } = fixtureWithIndex;
+
+                return <FixtureEdit
+                    index={i}
+                    key={`Fixture-${fixture.key}-${i}`}
+                    fixture={fixture}
+                    updateFixture={async (fixture) => await updateFixture(i, fixture)}
+                    deleteFixture={async (fixture) => await deleteFixture(i)}
+                    duplicateFixture={async (fixture) => await duplicateFixture(i, fixture)}
+                    idAlreadyUsed={idAlreadyUsed(i)}
+
+                    onDrop={() => onFixtureDrop()}
+                    onDraggedHover={(draggedItem: number) => onFixtureDragHover(i, draggedItem)}
+                />;
+            })}
         </div>
         <div className="flex flex-row gap-2 items-center justify-center">
             <AleasButton
@@ -210,61 +259,107 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
 }
 
 enum ItemTypes {
-    FixtureCard = "FixtureCard",
-    FixtureColumn = "FixtureColumn"
+    Fixture = "Fixture",
 } 
 
 interface DndDragObject {
     id: string;
+    index: number;
 }
 
-interface DndCollectedProps {
+interface DragCollectedProps {
     isDragging: boolean;
 }
 
-interface DndDropResult {
+interface DropCollectedProps {
 
 }
 
 interface FixtureEditProps {
+    index: number;
+
     fixture: Fixtures.Fixture;
     updateFixture: AsyncDispatch<Fixtures.Fixture>;
     deleteFixture: AsyncDispatch<Fixtures.Fixture>;
     duplicateFixture: AsyncDispatch<Fixtures.Fixture>;
     idAlreadyUsed: (name: string) => boolean;
+
+    onDrop: () => void;
+    onDraggedHover: (draggedItem: number) => void;
 }
 
 const FixtureEdit = (props: FixtureEditProps) => {
     const {
+        index,
+
         fixture,
         updateFixture,
         deleteFixture,
         duplicateFixture,
-        idAlreadyUsed
-    } = props;
+        idAlreadyUsed,
 
-    const [ , sceneDropZone] = useDrop<DndDragObject>({
-        accept: [
-            ItemTypes.FixtureCard
-        ],
-        drop: (item, monitor) => console.log({ item, foo: monitor }),
-        collect: monitor => monitor.isOver(),
-        hover: (item, monitor) => console.log({ item, monitor })
-    })
+        onDrop,
+        onDraggedHover,
+    } = props;
 
     const [
         { isDragging },
         drag
-    ] = useDrag<DndDragObject, DndDropResult, DndCollectedProps>({
-        type: ItemTypes.FixtureCard,
+    ] = useDrag<DndDragObject, void, DragCollectedProps>({
+        type: ItemTypes.Fixture,
         item: {
-            id: ''
+            id: fixture.id,
+            index
         },
         collect: monitor => ({
             isDragging: monitor.isDragging(),
         }),
         canDrag: () => !editingName && !editingKey,
+        end: onDrop
     })
+
+
+    const dndRef = useRef<HTMLDivElement>(null)
+    const [ , drop] = useDrop<
+        DndDragObject,
+        void,
+        DropCollectedProps
+    >({
+        accept: ItemTypes.Fixture,
+        collect: monitor => {
+            return {
+                handlerId: monitor.getHandlerId()
+            }
+        },
+        hover: (item, monitor) => {
+            if (!dndRef.current) {
+                return;
+            }
+
+            const draggedIndex = item.index
+            const hoverIndex = index
+
+            if (draggedIndex === hoverIndex) {
+                return;
+            }
+
+            const hoverBoundingRect = dndRef.current?.getBoundingClientRect()
+            const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2
+            const clientOffset = monitor.getClientOffset()
+            const hoverClientY = (clientOffset as any).y - hoverBoundingRect.top
+
+            if (draggedIndex < hoverIndex && hoverClientY < hoverMiddleY) {
+                return;
+            }
+
+            if (draggedIndex > hoverIndex && hoverClientY > hoverMiddleY) {
+                return;
+            }
+
+            onDraggedHover(draggedIndex);
+        },
+    })
+
 
     const fixtureCollection = useFixtureCollectionInfo();
     const fixtureInfo = useFixtureInfo(fixture);
@@ -339,120 +434,122 @@ const FixtureEdit = (props: FixtureEditProps) => {
             mode
         } = fixtureInfo;
 
-        return <div ref={drag} className={isDragging ? "" : undefined}>
-            {isDragging && <div className="full bg-red-400">Drag</div>}
-            <AleasFoldableComponent title={name}>
-                <div className="flex flex-col w-full gap-6">
-                    <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-6 gap-y-3 items-center">
-                        <FixtureEditLabel>Nom :</FixtureEditLabel>
-                        <div className="flex flex-row w-full items-center">
-                            <div className="flex-grow">{name}</div>
-                            <AleasIconButton
-                                icon="Edit"
-                                size="Small"
-                                className="flex-grow-0"
-                                onClick={() => setEditingName(true)}
-                            />
-                        </div>
-                        <AleasPopoverTextInput
-                            isOpen={editingName}
-                            onCancel={() => setEditingName(false)}
-                            onConfirm={(value: string) => {
-                                onNameChanged(value);
-                                setEditingName(false);
-                            }}
-                            title="Renommer"
-                            initialValue={name}
-                            canValidate={Validators.strings.lengthBetween(3, 50)}
-                        >
-                            Indiquer un nouveau nom (entre 3 et 50 caractères)
-                        </AleasPopoverTextInput>
-                        <FixtureEditLabel>Adresse :</FixtureEditLabel>
-                        <div className="w-full flex flex-row items-center justify-center gap-3">
-                            <AleasSlider
-                                className="flex-grow"
-                                value={fixture.address}
-                                setValue={onAdressChanged}
-                                orientation="horizontal"
-                                min={1} max={512}
-                            />
-                            <AleasNumberInput
-                                value={fixture.address}
-                                onValueChange={onAdressChanged}
-                                inputSize="Tiny"
-                                min={1} max={512}
-                            />
-                        </div>
+        drag(drop(dndRef));
+        return <div ref={dndRef} className={isDragging ? "bg-slate-400/20 rounded-md" : undefined}>
+            <div className={isDragging ? "opacity-25" : undefined}> 
+                <AleasFoldableComponent title={name}>
+                    <div className="flex flex-col w-full gap-6">
+                        <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-6 gap-y-3 items-center">
+                            <FixtureEditLabel>Nom :</FixtureEditLabel>
+                            <div className="flex flex-row w-full items-center">
+                                <div className="flex-grow">{name}</div>
+                                <AleasIconButton
+                                    icon="Edit"
+                                    size="Small"
+                                    className="flex-grow-0"
+                                    onClick={() => setEditingName(true)}
+                                />
+                            </div>
+                            <AleasPopoverTextInput
+                                isOpen={editingName}
+                                onCancel={() => setEditingName(false)}
+                                onConfirm={(value: string) => {
+                                    onNameChanged(value);
+                                    setEditingName(false);
+                                }}
+                                title="Renommer"
+                                initialValue={name}
+                                canValidate={Validators.strings.lengthBetween(3, 50)}
+                            >
+                                Indiquer un nouveau nom (entre 3 et 50 caractères)
+                            </AleasPopoverTextInput>
+                            <FixtureEditLabel>Adresse :</FixtureEditLabel>
+                            <div className="w-full flex flex-row items-center justify-center gap-3">
+                                <AleasSlider
+                                    className="flex-grow"
+                                    value={fixture.address}
+                                    setValue={onAdressChanged}
+                                    orientation="horizontal"
+                                    min={1} max={512}
+                                />
+                                <AleasNumberInput
+                                    value={fixture.address}
+                                    onValueChange={onAdressChanged}
+                                    inputSize="Tiny"
+                                    min={1} max={512}
+                                />
+                            </div>
 
-                        <FixtureEditLabel>Modèle :</FixtureEditLabel>
-                        <AleasDropdownButton
-                            options={modelOptions}
-                            value={model}
-                            onValueChanged={onModelOptionSelected}
-                            idFunction={(model?: FixtureModelInfo) => model?.shortName}
-                            size="Small"
-                        />
-
-                        {mode ? <>
-                            <FixtureEditLabel>Mode :</FixtureEditLabel>
+                            <FixtureEditLabel>Modèle :</FixtureEditLabel>
                             <AleasDropdownButton
-                                options={modeOptions}
-                                value={mode}
-                                onValueChanged={onModeChanged}
+                                options={modelOptions}
+                                value={model}
+                                onValueChanged={onModelOptionSelected}
+                                idFunction={(model?: FixtureModelInfo) => model?.shortName}
                                 size="Small"
                             />
-                        </> : <div className="col-span-2"></div>}
 
-                        <FixtureEditLabel>Identifiant :</FixtureEditLabel>
-                        <div className="flex flex-row w-full items-center">
-                            <div className="flex-grow">{key}</div>
-                            <AleasIconButton
-                                icon="Edit"
-                                size="Small"
-                                className="flex-grow-0"
-                                onClick={() => setEditingKey(true)}
-                            />
+                            {mode ? <>
+                                <FixtureEditLabel>Mode :</FixtureEditLabel>
+                                <AleasDropdownButton
+                                    options={modeOptions}
+                                    value={mode}
+                                    onValueChanged={onModeChanged}
+                                    size="Small"
+                                />
+                            </> : <div className="col-span-2"></div>}
+
+                            <FixtureEditLabel>Identifiant :</FixtureEditLabel>
+                            <div className="flex flex-row w-full items-center">
+                                <div className="flex-grow">{key}</div>
+                                <AleasIconButton
+                                    icon="Edit"
+                                    size="Small"
+                                    className="flex-grow-0"
+                                    onClick={() => setEditingKey(true)}
+                                />
+                            </div>
+                            <AleasPopoverTextInput
+                                isOpen={editingKey}
+                                onCancel={() => setEditingKey(false)}
+                                onConfirm={(newKey: string) => {
+                                    onKeyChanged(newKey);
+                                    setEditingKey(false);
+                                }}
+                                title="Renommer"
+                                initialValue={key}
+                                canValidate={mergeConditions(
+                                    Validators.strings.regex(/^[a-zA-Z]([a-zA-Z0-9_\-]){2,11}$/),
+                                    id => !idAlreadyUsed(id)
+                                )}
+                            >
+                                L'identifiant doit être unique, commencer par une lettre et contenir entre 3 et 12 caractères alphanumériques, tirets et underscores
+                            </AleasPopoverTextInput>
                         </div>
-                        <AleasPopoverTextInput
-                            isOpen={editingKey}
-                            onCancel={() => setEditingKey(false)}
-                            onConfirm={(newKey: string) => {
-                                onKeyChanged(newKey);
-                                setEditingKey(false);
-                            }}
-                            title="Renommer"
-                            initialValue={key}
-                            canValidate={mergeConditions(
-                                Validators.strings.regex(/^[a-zA-Z]([a-zA-Z0-9_\-]){2,11}$/),
-                                id => !idAlreadyUsed(id)
-                            )}
-                        >
-                            L'identifiant doit être unique, commencer par une lettre et contenir entre 3 et 12 caractères alphanumériques, tirets et underscores
-                        </AleasPopoverTextInput>
+                        <div className="w-full flex flex-row gap-3 items-center justify-center">
+                            <AleasButton
+                                className="px-5"
+                                size="Small"
+                                onClick={async () => await duplicateFixture(fixture)}
+                            >
+                                Dupliquer
+                            </AleasButton>
+                            <AleasButton
+                                hasConfirmation={true}
+                                confirmationOptions={{
+                                    title: "Supprimer",
+                                    message: "Êtes-vous sûr de vouloir supprimer cet appareil ?",
+                                }}
+                                className="px-5"
+                                size="Small"
+                                onClick={async () => await deleteFixture(fixture)}
+                            >
+                                Supprimer
+                            </AleasButton>
+                        </div>
                     </div>
-                    <div className="w-full flex flex-row gap-3 items-center justify-center">
-                        <AleasButton
-                            className="px-5"
-                            size="Small"
-                            onClick={async () => await duplicateFixture(fixture)}
-                        >
-                            Dupliquer
-                        </AleasButton>
-                        <AleasButton
-                            hasConfirmation={true}
-                            confirmationOptions={{
-                                title: "Supprimer",
-                                message: "Êtes-vous sûr de vouloir supprimer cet appareil ?",
-                            }}
-                            className="px-5"
-                            size="Small"
-                            onClick={async () => await deleteFixture(fixture)}
-                        >
-                            Supprimer
-                        </AleasButton>
-                    </div>
-                </div>
-            </AleasFoldableComponent>
+                </AleasFoldableComponent>
+            </div>
         </div>
     } 
     else {
