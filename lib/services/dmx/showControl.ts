@@ -163,75 +163,77 @@ export interface ShowInfo extends Named, HasId {
 
 
 export module Mappings {
-    export function computeDmxValues(fixtureName: string, values: SceneElementValues, lightingPlan: StageLightingPlan, fixtures: Fixtures.FixtureModelCollection): number[] {
+    export function computeDmxValues(fixtureName: string, values: SceneElementValues, lightingPlan: LightingPlanInfo, fixtures: Fixtures.FixtureModelCollection): number[] {
+
         const fixture = lightingPlan.fixtures[fixtureName];
+
+        const {
+            mode,
+            model: modelName
+        } = fixture;
+
+        const modelDefinition = fixtures.fixtureModels[modelName];
+        const { type } = modelDefinition;
+
+        let computedValues: number[];
+        if (Fixtures.isTrad(type)) {
+            const trad = values["Trad"];
+
+            computedValues = [trad ?? 0];
+        }
+        else if (Fixtures.isLed(type)){
+            const ledModelDefinition = modelDefinition as Fixtures.LedFixtureModelDefinition;
+
             const {
-                mode,
-                model: modelName
-            } = fixture;
-    
-            const modelDefinition = fixtures.fixtureModels[modelName];
-            const { type } = modelDefinition;
-    
-            let computedValues: number[];
-            if (Fixtures.isTrad(type)) {
-                const trad = values["Trad"];
-    
-                computedValues = [trad ?? 0];
+                modes,
+            } = ledModelDefinition;
+
+            if (!mode) {
+                throw "Mode should be defined for LED fixture"
             }
-            else if (Fixtures.isLed(type)){
-                const ledModelDefinition = modelDefinition as Fixtures.LedFixtureModelDefinition;
-    
-                const {
-                    modes,
-                } = ledModelDefinition;
-    
-                if (!mode) {
-                    throw "Mode should be defined for LED fixture"
+
+            computedValues = new Array(mode).fill(0);
+
+            const channels = modes[mode]
+            const chanMap = new Map<Chans.ChannelType, number>()
+
+            Object.entries(channels).forEach(([k, v]) => {
+                chanMap.set(v, Number.parseInt(k))
+            });
+
+            for (const chan in values) {
+                const chanType = <Chans.ChannelType>chan;
+                const chanAddr = chanMap.get(chanType);
+
+                if (chanAddr === undefined) {
+                    continue;
                 }
-    
-                computedValues = new Array(mode).fill(0);
-    
-                const channels = modes[mode]
-                const chanMap = new Map<Chans.ChannelType, number>()
-    
-                Object.entries(channels).forEach(([k, v]) => {
-                    chanMap.set(v, Number.parseInt(k))
-                });
-    
-                for (const chan in values) {
-                    const chanType = <Chans.ChannelType>chan;
-                    const chanAddr = chanMap.get(chanType);
-    
-                    if (chanAddr === undefined) {
-                        continue;
-                    }
-    
-                    if (Chans.isNumberChannel(chanType)) {
-                        const val = values[chanType]!;
-                        computedValues[chanAddr] = val;
-                    }
-                    else if (Chans.isColorChannel(chanType)) {
-                        
-                        const val = values[chanType]!;
-    
-                        const color = typeof val === 'string' ? Color.named(val) : val;
-                        const { r, g, b } = color;
-    
-                        computedValues[chanAddr] = r;
-                        computedValues[chanAddr + 1] = g;
-                        computedValues[chanAddr + 2] = b;
-                    }
-                    else {
-                        throw `Unsupported channel type: '${chan}'`;
-                    }
+
+                if (Chans.isNumberChannel(chanType)) {
+                    const val = values[chanType]!;
+                    computedValues[chanAddr] = val;
+                }
+                else if (Chans.isColorChannel(chanType)) {
+                    
+                    const val = values[chanType]!;
+
+                    const color = typeof val === 'string' ? Color.named(val) : val;
+                    const { r, g, b } = color;
+
+                    computedValues[chanAddr] = r;
+                    computedValues[chanAddr + 1] = g;
+                    computedValues[chanAddr + 2] = b;
+                }
+                else {
+                    throw `Unsupported channel type: '${chan}'`;
                 }
             }
-            else {
-                throw `Unsupported type: '${type}`;
-            }
-    
-            return computedValues;
+        }
+        else {
+            throw `Unsupported type: '${type}`;
+        }
+
+        return computedValues;
     }
     
     export function computeFixtureInfo(fixture: Fixtures.Fixture, fixturesCollection: Fixtures.FixtureModelCollection): FixtureInfo {
@@ -242,7 +244,6 @@ export module Mappings {
             mode,
             model: modelName,
             name: fullName,
-            order,
             key
         } = fixture;
     
@@ -258,7 +259,6 @@ export module Mappings {
             mode,
             model: modelInfo,
             channels: channelInfo,
-            order,
             key
         }
     

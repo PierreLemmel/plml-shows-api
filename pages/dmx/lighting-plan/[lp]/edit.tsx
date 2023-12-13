@@ -24,7 +24,7 @@ const LightingPlanEdit = () => {
     const onMessage = (msg: string) => toast.info(msg);
 
     return <AleasMainLayout
-        description={`Lighting Plan Edit - ${lightingPlan?.name ?? ""}`}
+        description={`Edition du plan de feu - ${lightingPlan?.name ?? ""}`}
         toasts
         requireAuth
         navbar

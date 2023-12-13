@@ -11,7 +11,6 @@ export interface DropdownOption<T = any> {
     label: string;
     disabled?: boolean;
     value: T;
-    placeholder?: string;
 }
 
 export interface DropdownProps<T = any, TKey = any> extends React.HTMLAttributes<HTMLDivElement> {
@@ -21,6 +20,7 @@ export interface DropdownProps<T = any, TKey = any> extends React.HTMLAttributes
     onValueChanged: (newValue: T) => void;
     size?: DropDownSize;
     disabled?: boolean;
+    placeholder?: string;
 }
 
 export const AleasDropdownButton = (props: DropdownProps) => {
@@ -150,7 +150,7 @@ export const AleasDropdownInput = (props: DropdownProps) => {
             setSelectedOption(undefined);
         }
 
-    }, [options]);
+    }, [options, value]);
 
 
     const handleSelectOption = (option: DropdownOption) => {
