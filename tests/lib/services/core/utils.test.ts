@@ -1,4 +1,4 @@
-import { withValue } from "@/lib/services/core/utils";
+import { incrementId, withValue, withValues } from "@/lib/services/core/utils";
 
 global.structuredClone = global.structuredClone ?? jest.fn(val => {
     return JSON.parse(JSON.stringify(val));
@@ -83,3 +83,114 @@ describe("withValue", () => {
         }).not.toThrow();
     });
 });
+
+describe("withValues", () => {
+    type Test = {
+        a: {
+            b: number;
+            c: {
+                d: string;
+                e: number;
+                f: {
+                    g: boolean;
+                    h: string;
+                }
+            };
+        };
+        x: string;
+    };
+
+    let test: Test;
+
+    beforeEach(() => {
+        test = {
+            a: {
+                b: 0,
+                c: {
+                    d: "Hello",
+                    e: 42,
+                    f: {
+                        g: true,
+                        h: "World",
+                    }
+                },
+            },
+            x: "World",
+        };
+    });
+
+    it("should set a nested properties", () => {
+        const result = withValues(test, {
+            "a.b": 42,
+            "a.c.d": "Updated"
+        });
+
+        expect(result.a.b).toBe(42);
+        expect(result.a.c.d).toBe("Updated");
+    });
+
+    it("should set a top-level property", () => {
+        const result = withValues(test, {
+            "x": "New Value"
+        });
+        expect(result.x).toBe("New Value");
+    });
+
+    it("Should compile for nested object", () => {
+        expect(() => {
+            const result = withValues(test, {
+                "a.c": {
+                    d: "Updated",
+                    e: 14,
+                    f: {
+                        g: false,
+                        h: "Updated",
+                    }
+                }
+            });
+
+            expect(result.a.c).toStrictEqual({
+                d: "Updated",
+                e: 14,
+                f: {
+                    g: false,
+                    h: "Updated",
+                }
+            });
+        }).not.toThrow();
+    })
+})
+
+describe("incrementId", () => {
+    it("should increment an id without number with '-01'", () => {
+        expect(incrementId("test")).toBe("test-01");
+    });
+
+    it("should increment a simple id with a number", () => {
+        expect(incrementId("id-test42")).toBe("id-test43");
+    });
+
+    it("should increment a simple id with a number and a space", () => {
+        expect(incrementId("id-test 42")).toBe("id-test 43");
+    });
+
+    it("should increment tens", () => {
+        expect(incrementId("test-9")).toBe("test-10");
+    });
+
+    it("should deal with zeros", () => {
+        expect(incrementId("test-001")).toBe("test-002");
+    });
+
+    it("should deal with and increment", () => {
+        expect(incrementId("test-009")).toBe("test-010");
+    });
+
+    it("should not modify number in the middle of the string", () => {
+        expect(incrementId("test-2-id-4")).toBe("test-2-id-5");
+    });
+
+    it("should deal with special case where it ends with '0'", () => {
+        expect(incrementId("test")).toBe("test-01");
+    });
+})

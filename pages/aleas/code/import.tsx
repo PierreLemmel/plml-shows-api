@@ -22,7 +22,7 @@ const CodeImport = () => {
         value: "tsx"
     }]);
 
-    const [language, setLanguage] = useState<DropdownOption<AleasCodeLanguage>>(languageDropdownOptions[0]);
+    const [language, setLanguage] = useState<AleasCodeLanguage>("typescript");
 
     const [path, setPath] = useState<string>("");
 
@@ -32,7 +32,7 @@ const CodeImport = () => {
             const codeFile: AleasCodeFile = {
                 path,
                 code,
-                language: language.value
+                language: language
             }
 
             await createAleasCodeFile(codeFile);
@@ -62,7 +62,7 @@ const CodeImport = () => {
                     className="pr-2"
                     options={languageDropdownOptions}
                     value={language}
-                    onSelectedOptionChanged={setLanguage}
+                    onValueChanged={setLanguage}
                 />
 
                 <div>Path:</div>

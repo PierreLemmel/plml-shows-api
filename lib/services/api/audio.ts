@@ -20,7 +20,7 @@ export async function importAudioClip(file: File, name: string, clipInfo: AudioC
     const { downloadUrl } = await uploadFile(folderPath, file, name);
 
     const data: AudioClipData = {
-        id: generateId(8),
+        id: generateId(),
         name: name,
         url: downloadUrl,
         created: Timestamp.now(),

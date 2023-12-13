@@ -64,11 +64,27 @@ export const mergeClasses = (...classes: (string|undefined|false)[]): string => 
     return result || ""; 
 }
 
-export function generateId(length: number = 8): string {
-    const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+export interface GenerateIdOptions {
+    length: number;
+    type: "LettersOnly"|"Alphanumeric";
+}
+
+export function generateId(options?: Partial<GenerateIdOptions>): string {
+
+    const {
+        length = 8,
+        type = "Alphanumeric"
+    } = options || {};
+
+    const characters = match(type, {
+        "LettersOnly": "abcdefghijklmnopqrstuvwxyz",
+        "Alphanumeric": "abcdefghijklmnopqrstuvwxyz0123456789"
+    })
+    
     let id = '';
+    const charactersLength = characters.length;
     for (let i = 0; i < length; i++) {
-        id += characters.charAt(Math.floor(Math.random() * characters.length));
+        id += characters.charAt(Math.floor(Math.random() * charactersLength));
     }
     return id;
 }
@@ -131,12 +147,53 @@ export function withValue<T, P extends Pathes<T>>(obj: T, path: P, value: ValueA
     
     const result = structuredClone(obj);
 
-    const str = path as string;
-
-    const parts = str.split(".");
-    const lastPart = parts.pop()!;
-    const lastObj: any = parts.reduce((prev: any, curr) => prev[curr], result as any)
-    lastObj[lastPart] = value;
+    setValueAtPath(result, path as string, value)
 
     return result;
+}
+
+export type ValuesMap<T> = Partial<{ [P in Pathes<T>]: ValueAtPath<T, P> }>
+
+export function withValues<T>(obj: T, values: ValuesMap<T>): T {
+
+    const result = structuredClone(obj);
+
+    Object.entries(values).forEach(([path, val]) => {
+        setValueAtPath(result, path as string, val)
+    })
+
+    return result;
+}
+
+function setValueAtPath(obj: any, path: string, value: any) {
+    const parts = path.split(".");
+    const lastPart = parts.pop()!;
+    const lastObj: any = parts.reduce((prev: any, curr) => prev[curr], obj)
+    lastObj[lastPart] = value;
+}
+
+export function mergeConditions<T>(...conditions: ((elt: T) => boolean)[]): (elt: T) => boolean {
+    return (elt: T) => conditions.every(c => c(elt));
+}
+
+export function incrementId(id: string) {
+
+    const pattern = /([0-9]+)$/;
+
+    const regexMatch = id.match(pattern);
+
+    if (regexMatch) {
+
+        const extract = regexMatch[1];
+
+        const incrementedNumber = (parseInt(extract) + 1).toString();
+        const padded = incrementedNumber.padStart(extract.length, "0");
+
+        const modifiedId = id.replace(pattern, padded);
+
+        return modifiedId;
+    }
+    else {
+        return id + "-01"
+    }
 }

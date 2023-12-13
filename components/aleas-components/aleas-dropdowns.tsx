@@ -1,9 +1,11 @@
-import { mergeClasses } from "@/lib/services/core/utils";
-import { useState } from "react";
+import { match, mergeClasses } from "@/lib/services/core/utils";
+import { useEffect, useState } from "react";
 
 const btnBackgroundClasses = "bg-gradient-to-r from-cyan-500 to-blue-500"
 const btnEnabledClasses = `hover:hue-rotate-15 cursor-pointer`
 const btnDisabledClasses = `brightness-50`
+
+export type DropDownSize = "Normal"|"Small";
 
 export interface DropdownOption<T = any> {
     label: string;
@@ -12,32 +14,47 @@ export interface DropdownOption<T = any> {
     placeholder?: string;
 }
 
-export interface DropdownProps<T = any> extends React.HTMLAttributes<HTMLDivElement> {
+export interface DropdownProps<T = any, TKey = any> extends React.HTMLAttributes<HTMLDivElement> {
     options: DropdownOption<T>[];
-    value?: DropdownOption<T>;
-    onSelectedOptionChanged: (option: DropdownOption<T>) => void;
+    value?: T;
+    idFunction?: (t: T) => TKey; 
+    onValueChanged: (newValue: T) => void;
+    size?: DropDownSize;
+    disabled?: boolean;
 }
 
 export const AleasDropdownButton = (props: DropdownProps) => {
 
     const {
         options,
-        onSelectedOptionChanged,
-        placeholder,
-        disabled,
-        value
-    } = {
-        disabled: false,
-        placeholder: "Select an option",
-        ...props
-    };
+        onValueChanged,
+        placeholder = "Select an option",
+        disabled = false,
+        idFunction = (t) => t,
+        value,
+        size = "Normal"
+    } = props;
 
     const [isOpen, setIsOpen] = useState(false);
 
     const handleSelectOption = (option: DropdownOption) => {
-        onSelectedOptionChanged(option);
+        setSelectedOption(option);
+        onValueChanged(option.value);
         setIsOpen(false);
     };
+
+    const [selectedOption, setSelectedOption] = useState<DropdownOption>();
+    useEffect(() => {
+
+        const option = options.find(o => idFunction(o.value) === idFunction(value));
+        if (option) {
+            setSelectedOption(option);
+        }
+        else {
+            setSelectedOption(undefined);
+        }
+
+    }, [options, value]);
 
     return (
         <div className="relative inline-block text-left cursor-pointer">
@@ -50,11 +67,14 @@ export const AleasDropdownButton = (props: DropdownProps) => {
                     disabled ? btnDisabledClasses : btnEnabledClasses,
                     "w-full rounded-md",
                     "sm:text-base",
-                    "py-3 px-6 min-w-[8em]"
+                    match(size, {
+                        "Small": "py-2 px-4 min-w-[6em] text-sm",
+                        "Normal": "py-3 px-6 min-w-[8em] text-base",
+                    })
                 )}
                 onClick={() => setIsOpen(!isOpen)}
             >
-                {value ? value.label : placeholder}
+                {selectedOption ? selectedOption.label : placeholder}
                 <svg
                     className={mergeClasses(
                         "-mr-1 ml-2 h-5 w-5",
@@ -78,7 +98,7 @@ export const AleasDropdownButton = (props: DropdownProps) => {
         {isOpen && (
             <div className={mergeClasses(
                 btnBackgroundClasses,
-                "z-10 origin-top-right absolute right-0 mt-2 w-48 rounded-md")
+                "z-10 origin-top-right absolute right-0 mt-2 min-w-48 w-full rounded-md")
             }>
                 <div className="py-1 px-[0.1em] max-h-48 overflow-y-auto">
                     {options.map((option, i) => (
@@ -110,22 +130,33 @@ export const AleasDropdownInput = (props: DropdownProps) => {
 
     const {
         options,
-        onSelectedOptionChanged,
-        placeholder,
-        disabled,
+        onValueChanged,
+        placeholder = "Select an option",
+        disabled = false,
         className,
         value
-    } = {
-        disabled: false,
-        placeholder: "Select an option",
-        ...props
-    };
+    } = props;
 
     const [isOpen, setIsOpen] = useState(false);
 
+    const [selectedOption, setSelectedOption] = useState<DropdownOption>();
+    useEffect(() => {
+
+        const option = options.find(o => o.value === value);
+        if (option) {
+            setSelectedOption(option);
+        }
+        else {
+            setSelectedOption(undefined);
+        }
+
+    }, [options]);
+
+
     const handleSelectOption = (option: DropdownOption) => {
-        onSelectedOptionChanged(option);
+        onValueChanged(option.value);
         setIsOpen(false);
+        setSelectedOption(option);
     };
 
     return (
@@ -147,7 +178,7 @@ export const AleasDropdownInput = (props: DropdownProps) => {
                 )}
                 onClick={() => setIsOpen(!isOpen)}
             >
-            {value ? value.label : placeholder}
+            {selectedOption ? selectedOption.label : placeholder}
             <svg
                 className={mergeClasses(
                     "-mr-1 ml-2 h-5 w-5",

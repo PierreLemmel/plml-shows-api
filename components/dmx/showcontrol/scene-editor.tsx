@@ -4,11 +4,10 @@ import AleasSkeletonLoader from "@/components/aleas-components/aleas-skeleton-lo
 import AleasSlider from "@/components/aleas-components/aleas-slider";
 import { replaceFirstElement, sorted } from "@/lib/services/core/arrays";
 import { Color, RgbColor } from "@/lib/services/core/types/rgbColor";
-import { Action, AsyncDipsatch } from "@/lib/services/core/types/utils";
+import { Action, AsyncDispatch } from "@/lib/services/core/types/utils";
 import { mergeClasses, withValue } from "@/lib/services/core/utils";
 import { Chans } from "@/lib/services/dmx/dmx512";
-import { createDefaultValuesForFixture, FixtureInfo, orderedFixtures, Scene, SceneElement, SceneElementInfo, SceneElementValues, Show, toScene, useLightingPlanInfo, useRealtimeScene, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
-import { on } from "events";
+import { initializeValuesForChannels, FixtureInfo, orderedFixtures, Scene, SceneElement, SceneElementInfo, SceneElementValues, Show, toScene, useLightingPlanInfo, useRealtimeScene, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
 import { Dispatch, Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { DndProvider, useDrag, useDrop, XYCoord } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -16,7 +15,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 export interface SceneEditorProps {
     show: Show|undefined;
     scene: Scene|undefined;
-    onSave: AsyncDipsatch<Scene>|Dispatch<Scene>;
+    onSave: AsyncDispatch<Scene>|Dispatch<Scene>;
     onFinished: Action;
 }
 
@@ -58,10 +57,10 @@ const SceneEditor = (props: SceneEditorProps) => {
         
         const {
             name,
-            model
+            channels
         } = fixture;
 
-        const seValues = createDefaultValuesForFixture(model);
+        const seValues = initializeValuesForChannels(channels);
 
         const newSceneElement: SceneElement = {
             fixture: name,

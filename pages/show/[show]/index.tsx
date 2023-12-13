@@ -49,12 +49,9 @@ const ShowPage = () => {
         }
     }) || [], [show]); 
 
-    const selectedOption = useMemo(() => dropdownOptions.find(o => o.value === scene), [scene, dropdownOptions])
-    const onDropdownSelectionChanged = (option: DropdownOption<Scene>) => {
-        setScene(option.value);
+    const onDropdownSelectionChanged = (newScene: Scene) => {
+        setScene(newScene);
     }
-
-
 
     const toggleBtnEnabled = isPlaying ? track !== null : scene !== undefined;
     const onToggleBtnClicked = () => setIsPlaying(curr => !curr);
@@ -117,8 +114,8 @@ const ShowPage = () => {
 
                     <AleasDropdownButton
                         options={dropdownOptions}
-                        value={selectedOption}
-                        onSelectedOptionChanged={onDropdownSelectionChanged}
+                        value={scene}
+                        onValueChanged={onDropdownSelectionChanged}
                         placeholder="Select a scene"
                     />
                 </div>
