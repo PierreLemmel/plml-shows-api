@@ -523,7 +523,7 @@ const FixtureEdit = (props: FixtureEditProps) => {
                                     id => !idAlreadyUsed(id)
                                 )}
                             >
-                                L'identifiant doit être unique, commencer par une lettre et contenir entre 3 et 12 caractères alphanumériques, tirets et underscores
+                                L&apos;identifiant doit être unique, commencer par une lettre et contenir entre 3 et 12 caractères alphanumériques, tirets et underscores
                             </AleasPopoverTextInput>
                         </div>
                         <div className="w-full flex flex-row gap-3 items-center justify-center">
