@@ -1,12 +1,12 @@
 import { AleasMainLayout } from "@/components/aleas-components/aleas-layout";
 import SceneEditor from "@/components/dmx/showcontrol/scene-editor";
-import { Scene, useShowControl } from "@/lib/services/dmx/showControl";
+import { Scene, useShowContext } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
 const EditScene = () => {
 
-    const showControl = useShowControl();
+    const showControl = useShowContext();
     const {
         show,
         mutations: {

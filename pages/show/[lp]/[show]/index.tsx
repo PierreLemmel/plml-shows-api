@@ -5,14 +5,14 @@ import AleasModalDialog from "@/components/aleas-components/aleas-modal-dialog";
 import AleasTextField from "@/components/aleas-components/aleas-textfield";
 import { toast } from "@/components/aleas-components/aleas-toast-container";
 import DmxSlider from "@/components/dmx/dmx-slider";
-import { createScene, Scene, useRealtimeScene, useShowControl } from "@/lib/services/dmx/showControl";
+import { createScene, Scene, useRealtimeScene, useShowContext } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 
 
 const ShowPage = () => {
    
-    const showControl = useShowControl();
+    const showControl = useShowContext();
     const {
         show,
         controler,

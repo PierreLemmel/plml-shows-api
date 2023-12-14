@@ -7,13 +7,13 @@ import { AleasShow, useAleasShowInfo } from "@/lib/services/aleas/aleas-setup";
 import { useAuth } from "@/lib/services/api/firebase";
 import { useEffectAsync } from "@/lib/services/core/hooks";
 import { match } from "@/lib/services/core/utils";
-import { useShowControl, useShowInfo } from "@/lib/services/dmx/showControl";
+import { useShowContext, useShowInfo } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
 
 const AleasShowRun = () => {
 
-    const showControl = useShowControl();
+    const showControl = useShowContext();
     const auth = useAuth();
 
     const router = useRouter();

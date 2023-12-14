@@ -6,7 +6,7 @@ import { AudioClipData, AudioClipInfo, useRealtimeAudio } from "../audio/audioCo
 import { IntervalCallbackProps, useInterval } from "../core/hooks";
 import { Action, MinMax } from "../core/types/utils";
 import { randomRange } from "../core/utils";
-import { Scene, SceneInfo, toScene, useRealtimeScene, useShowControl } from "../dmx/showControl";
+import { Scene, SceneInfo, toScene, useRealtimeScene, useShowContext } from "../dmx/showControl";
 import { getAleasAudioProvider, getAleasDurationProvider, getAleasSceneProvider } from "./aleas-providers";
 import { AleasShow, AleasShowInfo } from "./aleas-setup";
 
@@ -276,7 +276,7 @@ function isInTimeWindow(time: number, window: TimeWindow): IsInTimeWindowResult 
 
 export function useAleasRuntime(run: AleasShowRun|null): AleasRuntime|null {
 
-    const showControl = useShowControl();
+    const showControl = useShowContext();
 
     useEffect(() => {
         showControl.setMode("Show")

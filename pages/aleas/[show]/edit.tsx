@@ -15,14 +15,14 @@ import { pathCombine } from "@/lib/services/core/files";
 import { useEffectAsync } from "@/lib/services/core/hooks";
 import { sum } from "@/lib/services/core/maths";
 import { generateId, mergeClasses, withValue } from "@/lib/services/core/utils";
-import { useShowControl, useShowInfo } from "@/lib/services/dmx/showControl";
+import { useShowContext, useShowInfo } from "@/lib/services/dmx/showControl";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { Dispatch, useCallback, useEffect, useMemo, useState } from "react";
 
 const AleasShowDisplay = () => {
 
-    const showControl = useShowControl();
+    const showControl = useShowContext();
     
     const router = useRouter();
     const showName = router.query["show"] as string|undefined;

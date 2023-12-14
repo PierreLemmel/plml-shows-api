@@ -55,6 +55,18 @@ export module Chans {
         return colorChannelTypes.includes(chan as ColorChannelType);
     }
 
+    export function getChannelLength(chan: ChannelType): number {
+        if (isNumberChannel(chan)) {
+            return 1;
+        }
+        else if (isColorChannel(chan)) {
+            return 3;
+        }
+        else {
+            throw new Error(`Unknown channel type ${chan}`);
+        }
+    }
+
     export interface ChannelInfo {
         displayName: string;
         priority: number;

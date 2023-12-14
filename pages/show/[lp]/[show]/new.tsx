@@ -1,5 +1,5 @@
 import { AleasMainLayout } from "@/components/aleas-components/aleas-layout";
-import { useShowControl } from "@/lib/services/dmx/showControl";
+import { useShowContext } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 
@@ -9,7 +9,7 @@ export interface NewSceneProps {
 
 const NewScene = (props: NewSceneProps) => {
 
-    const showControl = useShowControl();
+    const showControl = useShowContext();
     const {
         show
     } = showControl

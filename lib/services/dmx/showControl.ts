@@ -4,7 +4,7 @@ import { replaceFirstElement } from "../core/arrays";
 import { useEffectAsync, useInterval } from "../core/hooks";
 import { Color, RgbColor, RgbNamedColor } from "../core/types/rgbColor";
 import { HasId, Named } from "../core/types/utils";
-import { doNothing, doNothingAsync, generateId, match, notImplemented, notImplementedAsync } from "../core/utils";
+import { doNothing, doNothingAsync, generateId, notImplemented, notImplementedAsync } from "../core/utils";
 import { Chans, Fixtures, StageLightingPlan } from "./dmx512";
 import { useDmxControl } from "./dmxControl";
 
@@ -132,7 +132,10 @@ export interface TradFixtureModelInfo extends FixtureModelInfoBase {
 }
 
 export interface ChannelsInfo {
-    [position: number]: Chans.ChannelType;
+    map: {
+        [position: number]: Chans.ChannelType;
+    }
+    totalLength: number;
 }
 
 export interface LedFixtureModelInfo extends FixtureModelInfoBase {
@@ -163,80 +166,56 @@ export interface ShowInfo extends Named, HasId {
 
 
 export module Mappings {
-    export function computeDmxValues(fixtureName: string, values: SceneElementValues, lightingPlan: LightingPlanInfo, fixtures: Fixtures.FixtureModelCollection): number[] {
+    export function computeDmxValues(fixtureName: string, values: SceneElementValues, lightingPlan: LightingPlanInfo): number[] {
 
         const fixture = lightingPlan.fixtures[fixtureName];
 
         const {
-            mode,
-            model: modelName
+            channels
         } = fixture;
 
-        const modelDefinition = fixtures.fixtureModels[modelName];
-        const { type } = modelDefinition;
+        
+        const computedValues = new Array(channels.totalLength).fill(0);
 
-        let computedValues: number[];
-        if (Fixtures.isTrad(type)) {
-            const trad = values["Trad"];
+        
+        const chanMap = new Map<Chans.ChannelType, number>()
 
-            computedValues = [trad ?? 0];
-        }
-        else if (Fixtures.isLed(type)){
-            const ledModelDefinition = modelDefinition as Fixtures.LedFixtureModelDefinition;
+        Object.entries(channels).forEach(([k, v]) => {
+            chanMap.set(v, Number.parseInt(k))
+        });
 
-            const {
-                modes,
-            } = ledModelDefinition;
+        for (const chan in values) {
+            const chanType = <Chans.ChannelType>chan;
+            const chanAddr = chanMap.get(chanType);
 
-            if (!mode) {
-                throw "Mode should be defined for LED fixture"
+            if (chanAddr === undefined) {
+                continue;
             }
 
-            computedValues = new Array(mode).fill(0);
-
-            const channels = modes[mode]
-            const chanMap = new Map<Chans.ChannelType, number>()
-
-            Object.entries(channels).forEach(([k, v]) => {
-                chanMap.set(v, Number.parseInt(k))
-            });
-
-            for (const chan in values) {
-                const chanType = <Chans.ChannelType>chan;
-                const chanAddr = chanMap.get(chanType);
-
-                if (chanAddr === undefined) {
-                    continue;
-                }
-
-                if (Chans.isNumberChannel(chanType)) {
-                    const val = values[chanType]!;
-                    computedValues[chanAddr] = val;
-                }
-                else if (Chans.isColorChannel(chanType)) {
-                    
-                    const val = values[chanType]!;
-
-                    const color = typeof val === 'string' ? Color.named(val) : val;
-                    const { r, g, b } = color;
-
-                    computedValues[chanAddr] = r;
-                    computedValues[chanAddr + 1] = g;
-                    computedValues[chanAddr + 2] = b;
-                }
-                else {
-                    throw `Unsupported channel type: '${chan}'`;
-                }
+            if (Chans.isNumberChannel(chanType)) {
+                const val = values[chanType]!;
+                computedValues[chanAddr] = val;
             }
-        }
-        else {
-            throw `Unsupported type: '${type}`;
+            else if (Chans.isColorChannel(chanType)) {
+                
+                const val = values[chanType]!;
+
+                const color = typeof val === 'string' ? Color.named(val) : val;
+                const { r, g, b } = color;
+
+                computedValues[chanAddr] = r;
+                computedValues[chanAddr + 1] = g;
+                computedValues[chanAddr + 2] = b;
+            }
+            else {
+                throw `Unsupported channel type: '${chan}'`;
+            }
         }
 
         return computedValues;
     }
     
-    export function computeFixtureInfo(fixture: Fixtures.Fixture, fixturesCollection: Fixtures.FixtureModelCollection): FixtureInfo {
+    export function computeFixtureInfo(fixture: Fixtures.Fixture, order: number, fixturesCollection: Fixtures.FixtureModelCollection): FixtureInfo {
     
         const {
             id,
@@ -259,6 +238,7 @@ export module Mappings {
             mode,
             model: modelInfo,
             channels: channelInfo,
+            order,
             key
         }
     
@@ -305,7 +285,23 @@ export module Mappings {
     }
 
     function mapToChannelInfo(channels: Fixtures.ChannelsDefinition): ChannelsInfo {
-        return { ...channels };
+
+        const length = Math.max(
+            ...Object.entries(channels).map(([k, v]) => {
+
+                const offset = Number.parseInt(k);
+                const l = Chans.getChannelLength(v);
+
+                return l + offset;
+            })
+        );
+
+        const ci: ChannelsInfo = {
+            map: { ...channels },
+            totalLength: length
+        }
+
+        return ci;
     }
 
     export function computeFixtureChannelsInfo(modelDefinition: Fixtures.FixtureModelDefinition, mode?: number): ChannelsInfo {
@@ -313,7 +309,10 @@ export module Mappings {
     
         if (Fixtures.isTrad(type)) {
             return {
-                0: "Trad"
+                map: {
+                    0: "Trad",
+                },
+                totalLength: 1
             }
         }
         else if (Fixtures.isLed(type)){
@@ -344,9 +343,9 @@ export module Mappings {
             [shortName: string]: FixtureInfo;
         } = {};
     
-        Object.entries(lightingPlan.fixtures).forEach(([fixtureName, fixtureValue]) => {
-            const fixtureInfo = computeFixtureInfo(fixtureValue, fixtures);
-            fixturesInfo[fixtureName] = fixtureInfo;
+        lightingPlan.fixtures.forEach((fixture, i) => {
+            const fixtureInfo = computeFixtureInfo(fixture, i, fixtures);
+            fixturesInfo[fixture.key] = fixtureInfo;
         });
     
         const result: LightingPlanInfo = {
@@ -356,7 +355,7 @@ export module Mappings {
         return result;
     }
     
-    export function generateSceneInfo(scene: Scene, lightingPlan: StageLightingPlan, fixtureModels: Fixtures.FixtureModelCollection): SceneInfo {
+    export function generateSceneInfo(scene: Scene, lightingPlan: LightingPlanInfo): SceneInfo {
         
         const { name, id } = scene;
         const elements: SceneElementInfo[] = scene.elements.map(se => {
@@ -367,11 +366,10 @@ export module Mappings {
             } = se;
     
             const fixture = lightingPlan.fixtures[fixtureName];
-            const fixtureInfo = computeFixtureInfo(fixture, fixtureModels);
-            const computedValues = computeDmxValues(fixtureName, values, lightingPlan, fixtureModels);
+            const computedValues = computeDmxValues(fixtureName, values, lightingPlan);
     
             const sei: SceneElementInfo = {
-                fixture: fixtureInfo,
+                fixture,
                 values,
                 rawValues: computedValues
             }
@@ -449,8 +447,6 @@ export function orderedFixtures(lightingPlan: LightingPlanInfo): FixtureInfo[] {
 export type CreateTrackOptions = Partial<Omit<Track, "scene"|"id"|"info"|"rawValues">>
 export type UpdateTrackOptions = Partial<Omit<Track, "id"|"info"|"rawValues">>
 
-export type ShowControlMode = "Console"|"Show";
-
 export interface ShowControlProps {
     lightingPlan?: StageLightingPlan;
     show?: Show;
@@ -463,13 +459,10 @@ export interface ShowControlProps {
         deleteScene: (scene: Scene) => Promise<void>,
     }
 
-    mode: ShowControlMode;
-    setMode: Dispatch<ShowControlMode>;
-
     loadShow: (name: string) => void;
 }
 
-export function useNewShowControl(): ShowControlProps {
+export function useNewShowContext(): ShowControlProps {
 
     const refreshRate = 30;
 
@@ -481,24 +474,31 @@ export function useNewShowControl(): ShowControlProps {
     const [fixtureCollection, setFixtureCollection] = useState<Fixtures.FixtureModelCollection>();
     const [lightingPlan, setLightingPlan] = useState<StageLightingPlan>();
 
-    const [mode, setMode] = useState<ShowControlMode>("Console");
-
     const tracksRef = useRef<Map<TrackId, Track>>(new Map());
 
     const dmxControl = useDmxControl();
 
-    const computeRawValues = useCallback<(scene: Scene) => DmxValueSegment[]>((scene: Scene) => (lightingPlan && fixtureCollection) ? scene.elements.map(se => {
+    const computeRawValues = useCallback<(scene: Scene) => DmxValueSegment[]>((scene: Scene) => {
 
-        const { fixture, values: seValues } = se;
+        if (lightingPlan) {
+            const segments = scene.elements.map<DmxValueSegment>(se => {
 
-        const { address } = lightingPlan.fixtures[fixture];
-        const values = Mappings.computeDmxValues(fixture, seValues, lightingPlan, fixtureCollection);
+                const { fixture, values: seValues } = se;
 
-        return {
-            address,
-            values
+                const { address } = lightingPlan.fixtures[fixture];
+                const values = Mappings.computeDmxValues(fixture, seValues, lightingPlan);
+
+                return {
+                    address,
+                    values
+                }
+            });
+            return segments;
         }
-    }) : [], [lightingPlan, fixtureCollection]);
+        else {
+            return [];
+        }
+    }, [lightingPlan, fixtureCollection]);
 
 
     const addTrack = useCallback((scene: Scene, options?: CreateTrackOptions) => {
@@ -611,20 +611,18 @@ export function useNewShowControl(): ShowControlProps {
 
         setLastUpdate(time);
 
-    }, 1000 / refreshRate, [mode], mode === "Show");
+    }, 1000 / refreshRate, []);
+
+    const lightingPlanName = show?.lightingPlan;
 
     useEffectAsync(async () => {
 
-        if (showName === undefined) {
-            return;
+        if (showName && lightingPlanName) {
+            const show = await getShow(lightingPlanName, showName);
+            setShow(show);
         }
 
-        const show = await getShow(showName);
-        setShow(show);
-
-    }, [showName]);
-
-    const lightingPlanName = show?.lightingPlan;
+    }, [lightingPlanName, showName]);
     
     useEffectAsync(async () => {
 
@@ -717,17 +715,12 @@ export function useNewShowControl(): ShowControlProps {
             deleteScene,
         },
 
-        mode,
-        setMode,
-
         loadShow: (name: string) => setShowName(name),
     }
 }
 
 export const ShowControlContext = createContext<ShowControlProps>({
     loadShow: doNothing,
-    mode: "Show",
-    setMode: doNothing,
     mutations: {
         saveScene: doNothingAsync,
         addScene: notImplementedAsync,
@@ -747,7 +740,7 @@ export const ShowControlContext = createContext<ShowControlProps>({
     }
 });
 
-export function useShowControl() {
+export function useShowContext() {
     return useContext<ShowControlProps>(ShowControlContext);
 }
 
@@ -755,48 +748,43 @@ export function useShowInfo(): ShowInfo|null {
 
     const {
         show,
-        lightingPlan,
-        fixtureCollection
-    } = useShowControl();
+    } = useShowContext();
 
     const lpInfo = useLightingPlanInfo();
     const result = useMemo(() => {
-        if (show && lightingPlan && fixtureCollection) {
+        if (show && lpInfo) {
 
             const { scenes, name, id } = show;
-            const sceneInfos = scenes.map(scene => Mappings.generateSceneInfo(scene, lightingPlan, fixtureCollection));
+            const sceneInfos = scenes.map(scene => Mappings.generateSceneInfo(scene, lpInfo));
 
             return {
                 name,
                 id,
                 scenes: sceneInfos,
-                lightingPlan: lpInfo!,
+                lightingPlan: lpInfo,
             }
         }
         else {
             return null;
         }
-    }, [show, lightingPlan, fixtureCollection, lpInfo])
+    }, [show, lpInfo])
 
     return result;
 }
 
 export function useSceneInfo(scene: Scene|undefined): SceneInfo|null {
 
-    const {
-        lightingPlan,
-        fixtureCollection
-    } = useShowControl();
+    const lpInfo = useLightingPlanInfo();
 
     const result = useMemo(() => {
-        if (scene && lightingPlan && fixtureCollection) {
-            const info = Mappings.generateSceneInfo(scene, lightingPlan, fixtureCollection);
+        if (scene && lpInfo) {
+            const info = Mappings.generateSceneInfo(scene, lpInfo);
             return info;
         }
         else {
             return null;
         }
-    }, [scene, lightingPlan, fixtureCollection])
+    }, [scene, lpInfo])
     
     return result;
 }
@@ -806,7 +794,7 @@ export function useLightingPlanInfo(): LightingPlanInfo|null {
     const {
         lightingPlan,
         fixtureCollection
-    } = useShowControl();
+    } = useShowContext();
 
     if (lightingPlan && fixtureCollection) {
         const info = Mappings.computeLightingPlanInfo(lightingPlan, fixtureCollection);
@@ -821,7 +809,7 @@ export function useFixtureCollectionInfo(): FixtureModelCollectionInfo|null {
 
     const {
         fixtureCollection,
-    } = useShowControl();
+    } = useShowContext();
 
     const result = useMemo(() => {
         if (fixtureCollection) {
@@ -840,7 +828,7 @@ export function useRealtimeScene(scene: Scene|undefined, isPlaying: boolean = tr
 
     const {
         controler
-    } = useShowControl();
+    } = useShowContext();
 
     const {
         tracks,
@@ -885,17 +873,17 @@ export function useRealtimeScene(scene: Scene|undefined, isPlaying: boolean = tr
     return track;
 }
 
-export function useFixtureInfo(fixture: Fixtures.Fixture|undefined): FixtureInfo|null {
+export function useFixtureInfo(fixture: Fixtures.Fixture|undefined, order: number): FixtureInfo|null {
 
     const [fi, setFI] = useState<FixtureInfo|null>(null);
     const {
         fixtureCollection
-    } = useShowControl();
+    } = useShowContext();
 
     useEffect(() => {
         
         if (fixture && fixtureCollection) {
-            const newFI = Mappings.computeFixtureInfo(fixture, fixtureCollection);
+            const newFI = Mappings.computeFixtureInfo(fixture, order, fixtureCollection);
             setFI(newFI)
         }
         else {

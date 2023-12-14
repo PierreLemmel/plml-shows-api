@@ -2,7 +2,7 @@ import '@/styles/globals.css'
 import 'react-toastify/dist/ReactToastify.css';
 import type { AppProps } from 'next/app'
 import { AuthContext, useNewAuth } from '@/lib/services/api/firebase';
-import { ShowControlContext, useNewShowControl } from '@/lib/services/dmx/showControl';
+import { ShowControlContext, useNewShowContext } from '@/lib/services/dmx/showControl';
 import { DmxControlContext, useNewDmxControl } from '@/lib/services/dmx/dmxControl';
 import { ReactElement } from 'react';
 
@@ -32,6 +32,6 @@ const DmxControlContextWrapper = ({ children }: WrapperProps) => <DmxControlCont
 	{children}
 </DmxControlContext.Provider>
 
-const ShowControlContextWrapper = ({ children }: WrapperProps) => <ShowControlContext.Provider value={useNewShowControl()}>
+const ShowControlContextWrapper = ({ children }: WrapperProps) => <ShowControlContext.Provider value={useNewShowContext()}>
 	{children}
 </ShowControlContext.Provider>

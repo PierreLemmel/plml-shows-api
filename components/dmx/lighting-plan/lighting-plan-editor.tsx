@@ -362,7 +362,7 @@ const FixtureEdit = (props: FixtureEditProps) => {
 
 
     const fixtureCollection = useFixtureCollectionInfo();
-    const fixtureInfo = useFixtureInfo(fixture);
+    const fixtureInfo = useFixtureInfo(fixture, index);
 
     const onAdressChanged = async (address: number) => updateFixture(withValue(fixture, "address", address))
     const onNameChanged = async (name: string) => updateFixture(withValue(fixture, "name", name))
