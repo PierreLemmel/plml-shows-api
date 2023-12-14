@@ -5,23 +5,22 @@ import AleasModalDialog from "@/components/aleas-components/aleas-modal-dialog";
 import AleasTextField from "@/components/aleas-components/aleas-textfield";
 import { toast } from "@/components/aleas-components/aleas-toast-container";
 import DmxSlider from "@/components/dmx/dmx-slider";
-import { createScene, Scene, useRealtimeScene, useShowContext } from "@/lib/services/dmx/showControl";
+import { createScene, Scene, useRealtimeScene, useSceneInfo, useShowContext, useShowControl } from "@/lib/services/dmx/showControl";
 import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 
 
 const ShowPage = () => {
    
-    const showControl = useShowContext();
+    const showContext = useShowContext();
     const {
         show,
-        controler,
-    } = showControl;
+    } = showContext;
 
     const {
         master, setMaster,
         fade, setFade,
-    } = controler;
+    } = useShowControl();
 
     const router = useRouter();
 
@@ -29,18 +28,16 @@ const ShowPage = () => {
     
     const [scene, setScene] = useState<Scene>();
     const [isPlaying, setIsPlaying] = useState(false);
-    const track = useRealtimeScene(scene, isPlaying);
+
+    const sceneInfo = useSceneInfo(scene);
+    const track = useRealtimeScene(sceneInfo, isPlaying);
 
     useEffect(() => {
-        if (showControl.show?.name !== showName) {
-            showControl.loadShow(showName);
+        if (showContext.show?.name !== showName) {
+            showContext.loadShow(showName);
         }
-    }, [showName, showControl]);
+    }, [showName, showContext]);
 
-
-    useEffect(() => {
-        showControl.setMode("Show")
-    }, [showControl]);
 
     const dropdownOptions: DropdownOption<Scene>[] = useMemo(() => show?.scenes.map(scene => {
         return {
@@ -81,7 +78,7 @@ const ShowPage = () => {
         }
 
         const newScene = createScene(newSceneName);
-        await showControl.mutations.addScene(newScene);
+        await showContext.mutations.addScene(newScene);
 
         router.push(`${router.asPath}/scenes/edit/${newSceneName}`);
     }
@@ -97,7 +94,7 @@ const ShowPage = () => {
         }
 
         const sceneName = scene.name;
-        await showControl.mutations.deleteScene(scene);
+        await showContext.mutations.deleteScene(scene);
         setDeleteAlertOpen(false);
 
         toast.info(`La scène ${sceneName} a été supprimée`);

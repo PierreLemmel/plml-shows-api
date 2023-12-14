@@ -276,12 +276,7 @@ function isInTimeWindow(time: number, window: TimeWindow): IsInTimeWindowResult 
 
 export function useAleasRuntime(run: AleasShowRun|null): AleasRuntime|null {
 
-    const showControl = useShowContext();
-
-    useEffect(() => {
-        showControl.setMode("Show")
-    }, [showControl])
-    
+    const showControl = useShowContext();    
 
     const [state, setState] = useState<AleasRuntimeState>("Stopped");
     
@@ -296,9 +291,7 @@ export function useAleasRuntime(run: AleasShowRun|null): AleasRuntime|null {
 
     }, [])
 
-    const realTimeScene = useMemo<Scene|undefined>(() => currentScene ?
-        toScene(currentScene.scene) : undefined, [currentScene])
-    useRealtimeScene(realTimeScene, true, sceneMaster);
+    useRealtimeScene(currentScene?.scene ?? null, true, sceneMaster);
 
     const realTimeAudio = useMemo<AudioClipData|undefined>(() => currentScene?.audio ? currentScene.audio.data : undefined, [currentScene]);
     useRealtimeAudio(realTimeAudio, true, audioVolume);

@@ -35,10 +35,6 @@ const SceneEditor = (props: SceneEditorProps) => {
     const showControl = useShowContext();
     const lightingPlan = useLightingPlanInfo();
 
-    useEffect(() => {
-        showControl.setMode("Show")
-    }, [showControl])
-
     const [workScene, setWorkScene] = useState<Scene>();
     useEffect(() => {
         if (scene) {
@@ -126,7 +122,9 @@ const SceneEditor = (props: SceneEditorProps) => {
     }, [workScene, sceneInfo])
 
     const [playScene, setPlayScene] = useState(false);
-    const track = useRealtimeScene(workScene, playScene);
+
+    const workSI = useSceneInfo(workScene);
+    const track = useRealtimeScene(workSI, playScene);
     const playEnabled = workScene !== undefined && track !== undefined;
 
     return <div className={mergeClasses(

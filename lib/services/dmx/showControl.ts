@@ -61,7 +61,7 @@ export function createScene(name: string): Scene {
     }
 } 
 
-export interface ShowControler {
+export interface ShowControlProps {
     fade: number;
     setFade: Dispatch<number>;
     master: number;
@@ -71,16 +71,18 @@ export interface ShowControler {
 
     tracks: ReadonlyMap<TrackId, Track>;
 
-    addTrack: (scene: Scene, options?: CreateTrackOptions) => Track;
+    addTrack: (scene: SceneInfo, options?: CreateTrackOptions) => Track;
     updateTrack: (track: Track|TrackId, options: UpdateTrackOptions) => Track;
     removeTrack: (track: Track|TrackId) => Track|undefined;
 }
+
+
 
 export type TrackId = string;
 
 export interface Track extends Named {
     id: TrackId;
-    scene: Scene;
+    scene: SceneInfo;
     enabled: boolean;
     master: number;
     rawValues: DmxValueSegment[]
@@ -166,9 +168,7 @@ export interface ShowInfo extends Named, HasId {
 
 
 export module Mappings {
-    export function computeDmxValues(fixtureName: string, values: SceneElementValues, lightingPlan: LightingPlanInfo): number[] {
-
-        const fixture = lightingPlan.fixtures[fixtureName];
+    export function computeDmxValues(fixture: FixtureInfo, values: SceneElementValues): number[] {
 
         const {
             channels
@@ -366,7 +366,7 @@ export module Mappings {
             } = se;
     
             const fixture = lightingPlan.fixtures[fixtureName];
-            const computedValues = computeDmxValues(fixtureName, values, lightingPlan);
+            const computedValues = computeDmxValues(fixture, values);
     
             const sei: SceneElementInfo = {
                 fixture,
@@ -447,10 +447,9 @@ export function orderedFixtures(lightingPlan: LightingPlanInfo): FixtureInfo[] {
 export type CreateTrackOptions = Partial<Omit<Track, "scene"|"id"|"info"|"rawValues">>
 export type UpdateTrackOptions = Partial<Omit<Track, "id"|"info"|"rawValues">>
 
-export interface ShowControlProps {
+export interface ShowContextProps {
     lightingPlan?: StageLightingPlan;
     show?: Show;
-    controler: ShowControler;
     fixtureCollection?: Fixtures.FixtureModelCollection;
 
     mutations: {
@@ -462,156 +461,15 @@ export interface ShowControlProps {
     loadShow: (name: string) => void;
 }
 
-export function useNewShowContext(): ShowControlProps {
 
-    const refreshRate = 30;
 
-    const [lastUpdate, setLastUpdate] = useState<number>(0);
+export function useNewShowContext(): ShowContextProps {
 
     const [showName, setShowName] = useState<string>();
 
     const [show, setShow] = useState<Show>();
     const [fixtureCollection, setFixtureCollection] = useState<Fixtures.FixtureModelCollection>();
     const [lightingPlan, setLightingPlan] = useState<StageLightingPlan>();
-
-    const tracksRef = useRef<Map<TrackId, Track>>(new Map());
-
-    const dmxControl = useDmxControl();
-
-    const computeRawValues = useCallback<(scene: Scene) => DmxValueSegment[]>((scene: Scene) => {
-
-        if (lightingPlan) {
-            const segments = scene.elements.map<DmxValueSegment>(se => {
-
-                const { fixture, values: seValues } = se;
-
-                const { address } = lightingPlan.fixtures[fixture];
-                const values = Mappings.computeDmxValues(fixture, seValues, lightingPlan);
-
-                return {
-                    address,
-                    values
-                }
-            });
-            return segments;
-        }
-        else {
-            return [];
-        }
-    }, [lightingPlan, fixtureCollection]);
-
-
-    const addTrack = useCallback((scene: Scene, options?: CreateTrackOptions) => {
-
-        const id = generateId();
-
-        const rawValues: DmxValueSegment[] = computeRawValues(scene);
-        
-        const track: Track = {
-            id,
-            scene,
-            name: scene.name,
-            enabled: true,
-            master: 1,
-            rawValues,
-            ...options
-        }
-
-        tracksRef.current.set(id, track);
-
-        return track;
-    }, [computeRawValues])
-
-
-    const updateTrack = useCallback((track: Track|TrackId, options?: UpdateTrackOptions) => {
-
-        const tracks = tracksRef.current;
-
-        const trackId = isTrack(track) ? track.id : track;
-        const result = tracks.get(trackId);
-
-        if (!result) {
-            throw new Error(`Track '${trackId}' not found`);
-        }
-
-        const newTrack = {
-            ...result,
-            ...options
-        }
-
-        if (options?.scene) {
-            newTrack.rawValues = computeRawValues(options.scene);
-        }
-
-        tracks.set(trackId, newTrack);
-
-        return newTrack;
-
-    }, [computeRawValues]);
-
-    const removeTrack = useCallback((track: Track|TrackId) => {
-
-        const tracks = tracksRef.current;
-
-        const trackId = isTrack(track) ? track.id : track;
-        const result = tracks.get(trackId);
-
-        tracks.delete(trackId);
-
-        return result;
-    
-    }, []);
-
-
-    const controler = useMemo<ShowControler>(() => {
-        const {
-            blackout, setBlackout,
-            fade, setFade,
-            master, setMaster,
-        } = dmxControl;
-
-        const tracks = tracksRef.current;
-
-        return  {
-            blackout, setBlackout,
-            fade, setFade,
-            master, setMaster,
-
-            tracks,
-            addTrack,
-            updateTrack,
-            removeTrack,
-        }
-    }, [dmxControl, addTrack, removeTrack ])
-
-    useInterval((props) => {
-        const { time } = props;
-
-        dmxControl.cleanTargets();
-        const targets = dmxControl.targets;
-
-        tracksRef.current.forEach(track => {
-            const { enabled, master, rawValues } = track;
-            
-            if (!enabled || master <= 0) {
-                return;
-            }
-
-            rawValues.forEach(segment => {
-                const { address, values } = segment;
-                
-                for (let i=0, addr=address; i < values.length; i++, addr++) {
-                    const target = master * values[i];
-                    if (target > targets[addr]) {
-                        dmxControl.setTarget(addr, target)
-                    }
-                }
-            })
-        })
-
-        setLastUpdate(time);
-
-    }, 1000 / refreshRate, []);
 
     const lightingPlanName = show?.lightingPlan;
 
@@ -706,7 +564,6 @@ export function useNewShowContext(): ShowControlProps {
     return {
         show,
         lightingPlan,
-        controler,
         fixtureCollection,
 
         mutations: {
@@ -719,30 +576,179 @@ export function useNewShowContext(): ShowControlProps {
     }
 }
 
-export const ShowControlContext = createContext<ShowControlProps>({
+export const ShowContext = createContext<ShowContextProps>({
     loadShow: doNothing,
     mutations: {
         saveScene: doNothingAsync,
         addScene: notImplementedAsync,
         deleteScene: notImplementedAsync,
     },
-    controler: {
-        fade: 0,
-        setFade: doNothing,
-        master: 1,
-        setMaster: doNothing,
-        blackout: false,
-        setBlackout: doNothing,
-        tracks: new Map(),
-        addTrack: notImplemented,
-        updateTrack: notImplemented,
-        removeTrack: notImplemented,
-    }
 });
 
-export function useShowContext() {
-    return useContext<ShowControlProps>(ShowControlContext);
+export const useShowContext = () => useContext<ShowContextProps>(ShowContext)
+
+
+
+export const ShowControlContext = createContext<ShowControlProps>({
+    fade: 0,
+    setFade: doNothing,
+    master: 1,
+    setMaster: doNothing,
+    blackout: false,
+    setBlackout: doNothing,
+    tracks: new Map(),
+    addTrack: notImplemented,
+    updateTrack: notImplemented,
+    removeTrack: notImplemented
+})
+
+export function useNewShowControl(): ShowControlProps {
+    const refreshRate = 30;
+
+    const [lastUpdate, setLastUpdate] = useState<number>(0);
+
+    const tracksRef = useRef<Map<TrackId, Track>>(new Map());
+
+    const dmxControl = useDmxControl();
+
+    const computeRawValues = useCallback<(scene: SceneInfo) => DmxValueSegment[]>((scene: SceneInfo) => {
+
+        const segments = scene.elements.map<DmxValueSegment>(se => {
+
+            const { fixture, values: seValues } = se;
+
+            const { address } = fixture;
+            const values = Mappings.computeDmxValues(fixture, seValues);
+
+            return {
+                address,
+                values
+            }
+        });
+        return segments;
+
+    }, []);
+
+
+    const addTrack = useCallback((scene: SceneInfo, options?: CreateTrackOptions) => {
+
+        const id = generateId();
+
+        const rawValues: DmxValueSegment[] = computeRawValues(scene);
+        
+        const track: Track = {
+            id,
+            scene,
+            name: scene.name,
+            enabled: true,
+            master: 1,
+            rawValues,
+            ...options
+        }
+
+        tracksRef.current.set(id, track);
+
+        return track;
+    }, [computeRawValues])
+
+
+    const updateTrack = useCallback((track: Track|TrackId, options?: UpdateTrackOptions) => {
+
+        const tracks = tracksRef.current;
+
+        const trackId = isTrack(track) ? track.id : track;
+        const result = tracks.get(trackId);
+
+        if (!result) {
+            throw new Error(`Track '${trackId}' not found`);
+        }
+
+        const newTrack = {
+            ...result,
+            ...options
+        }
+
+        if (options?.scene) {
+            newTrack.rawValues = computeRawValues(options.scene);
+        }
+
+        tracks.set(trackId, newTrack);
+
+        return newTrack;
+
+    }, [computeRawValues]);
+
+    const removeTrack = useCallback((track: Track|TrackId) => {
+
+        const tracks = tracksRef.current;
+
+        const trackId = isTrack(track) ? track.id : track;
+        const result = tracks.get(trackId);
+
+        tracks.delete(trackId);
+
+        return result;
+    
+    }, []);
+
+
+    const controler = useMemo<ShowControlProps>(() => {
+        const {
+            blackout, setBlackout,
+            fade, setFade,
+            master, setMaster,
+        } = dmxControl;
+
+        const tracks = tracksRef.current;
+
+        return  {
+            blackout, setBlackout,
+            fade, setFade,
+            master, setMaster,
+
+            tracks,
+            addTrack,
+            updateTrack,
+            removeTrack,
+        }
+    }, [dmxControl, addTrack, updateTrack, removeTrack ])
+
+    useInterval((props) => {
+        const { time } = props;
+
+        dmxControl.cleanTargets();
+        const targets = dmxControl.targets;
+
+        tracksRef.current.forEach(track => {
+            const { enabled, master, rawValues } = track;
+            
+            if (!enabled || master <= 0) {
+                return;
+            }
+
+            rawValues.forEach(segment => {
+                const { address, values } = segment;
+                
+                for (let i=0, addr=address; i < values.length; i++, addr++) {
+                    const target = master * values[i];
+                    if (target > targets[addr]) {
+                        dmxControl.setTarget(addr, target)
+                    }
+                }
+            })
+        })
+
+        setLastUpdate(time);
+
+    }, 1000 / refreshRate, []);
+
+    
+    return controler;
 }
+
+export const useShowControl = () => useContext(ShowControlContext);
+
+
 
 export function useShowInfo(): ShowInfo|null {
 
@@ -824,11 +830,9 @@ export function useFixtureCollectionInfo(): FixtureModelCollectionInfo|null {
     return result;
 }
 
-export function useRealtimeScene(scene: Scene|undefined, isPlaying: boolean = true, master: number = 1): Track|null {
+export function useRealtimeScene(scene: SceneInfo|null, isPlaying: boolean = true, master: number = 1): Track|null {
 
-    const {
-        controler
-    } = useShowContext();
+    const controler = useShowControl();
 
     const {
         tracks,
@@ -867,7 +871,7 @@ export function useRealtimeScene(scene: Scene|undefined, isPlaying: boolean = tr
 
         updateTrack(currTrack, { scene, enabled: isPlaying, master });
 
-    }, [scene, isPlaying, tracks]);
+    }, [scene, isPlaying, updateTrack, master]);
 
     
     return track;
