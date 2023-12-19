@@ -42,10 +42,10 @@ export function initializeValuesForChannels(channelsInfo: ChannelsInfo): SceneEl
     const values: SceneElementValues = {};
 
     channels.forEach(chan => {
-        if (Chans.isNumberChannel(chan)) {
+        if (Chans.isNumberChannelType(chan)) {
             values[chan] = 0;
         }
-        else if (Chans.isColorChannel(chan)) {
+        else if (Chans.isColorChannelType(chan)) {
             values[chan] = Color.black;
         }
     });
@@ -192,11 +192,11 @@ export module Mappings {
                 continue;
             }
 
-            if (Chans.isNumberChannel(chanType)) {
+            if (Chans.isNumberChannelType(chanType)) {
                 const val = values[chanType]!;
                 computedValues[chanAddr] = val;
             }
-            else if (Chans.isColorChannel(chanType)) {
+            else if (Chans.isColorChannelType(chanType)) {
                 
                 const val = values[chanType]!;
 

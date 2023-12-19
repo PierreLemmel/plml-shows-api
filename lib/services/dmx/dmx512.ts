@@ -62,23 +62,43 @@ export module Chans {
     }
 
     export function isNumberChannel(chan: ChannelDefinition): chan is NumberChannelDefinition {
-        return numberChannelTypes.includes(chan.type as NumberChannelType);
+        return isNumberChannelType(chan.type);
+    }
+
+    export function isNumberChannelType(type: ChannelType): type is NumberChannelType {
+        return numberChannelTypes.includes(type as NumberChannelType);
     }
 
     export function isColorChannel(chan: ChannelDefinition): chan is ColorChannelDefinition {
-        return colorChannelTypes.includes(chan.type as ColorChannelType);
+        return isColorChannelType(chan.type);
+    }
+
+    export function isColorChannelType(type: ChannelType): type is ColorChannelType {
+        return colorChannelTypes.includes(type as ColorChannelType);
     }
 
     export function isValueArrayChannel(chan: ChannelDefinition): chan is ValueArrayChannelDefinition {
-        return chan.type === "ValueArray";
+        return isValueArrayChannelType(chan.type);
     }
-    
+
+    export function isValueArrayChannelType(type: ChannelType): type is "ValueArray" {
+        return type === "ValueArray";
+    }
+
     export function isColorArrayChannel(chan: ChannelDefinition): chan is ColorArrayChannelDefinition {
-        return chan.type === "ColorArray";
+        return isColorArrayChannelType(chan.type);
+    }
+
+    export function isColorArrayChannelType(type: ChannelType): type is "ColorArray" {
+        return type === "ColorArray";
     }
     
     export function isUnusedChannel(chan: ChannelDefinition): chan is UnusedChannelDefinition {
-        return chan.type === "UNUSED";
+        return isUnusedChannelType(chan.type);
+    }
+
+    export function isUnusedChannelType(type: ChannelType): type is "UNUSED" {
+        return type === "UNUSED";
     }
 
     export function getChannelLength(chan: ChannelDefinition): number {

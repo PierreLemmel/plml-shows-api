@@ -354,7 +354,7 @@ const SEFixtureCard = (props: SEFixtureCardProps) => {
 
                 return <Fragment key={type}>
                     <div>{displayName}</div>
-                    {Chans.isNumberChannel(type) && 
+                    {Chans.isNumberChannelType(type) && 
                     <>
                         <div>
                             <AleasSlider 
@@ -381,7 +381,7 @@ const SEFixtureCard = (props: SEFixtureCardProps) => {
                         </div>
                         <div className="min-w-[2em]">{values[type]}</div>
                     </>}
-                    {Chans.isColorChannel(type) && <>
+                    {Chans.isColorChannelType(type) && <>
                         <FoldableColorPicker
                             color={Color.getColorValue(values[type]!)}
                             onColorChange={color => {
