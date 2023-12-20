@@ -135,7 +135,7 @@ export interface TradFixtureModelInfo extends FixtureModelInfoBase {
 
 export interface ChannelsInfo {
     map: {
-        [position: number]: Chans.ChannelType;
+        [position: number]: Chans.ChannelDefinition;
     }
     totalLength: number;
 }
@@ -285,7 +285,6 @@ export module Mappings {
     }
 
     function mapToChannelInfo(channels: Fixtures.ChannelsDefinition): ChannelsInfo {
-
         const length = Math.max(
             ...Object.entries(channels).map(([k, v]) => {
 
@@ -310,7 +309,9 @@ export module Mappings {
         if (Fixtures.isTrad(type)) {
             return {
                 map: {
-                    0: "Trad",
+                    0: {
+                        type: "Trad"
+                    },
                 },
                 totalLength: 1
             }

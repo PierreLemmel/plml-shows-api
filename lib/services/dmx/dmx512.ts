@@ -1,4 +1,4 @@
-import { HasId, Named } from "../core/types/utils";
+import { HasId, Named, ShortNamed } from "../core/types/utils";
 
 
 export module Chans {
@@ -241,7 +241,7 @@ export module Fixtures {
     }
 
     export interface ChannelsDefinition {
-        readonly [position: number]: Chans.ChannelType;
+        readonly [position: number]: Chans.ChannelDefinition;
     }
 
     export interface LedFixtureModelDefinition extends FixtureModelDefinitionBase {
@@ -254,10 +254,6 @@ export module Fixtures {
         }
     }
 
-    export interface LedFixtureChannelsDefinition {
-        readonly [position: number]: Chans.ChannelType;
-    }
-
     export interface TradFixtureModelDefinition extends FixtureModelDefinitionBase {
 
         readonly manufacturer?: string;
@@ -268,7 +264,7 @@ export module Fixtures {
     export type FixtureModelDefinition = LedFixtureModelDefinition|TradFixtureModelDefinition;
     
     
-    export interface FixtureModelCollection extends Named, HasId {
+    export interface FixtureModelCollection extends Named, ShortNamed, HasId {
     
         readonly fixtureModels: {
             readonly [shortName: string]: FixtureModelDefinition;

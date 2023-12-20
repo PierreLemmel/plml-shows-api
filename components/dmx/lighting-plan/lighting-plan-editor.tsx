@@ -5,8 +5,7 @@ import AleasNumberInput from "@/components/aleas-components/aleas-number-input";
 import { AleasPopoverTextInput } from "@/components/aleas-components/aleas-popover-inputs";
 import AleasSkeletonLoader from "@/components/aleas-components/aleas-skeleton-loader";
 import AleasSlider from "@/components/aleas-components/aleas-slider";
-import { updateLightingPlan } from "@/lib/services/api/show-control-api";
-import { arrayMove, arraySwap, excludeIndex, insertAt } from "@/lib/services/core/arrays";
+import { arrayMove, excludeIndex, insertAt } from "@/lib/services/core/arrays";
 import { AsyncDispatch } from "@/lib/services/core/types/utils";
 import { generateId, incrementId, mergeClasses, mergeConditions, withValue, withValues } from "@/lib/services/core/utils";
 import { Validators } from "@/lib/services/core/validation";
@@ -16,16 +15,26 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 
-export interface LightingPlanEditorProps {
+export type LightingPlanEditorProps = {
     lightingPlan: StageLightingPlan;
     onMessage: (message: string) => void;
-}
+    saveLightingPlan: (lightingPlan: StageLightingPlan) => Promise<void>;
+} & ({
+    canRename?: false;
+    onRename?: never;
+} | {
+    canRename: true;
+    onRename: (newName: string) => Promise<void>;
+})
 
 const LightingPlanEditor = (props: LightingPlanEditorProps) => {
 
     const {
         lightingPlan,
-        onMessage
+        onMessage,
+        saveLightingPlan,
+        canRename,
+        onRename
     } = props;
 
     const [workLightingPlan, setWorkLightingPlan] = useState<StageLightingPlan>();
@@ -69,7 +78,6 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
             setModified(true);
         }
 
-        console.log("Drop")
         setSwapIndexes(null);
     }, [workLightingPlan, swapIndexes]);
 
@@ -175,10 +183,26 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
         setModified(true);
     }, [workLightingPlan]);
 
+    const onLpRename = useCallback(async (newName: string) => {
+
+        if (!workLightingPlan) {
+            return;
+        }
+
+        const newLP = withValue(workLightingPlan, "name", newName);
+        setWorkLightingPlan(newLP);
+        setModified(true);
+
+        if (onRename) {
+            onRename(newName);
+        }
+
+    }, [workLightingPlan, onRename])
+
     const save = async () => {
         if (workLightingPlan) {
             setWorking(true)
-            await updateLightingPlan(workLightingPlan)
+            await saveLightingPlan(workLightingPlan)
 
             setWorking(false);
             setModified(false);
@@ -197,12 +221,39 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
     const canSave = workLightingPlan !== undefined && modified;
     const canReset = workLightingPlan !== undefined && modified;
 
+    const lpName = workLightingPlan?.name ?? "";
+    const [editingName, setEditingName] = useState<boolean>(false);
+
     return <div
         className={mergeClasses(
             "flex flex-col gap-6 w-full h-full overflow-y-auto justify-start items-stretch",
         )}
     >
-        <div className="w-full text-center text-4xl">{workLightingPlan?.name}</div>
+        <div className={mergeClasses(
+            "w-full text-center text-4xl",
+            canRename && "flex flex-row gap-2 items-center justify-center"
+        )}>
+            <div>{workLightingPlan?.name}</div>
+            {canRename && <AleasIconButton
+                icon="Edit"
+                size="Small"
+                className="flex-grow-0"
+                onClick={() => setEditingName(true)}
+            />}
+        </div>
+        {canRename && <AleasPopoverTextInput
+            isOpen={editingName}
+            onCancel={() => setEditingName(false)}
+            onConfirm={async (value: string) => {
+                await onLpRename(value);
+                setEditingName(false);
+            }}
+            title="Renommer"
+            initialValue={lpName}
+            canValidate={Validators.strings.lengthBetween(3, 50)}
+        >
+            Indiquer un nouveau nom (entre 3 et 50 caractères)
+        </AleasPopoverTextInput>}
         <div className="flex flex-row justify-end pr-1">
             <AleasButton
                 size="Small"

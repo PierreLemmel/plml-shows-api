@@ -28,8 +28,13 @@ export async function updateShow(show: Partial<Show> & Named & { lightingPlan: s
 
 
 export async function getLightingPlan(plan: string) {
-    const sanitized = toFirebaseKey(plan);
-    return await getDocument<StageLightingPlan>(`dmx/lighting-plans/public/${sanitized}`)
+
+    const path = pathCombine(
+        "dmx/lighting-plans/public", 
+        toFirebaseKey(plan)
+    );
+
+    return await getDocument<StageLightingPlan>(path)
 }
 
 export async function listAllLightingPlans(): Promise<string[]> {
@@ -37,25 +42,56 @@ export async function listAllLightingPlans(): Promise<string[]> {
 }
 
 export async function createLightingPlan(plan: StageLightingPlan) {
-    const sanitized = toFirebaseKey(plan.name);
-    await setDocument<StageLightingPlan>(`dmx/lighting-plans/public/${sanitized}`, plan);
+
+    const path = pathCombine(
+        "dmx/lighting-plans/public", 
+        toFirebaseKey(plan.name)
+    );
+
+    await setDocument<StageLightingPlan>(path, plan);
 }
 
 export async function updateLightingPlan(plan: Partial<StageLightingPlan> & Named) {
-    const sanitized = toFirebaseKey(plan.name);
+
+    const path = pathCombine(
+        "dmx/lighting-plans/public", 
+        toFirebaseKey(plan.name)
+    );
     
-    await updateDocument<StageLightingPlan>(`dmx/lighting-plans/public/${sanitized}`, plan);
+    await updateDocument<StageLightingPlan>(path, plan);
 }
 
+export async function listAllShowsInLightingPlan(plan: string): Promise<string[]> {
+    const path = pathCombine(
+        "dmx/lighting-plans/public", 
+        toFirebaseKey(plan),
+        "shows"
+    );
+    
+    return await listDocuments(path);
+}
+
+
+
+const pathToFixtureCollection = (name: string) => pathCombine(
+    "dmx/fixtures/collections",
+    toFirebaseKey(name)
+);
 
 
 export async function getFixtureCollection(name: string) {
-    const sanitized = toFirebaseKey(name);
-    return await getDocument<Fixtures.FixtureModelCollection>(`dmx/fixtures/collections/${sanitized}`);
+
+    const path = pathToFixtureCollection(name);
+    return await getDocument<Fixtures.FixtureModelCollection>(path);
 }
 
 export async function createFixtureCollection(coll: Fixtures.FixtureModelCollection) {
-    const sanitized = toFirebaseKey(coll.name);
-    await setDocument<Fixtures.FixtureModelCollection>(`dmx/fixtures/collections/${sanitized}`, coll);
+    const path = pathToFixtureCollection(coll.name);
+    await setDocument<Fixtures.FixtureModelCollection>(path, coll);
 }
 
+export async function updateFixtureCollection(coll: Partial<Fixtures.FixtureModelCollection> & Named) {
+
+    const path = pathToFixtureCollection(coll.name);
+    await updateDocument<Fixtures.FixtureModelCollection>(path, coll);
+}

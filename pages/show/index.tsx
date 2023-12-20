@@ -2,9 +2,10 @@ import { AleasIconButton } from "@/components/aleas-components/aleas-buttons";
 import { AleasDropdownInput } from "@/components/aleas-components/aleas-dropdowns";
 import { AleasMainLayout } from "@/components/aleas-components/aleas-layout";
 import useLocalStorage from "@/lib/services/api/local-storage";
-import { listAllLightingPlans } from "@/lib/services/api/show-control-api";
+import { listAllLightingPlans, listAllShowsInLightingPlan } from "@/lib/services/api/show-control-api";
 import { pathCombine } from "@/lib/services/core/files";
 import { useEffectAsync } from "@/lib/services/core/hooks";
+import { useShowContext } from "@/lib/services/dmx/showControl";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -40,6 +41,19 @@ const ShowPage = () => {
         [lightingPlans]
     );
 
+    const [availableShows, setAvailableShows] = useState<string[]>([]);
+
+    useEffectAsync(async () => {
+        if (selectedLightingPlan) {
+            const shows = await listAllShowsInLightingPlan(selectedLightingPlan);
+            setAvailableShows(shows);
+        }
+        else {
+            setAvailableShows([]);
+        }
+    }, [selectedLightingPlan]);
+
+    const hasAvailableShows = availableShows.length > 0;
 
     return <AleasMainLayout
         title="Spectacles"
@@ -81,6 +95,16 @@ const ShowPage = () => {
                 <div className="flex flex-row justify-between">
                     <div className="font-bold text-2xl">Spectacles :</div>
                     <AleasIconButton icon={"New"}/>
+                </div>
+                
+                <div className="flex flex-col gap-3">
+                    {hasAvailableShows ? 
+                        availableShows.map(show => <div key={show} className="flex flex-row items-center gap-2">
+                            <div>{show}</div>
+                            <AleasIconButton icon={"Edit"}/>
+                            <AleasIconButton icon={"Delete"}/>
+                        </div>) :
+                    <div>Aucun spectacle à afficher pour l&apos;instant</div>}
                 </div>
             </div>}
             

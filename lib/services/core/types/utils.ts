@@ -2,6 +2,11 @@ export interface Named {
     readonly name: string;
 }
 
+export interface ShortNamed {
+    readonly shortName: string;
+
+}
+
 export interface HasId {
     readonly id: string;
 }
