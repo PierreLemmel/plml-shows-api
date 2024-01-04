@@ -94,8 +94,9 @@ const ShowEditor = (props: ShowEditorProps) => {
         await saveShow(updatedShow);
 
         const newScenePath = sceneEditPath(newSceneName);
-        console.log({ newSceneName, newScenePath })
         router.push(newScenePath);
+        
+        router.push("", "", { })
     }, [sceneEditPath, show]);
 
 
