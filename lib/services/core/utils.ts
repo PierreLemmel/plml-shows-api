@@ -47,7 +47,7 @@ export function getValue<T>(provider: ValueProvider<T>): T {
     }
 }
 
-export const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+export const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 export const currentTime = () => new Date().getTime();
 
@@ -200,4 +200,8 @@ export function incrementId(id: string) {
     else {
         return id + "-01"
     }
+}
+
+export function isEmpty<T extends { length: number }>(array: T) {
+    return array.length === 0;
 }

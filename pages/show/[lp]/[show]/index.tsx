@@ -3,6 +3,7 @@ import AleasSkeletonLoader from "@/components/aleas-components/aleas-skeleton-lo
 import { aleasToast } from "@/components/aleas-components/aleas-toast-container";
 import ShowEditor from "@/components/dmx/show/show-editor";
 import { useRouterQuery } from "@/lib/services/api/routing";
+import { pathCombine } from "@/lib/services/core/files";
 import { useShowContext, useLoadShowInContextIfNeeded, Show } from "@/lib/services/dmx/showControl";
 import { useCallback } from "react";
 
@@ -35,6 +36,13 @@ const ShowPage = () => {
                 show={show}
                 saveShow={saveShow}
                 onMessage={aleasToast.info}
+                sceneEditPath={scene => pathCombine(
+                    "show",
+                    lpName,
+                    show.name,
+                    "scenes/edit",
+                    scene
+                )}
             /> :
             <AleasSkeletonLoader />
         }

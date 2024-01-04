@@ -31,7 +31,10 @@ export type SceneElement = {
 
 export function extractChannels(channelsInfo: ChannelsInfo): (Chans.NumberChannelType|Chans.ColorChannelType)[] {
 
-    const channels = Object.values(channelsInfo).filter(chan => Chans.isNumberChannel(chan) || Chans.isColorChannel(chan)) as (Chans.NumberChannelType|Chans.ColorChannelType)[];
+    const channels = Object
+        .values(channelsInfo.map)
+        .map(val => val.type)
+        .filter(chan => Chans.isNumberChannelType(chan) || Chans.isColorChannelType(chan)) as (Chans.NumberChannelType|Chans.ColorChannelType)[];
 
     return channels;
 }

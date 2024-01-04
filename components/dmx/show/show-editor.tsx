@@ -3,9 +3,8 @@ import { AleasDropdownButton, DropdownOption } from "@/components/aleas-componen
 import AleasModalDialog from "@/components/aleas-components/aleas-modal-dialog"
 import { AleasPopoverTextInput } from "@/components/aleas-components/aleas-popover-inputs"
 import AleasTextField from "@/components/aleas-components/aleas-textfield"
-import { pathCombine } from "@/lib/services/core/files"
 import { AsyncDispatch } from "@/lib/services/core/types/utils"
-import { doNothing, mergeClasses, simplyReturn, withValue } from "@/lib/services/core/utils"
+import { doNothing, isEmpty, mergeClasses, simplyReturn, withValue } from "@/lib/services/core/utils"
 import { Validators } from "@/lib/services/core/validation"
 import { addSceneToShow, createNewScene, deleteSceneInShow, Scene, Show, useRealtimeScene, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl"
 import router from "next/router"
@@ -17,6 +16,7 @@ export type ShowEditorProps = {
     show: Show;
     onMessage: Dispatch<string>;
     saveShow: AsyncDispatch<Show>;
+    sceneEditPath: (sceneName: string) => string;
 } & ({
     canRename?: false;
     renameValidation?: never;
@@ -38,7 +38,8 @@ const ShowEditor = (props: ShowEditorProps) => {
         canRename = false,
         renameValidation = simplyReturn(true),
         onRename = doNothing,
-        onRenameFail = doNothing
+        onRenameFail = doNothing,
+        sceneEditPath
     } = props;
 
     const {
@@ -67,21 +68,22 @@ const ShowEditor = (props: ShowEditorProps) => {
     const toggleBtnEnabled = isPlaying ? track !== null : scene !== undefined;
     const onToggleBtnClicked = () => setIsPlaying(curr => !curr);
 
-    const editBtnClicked = scene !== undefined;
-    const onEditBtnClicked = () => {
+    const editBtnEnabled = scene !== undefined;
+    const onEditBtnClicked = useCallback(() => {
         if (scene) {
-            router.push(`${router.asPath}/scenes/edit/${scene.name}`);
+            const path = sceneEditPath(scene.name);
+            router.push(path);
         }
-    };
+    }, [scene]);
 
     const newBtnEnabled = true;
     const [newModalOpened, setNewModalOpened] = useState(false);
     const [newSceneName, setNewSceneName] = useState("");
 
-    const onNewSceneBtnClicked = () =>{
+    const onNewSceneBtnClicked = useCallback(async () =>{
         setNewSceneName("");
         setNewModalOpened(true);
-    }
+    }, []);
 
     const onNewModalCancel = () => setNewModalOpened(false);
 
@@ -91,13 +93,10 @@ const ShowEditor = (props: ShowEditorProps) => {
         const updatedShow = addSceneToShow(show, newScene);
         await saveShow(updatedShow);
 
-        const sceneEditPath = pathCombine(
-            router.asPath,
-            "scenes/edit",
-            newSceneName
-        )
-        router.push(sceneEditPath);
-    }, [router.asPath, show]);
+        const newScenePath = sceneEditPath(newSceneName);
+        console.log({ newSceneName, newScenePath })
+        router.push(newScenePath);
+    }, [sceneEditPath, show]);
 
 
     const deleteBtnEnabled = scene !== undefined;
@@ -128,7 +127,7 @@ const ShowEditor = (props: ShowEditorProps) => {
 
     const [editingName, setEditingName] = useState<boolean>(false);
 
-    return <div className="centered-row gap-4">
+    return <div className="centered-col gap-6">
 
         <div className={mergeClasses(
             "w-full text-center text-4xl",
@@ -157,92 +156,99 @@ const ShowEditor = (props: ShowEditorProps) => {
             </AleasPopoverTextInput>}
         </div>
 
-        <div className="centered-col gap-8">
-            <div className="centered-row gap-3">
+        <div className="centered-row gap-4">
 
-                <div className="text-lg">
-                    Scenes:
+            <div className="centered-col gap-8">
+                <div className="centered-row gap-3">
+
+                    <div className="text-lg">
+                        Scenes:
+                    </div>
+
+                    {!isEmpty(show.scenes) ? 
+                        <AleasDropdownButton
+                            options={dropdownOptions}
+                            value={scene}
+                            onValueChanged={onDropdownSelectionChanged}
+                            placeholder="Select a scene"
+                        /> : 
+                        <div>Aucune scène à afficher</div>
+                    }
+                    
                 </div>
 
-                <AleasDropdownButton
-                    options={dropdownOptions}
-                    value={scene}
-                    onValueChanged={onDropdownSelectionChanged}
-                    placeholder="Select a scene"
+                <div className="flex flex-row items-center justify-center gap-3">
+                    <AleasButton
+                        onClick={onToggleBtnClicked}
+                        disabled={!toggleBtnEnabled}
+                    >
+                        {isPlaying ? "Stop" : "Tester"}
+                    </AleasButton>
+
+                    <AleasButton
+                        disabled={!editBtnEnabled}
+                        onClick={onEditBtnClicked}
+                    >
+                        Editer
+                    </AleasButton>
+
+                    <AleasButton
+                        onClick={onNewSceneBtnClicked}
+                        disabled={!newBtnEnabled}
+                    >
+                        Nouvelle scène
+                    </AleasButton>
+
+                    <AleasButton
+                        onClick={onDeleteBtnClicked}
+                        disabled={!deleteBtnEnabled}
+                        hasConfirmation
+                        confirmationOptions={{
+                            title: "Suppression",
+                            message: "Êtes-vous certain·e de vouloir supprimer la scène ?"
+                        }}
+                    >
+                        Supprimer
+                    </AleasButton>
+                </div>
+                
+                {<div className="flex flex-col gap-4">
+                    <div>{track ?
+                        <>Currently playing: {track.name}</> :
+                        <>No Scene playing</>
+                    }</div>
+                </div>}
+            </div>
+
+            <div className="flex flex-col gap-3 items-center ml-12">
+                <div>Fade</div>
+                <DmxSlider
+                    value={fade}
+                    setValue={setFade}
+                    sliderType="Value"
+                    min={0} max={10}
+                    step={0.1}
                 />
             </div>
 
-            <div className="flex flex-row items-center justify-center gap-3">
-                <AleasButton
-                    onClick={onToggleBtnClicked}
-                    disabled={!toggleBtnEnabled}
-                >
-                    {isPlaying ? "Stop" : "Tester"}
-                </AleasButton>
-
-                <AleasButton
-                    onClick={onEditBtnClicked}
-                    disabled={!editBtnClicked}
-                >
-                    Editer
-                </AleasButton>
-
-                <AleasButton
-                    onClick={onNewSceneBtnClicked}
-                    disabled={!newBtnEnabled}
-                >
-                    Nouvelle scène
-                </AleasButton>
-
-                <AleasButton
-                    onClick={onDeleteBtnClicked}
-                    disabled={!deleteBtnEnabled}
-                    hasConfirmation
-                    confirmationOptions={{
-                        title: "Suppression",
-                        message: "Êtes-vous certain·e de vouloir supprimer la scène ?"
-                    }}
-                >
-                    Supprimer
-                </AleasButton>
+            <div className="flex flex-col gap-3 items-center">
+                <div>Master</div>
+                <DmxSlider value={master} setValue={setMaster} sliderType="Percent" />
             </div>
-            
-            {<div className="flex flex-col gap-4">
-                <div>{track ?
-                    <>Currently playing: {track.name}</> :
-                    <>No Scene playing</>
-                }</div>
-            </div>}
+
+            <AleasModalDialog
+                isOpen={newModalOpened}
+                onConfirm={onNewModalValidate}
+                onCancel={onNewModalCancel}
+                canValidate={newSceneName.length >= 4}
+            >
+                <div className="flex flex-col justify-center items-center gap-3 mb-10">
+                    <div>Entrez un nom pour la nouvelle scène :</div>
+                    <AleasTextField value={newSceneName} onValueChange={setNewSceneName} />
+                </div>
+            </AleasModalDialog>
+
         </div>
-
-        <div className="flex flex-col gap-3 items-center ml-12">
-            <div>Fade</div>
-            <DmxSlider
-                value={fade}
-                setValue={setFade}
-                sliderType="Value"
-                min={0} max={10}
-                step={0.1}
-            />
-        </div>
-
-        <div className="flex flex-col gap-3 items-center">
-            <div>Master</div>
-            <DmxSlider value={master} setValue={setMaster} sliderType="Percent" />
-        </div>
-
-        <AleasModalDialog
-            isOpen={newModalOpened}
-            onConfirm={onNewModalValidate}
-            onCancel={onNewModalCancel}
-            canValidate={newSceneName.length >= 4}
-        >
-            <div className="flex flex-col justify-center items-center gap-3 mb-10">
-                <div>Entrez un nom pour la nouvelle scène :</div>
-                <AleasTextField value={newSceneName} onValueChange={setNewSceneName} />
-            </div>
-        </AleasModalDialog>
-
     </div>
 }
 

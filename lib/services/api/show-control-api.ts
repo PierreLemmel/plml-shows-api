@@ -8,7 +8,7 @@ import { deleteDocument, documentExists, getDocument, listDocuments, renameDocum
 const pathToShow = (lp: string, name: string) => pathCombine(
     "dmx/lighting-plans/public",
     toFirebaseKey(lp),
-    "show",
+    "shows",
     toFirebaseKey(name)
 );
 

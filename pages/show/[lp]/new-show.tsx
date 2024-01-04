@@ -4,6 +4,7 @@ import { aleasToast } from "@/components/aleas-components/aleas-toast-container"
 import ShowEditor from "@/components/dmx/show/show-editor";
 import { useRouterQuery } from "@/lib/services/api/routing";
 import { createShow, renameShowIfNeeded, showExists, updateShow } from "@/lib/services/api/show-control-api";
+import { pathCombine } from "@/lib/services/core/files";
 import { AsyncDispatch } from "@/lib/services/core/types/utils";
 import { createNewShow, Show, useShowContext } from "@/lib/services/dmx/showControl";
 import { useCallback, useEffect, useState } from "react";
@@ -66,6 +67,13 @@ const NewShowPage = () => {
                 canRename={true}
                 onRenameFail={onRenameFail}
                 renameValidation={renameValidation}
+                sceneEditPath={scene => pathCombine(
+                    "show",
+                    lpName,
+                    show.name,
+                    "scenes/edit",
+                    scene
+                )}
             /> :
             <AleasSkeletonLoader />
         }

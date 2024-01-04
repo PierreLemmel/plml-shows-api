@@ -1,6 +1,6 @@
 import { Action } from '@/lib/services/core/types/utils';
 import { doNothing, mergeClasses } from '@/lib/services/core/utils';
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { AleasButton } from './aleas-buttons';
 
 interface AleasModalDialogProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -30,6 +30,21 @@ const AleasModalDialog = (props: AleasModalDialogProps) => {
 		...restProps
 	} = props;
 
+	const [isConfirming, setIsConfirming] = useState(false);
+	const [isCanceling, setIsCanceling] = useState(false);
+
+	const onActualConfirm = useCallback(async () => {
+		setIsConfirming(true);
+		await onConfirm();
+		setIsConfirming(false);
+	}, [onConfirm])
+
+	const onActualCancel = useCallback(async () => {
+		setIsCanceling(true);
+		await onCancel();
+		setIsCanceling(false);
+	}, [onCancel])
+
   	return isOpen ? <div
 		className={mergeClasses(
 			"fixed full inset-0 z-50 flex items-center justify-center bg-slate-500/10",
@@ -44,10 +59,16 @@ const AleasModalDialog = (props: AleasModalDialogProps) => {
 			<div className={contentClassName}>
 				<div>{children}</div>
 				<div className="flex flex-row justify-center items-center gap-3">
-					<AleasButton onClick={onConfirm} disabled={!canValidate}>
+					<AleasButton
+						onClick={onActualConfirm}
+						disabled={!canValidate || isCanceling}
+					>
 						{confirmText}
 					</AleasButton>
-					<AleasButton onClick={onCancel}>
+					<AleasButton
+						onClick={onActualCancel}
+						disabled={isConfirming}
+					>
 						{cancelText}
 					</AleasButton>
 				</div>

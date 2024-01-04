@@ -41,8 +41,8 @@ export const AleasPopoverTextInput = (props: AleasPopoverTextInputProps) => {
 		confirmText="Ok"
 		cancelText="Annuler"
 	>
-		<div className="full flex flex-col gap-2 mb-6 items-stretch w-100 max-w-[50vw]">		
-			{title && <div className="text-lg font-bold">{title}</div>}
+		<div className="full flex flex-col gap-2 mb-6 items-stretch w-100 max-w-[50vw] text-base">		
+			{title && <div className="text-2xl font-bold">{title}</div>}
 			{children && <div>{children}</div>}
 			<AleasTextField
 				value={value}
