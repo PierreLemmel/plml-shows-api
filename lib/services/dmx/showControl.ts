@@ -4,7 +4,7 @@ import { replaceFirstElement } from "../core/arrays";
 import { useEffectAsync, useInterval } from "../core/hooks";
 import { Color, RgbColor, RgbNamedColor } from "../core/types/rgbColor";
 import { HasId, Named } from "../core/types/utils";
-import { doNothing, doNothingAsync, generateId, notImplemented, notImplementedAsync } from "../core/utils";
+import { doNothing, doNothingAsync, generateId, notImplemented, notImplementedAsync, withValue } from "../core/utils";
 import { Chans, Fixtures, StageLightingPlan } from "./dmx512";
 import { useDmxControl } from "./dmxControl";
 
@@ -53,13 +53,54 @@ export function initializeValuesForChannels(channelsInfo: ChannelsInfo): SceneEl
     return values;
 }
 
-export function createScene(name: string): Scene {
+export function createNewScene(name: string): Scene {
     return {
         id: generateId(),
         name,
         elements: []
     }
 } 
+
+
+
+export function updateSceneInShow(show: Show, scene: Scene): Show {
+
+    const originalScenes = [...show.scenes];
+    const newScenes = replaceFirstElement(originalScenes, s => s.id === scene.id, scene);
+    
+    const updatedShow = withValue(show, "scenes", newScenes);
+    return updatedShow;
+};
+
+export function addSceneToShow(show: Show, scene: Scene): Show {
+
+    const scenes = [...show.scenes, scene];
+    
+    const updatedShow = withValue(show, "scenes", scenes);
+    return updatedShow;
+}
+
+export function deleteSceneInShow(show: Show, scene: Scene): Show {
+
+    const scenes = show.scenes.filter(s => s.id !== scene.id);
+    
+    const updatedShow = withValue(show, "scenes", scenes);
+    return updatedShow;
+}
+
+
+export function createNewShow(lightingPlan: string): Show {
+    const newShow: Show = {
+        lightingPlan,
+        scenes: [],
+        name: "Nouveau spectacle",
+        id: generateId()
+    }
+
+    return newShow;
+}
+
+
 
 export interface ShowControlProps {
     fade: number;
@@ -448,25 +489,34 @@ export function orderedFixtures(lightingPlan: LightingPlanInfo): FixtureInfo[] {
 export type CreateTrackOptions = Partial<Omit<Track, "scene"|"id"|"info"|"rawValues">>
 export type UpdateTrackOptions = Partial<Omit<Track, "id"|"info"|"rawValues">>
 
+
 export interface ShowContextProps {
     lightingPlan?: StageLightingPlan;
     show?: Show;
+    setShow: (show: Show) => void;
     fixtureCollection?: Fixtures.FixtureModelCollection;
-
-    mutations: {
-        addScene: (scene: Scene) => Promise<void>,
-        saveScene: (scene: Scene) => Promise<void>,
-        deleteScene: (scene: Scene) => Promise<void>,
-    }
-
-    loadShow: (name: string) => void;
 }
 
 
 
-export function useNewShowContext(): ShowContextProps {
+export function useLoadShowInContextIfNeeded(lightingPlanName: string, showName: string) {
 
-    const [showName, setShowName] = useState<string>();
+    const {
+        show,
+        setShow,
+    } = useShowContext();
+
+    useEffectAsync(async () => {
+
+        if (show?.name !== showName && show?.lightingPlan !== lightingPlanName) {
+            const loadedShow = await getShow(lightingPlanName, showName);
+            setShow(loadedShow);
+        }
+
+    }, [lightingPlanName, showName, show]);
+}
+
+export function useNewShowContext(): ShowContextProps {
 
     const [show, setShow] = useState<Show>();
     const [fixtureCollection, setFixtureCollection] = useState<Fixtures.FixtureModelCollection>();
@@ -474,14 +524,6 @@ export function useNewShowContext(): ShowContextProps {
 
     const lightingPlanName = show?.lightingPlan;
 
-    useEffectAsync(async () => {
-
-        if (showName && lightingPlanName) {
-            const show = await getShow(lightingPlanName, showName);
-            setShow(show);
-        }
-
-    }, [lightingPlanName, showName]);
     
     useEffectAsync(async () => {
 
@@ -509,81 +551,16 @@ export function useNewShowContext(): ShowContextProps {
     }, [fixtureCollectionName]);
 
 
-    const saveScene = useCallback(async (scene: Scene) => {
-        if (!show) {
-            return;
-        }
-
-        const originalScenes = [...show.scenes];
-        const newScenes = replaceFirstElement(originalScenes, s => s.id === scene.id, scene);
-        
-        const updatedShow = { 
-            ...structuredClone(show),
-            scenes: newScenes
-        };
-
-        await updateShow(updatedShow);
-        setShow(updatedShow);
-
-    }, [show]);
-
-    const addScene = useCallback(async (scene: Scene) => {
-
-        if (!show) {
-            return;
-        }
-
-        const scenes = [...show.scenes, scene];
-        
-        const updatedShow = { 
-            ...show,
-            scenes: scenes
-        };
-        await updateShow(updatedShow);
-        setShow(updatedShow);
-
-    }, [show]);
-
-    const deleteScene = useCallback(async (scene: Scene) => {
-
-        if (!show) {
-            return;
-        }
-
-        const scenes = show.scenes.filter(s => s.id !== scene.id);
-        
-        const updatedShow = { 
-            ...show,
-            scenes: scenes
-        };
-
-        await updateShow(updatedShow);
-        setShow(updatedShow);
-
-    }, [show]);
-
     return {
         show,
+        setShow,
         lightingPlan,
         fixtureCollection,
-
-        mutations: {
-            saveScene,
-            addScene,
-            deleteScene,
-        },
-
-        loadShow: (name: string) => setShowName(name),
     }
 }
 
 export const ShowContext = createContext<ShowContextProps>({
-    loadShow: doNothing,
-    mutations: {
-        saveScene: doNothingAsync,
-        addScene: notImplementedAsync,
-        deleteScene: notImplementedAsync,
-    },
+    setShow: doNothing,
 });
 
 export const useShowContext = () => useContext<ShowContextProps>(ShowContext)

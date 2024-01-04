@@ -135,6 +135,10 @@ export function returnZero(...val: any[]) {
     return 0;
 }
 
+export function simplyReturn<T>(val: T): (...args: any[]) => T {
+    return () => val;
+}
+
 export function notImplemented<T>(): T {
     throw new Error("Not implemented");
 }

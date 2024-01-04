@@ -6,7 +6,7 @@ import AleasBackground from '@/components/aleas-components/aleas-background';
 import { AleasButton } from '@/components/aleas-components/aleas-buttons';
 import AleasHead from '@/components/aleas-components/aleas-head';
 import { AleasModalContainer, AleasTitle } from '@/components/aleas-components/aleas-layout';
-import { AleasToastContainer, toast } from '@/components/aleas-components/aleas-toast-container';
+import { aleasToast } from '@/components/aleas-components/aleas-toast-container';
 import { useEffectOnce } from '@/lib/services/core/hooks';
 import { getThanksMessages } from '@/lib/services/aleas/misc/aleas-thanks';
 import { flattenArray } from '@/lib/services/core/arrays';
@@ -57,7 +57,7 @@ export default function ThanksDisplay(props: InferGetStaticPropsType<typeof getS
 
     const onCopied = () => {
         navigator.clipboard.writeText(review)
-        toast('Ajouté au presse-papier')
+        aleasToast('Ajouté au presse-papier')
     }
 
     return <>
@@ -113,7 +113,6 @@ export default function ThanksDisplay(props: InferGetStaticPropsType<typeof getS
                     </div>
                 </AleasModalContainer>
             </div>
-            <AleasToastContainer />
             
         </main>
         

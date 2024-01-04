@@ -23,7 +23,7 @@ interface BaseButtonProps extends React.HTMLAttributes<HTMLDivElement> {
     onClick?: () => void;
 }
 
-type ButtonProps = BaseButtonProps & (WithoutConfirmationOptions | WithConfirmationOptions)
+export type ButtonProps = BaseButtonProps & (WithoutConfirmationOptions | WithConfirmationOptions)
 
 type WithoutConfirmationOptions = {
     hasConfirmation?: false;
@@ -216,15 +216,31 @@ const IconsSvgs = {
 
 export type Icons = keyof typeof IconsSvgs;
 
-interface IconButtonProps extends React.HTMLAttributes<HTMLDivElement> {
+interface BaseIconButtonProps extends React.HTMLAttributes<HTMLDivElement> {
     disabled?: boolean;
     size?: IconButtonSize;
     icon: Icons;
     children?: never[];
+    onClick?: () => void;
 }
 
+export type IconButtonProps = BaseIconButtonProps & (WithConfirmationOptions | WithoutConfirmationOptions)
 
 export const AleasIconButton = (props: IconButtonProps) => {
+    const {
+        hasConfirmation,
+        ...restProps
+    } = props;
+
+    if (hasConfirmation) {
+        return <AleasIconButtonWithConfirmation {...props} hasConfirmation />
+    }
+    else {
+        return <AleasBaseIconButton {...restProps} />
+    }
+}
+
+const AleasBaseIconButton = (props: BaseIconButtonProps) => {
     const {
         disabled = false,
         children,
@@ -242,7 +258,7 @@ export const AleasIconButton = (props: IconButtonProps) => {
         {...restProps}
         onClick={e => {
             if (!disabled && onClick) {
-                onClick(e)
+                onClick()
             }
         }}
         className={mergeClasses(
@@ -256,5 +272,50 @@ export const AleasIconButton = (props: IconButtonProps) => {
             className
         )}>
         {IconsSvgs[icon]}
+    </div>
+}
+
+const AleasIconButtonWithConfirmation = (props: BaseIconButtonProps & WithConfirmationOptions) => {
+    const {
+        confirmationOptions: {
+            title,
+            message,
+            confirmText,
+            cancelText
+        },
+        hasConfirmation,
+        onClick = () => {},
+        ...buttonProps
+    } = props;
+
+    const [confirmOpen, setConfirmOpen] = useState(false);
+
+    const onMainButtonClick = () => {
+        setConfirmOpen(true);
+    }
+
+    const onConfirmButtonClick = () => {
+        setConfirmOpen(false);
+        onClick();
+    }
+
+    const onCancelButtonClick = () => {
+        setConfirmOpen(false);
+    }
+
+    return <div>
+        <AleasBaseIconButton
+            onClick={onMainButtonClick}
+            {...buttonProps}
+        />
+        <AleasConfirmDialog
+            title={title}
+            message={message}
+            isOpen={confirmOpen}
+            onConfirm={onConfirmButtonClick}
+            onCancel={onCancelButtonClick}
+            confirmText={confirmText}
+            cancelText={cancelText}
+        />
     </div>
 }

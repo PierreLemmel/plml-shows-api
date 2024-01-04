@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 
 const useLocalStorage = <T>(key: string, initialValue: T): [T, (value: T) => void] => {
-    const [storedValue, setStoredValue] = useState<T>(() => {
+    const [storedValue, setStoredValue] = useState<T>(initialValue);
+
+    useEffect(() => {
         try {
             const item = localStorage.getItem(key);
-            return item ? JSON.parse(item) : initialValue;
+            setStoredValue(item ? JSON.parse(item) : initialValue);
         } catch (error) {
             console.error(`Error retrieving value from local storage: ${error}`);
-            return initialValue;
         }
-    });
+    }, []);
 
     useEffect(() => {
         try {

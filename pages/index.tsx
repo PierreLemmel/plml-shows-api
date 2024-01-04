@@ -49,7 +49,7 @@ const Home = () => {
 					</div>
 
 					<div>Nous contacter : <Link href="mailto:dansletitre@gmail.com" className="hover:text-blue-200 hover:font-bold">dansletitre@gmail.com</Link></div>
-					{/* <div>Réalisation technique : <a className="text-gray-400 underline" href="https://linktr.ee/plemmel" target="_blank" rel="noreferrer">Pierre Lemmel</a></div> */}
+					<div>Réalisation technique : <a className="text-gray-400 underline" href="https://linktr.ee/plemmel" target="_blank" rel="noreferrer">Pierre Lemmel</a></div>
 				</AleasModalContainer>
 			</div>
 		</main>

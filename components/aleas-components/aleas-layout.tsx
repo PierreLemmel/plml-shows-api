@@ -110,7 +110,6 @@ export interface AleasLayoutProps extends React.HTMLAttributes<HTMLDivElement> {
     titleDisplay?: boolean;
     description?: string;
     navbar?: boolean;
-    toasts?: boolean;
     modal?: boolean;
     requireAuth?: boolean;
 }
@@ -122,7 +121,6 @@ export const AleasMainLayout = (props: AleasLayoutProps) => {
         titleDisplay = true,
         description,
         navbar = true,
-        toasts = false,
         modal = false,
         requireAuth = false,
         className,
@@ -159,7 +157,7 @@ export const AleasMainLayout = (props: AleasLayoutProps) => {
                 </div>
             </div>
 
-            {toasts && <AleasToastContainer />}
+            <AleasToastContainer />
             
         </main>
     </>

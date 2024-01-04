@@ -13,9 +13,9 @@ import { DndProvider, useDrag, useDrop, XYCoord } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
 export interface SceneEditorProps {
-    show: Show|undefined;
-    scene: Scene|undefined;
-    onSave: AsyncDispatch<Scene>|Dispatch<Scene>;
+    show: Show;
+    scene: Scene;
+    onSave: AsyncDispatch<Scene>;
     onFinished: Action;
 }
 
@@ -32,10 +32,9 @@ const SceneEditor = (props: SceneEditorProps) => {
         onFinished,
     } = props;
 
-    const showControl = useShowContext();
     const lightingPlan = useLightingPlanInfo();
 
-    const [workScene, setWorkScene] = useState<Scene>();
+    const [workScene, setWorkScene] = useState<Scene>(structuredClone(scene));
     useEffect(() => {
         if (scene) {
             const clone = structuredClone(scene);
@@ -47,10 +46,6 @@ const SceneEditor = (props: SceneEditorProps) => {
 
     const onFixtureAdded = useCallback((fixture: FixtureInfo) => {
 
-        if (!workScene) {
-            return;
-        }
-        
         const {
             name,
             channels
@@ -82,18 +77,13 @@ const SceneEditor = (props: SceneEditorProps) => {
     const applyEnabled = workScene !== undefined;
     const [isSaving, setIsSaving] = useState(false);
     const onApplyClicked = async () => {
-
-        if (!workScene) {
-            return;
-        }
-
         setIsSaving(true);
         await onSave(workScene);
         setIsSaving(false);
     }
 
     const onSceneElementValueChanged = useCallback((element: SceneElementInfo) => {
-        if (!sceneInfo || !workScene) {
+        if (!sceneInfo) {
             return;
         }
 
@@ -106,7 +96,7 @@ const SceneEditor = (props: SceneEditorProps) => {
     }, [workScene, sceneInfo]);
 
     const onSceneElementRemoved = useCallback((element: SceneElementInfo) => {
-        if (!sceneInfo || !workScene) {
+        if (!sceneInfo) {
             return;
         }
 

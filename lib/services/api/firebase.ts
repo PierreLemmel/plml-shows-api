@@ -3,8 +3,6 @@ import { collection, doc, DocumentData, getDoc, deleteDoc, getDocs, getFirestore
 import { getDownloadURL, getStorage, list, ref, uploadBytes } from "firebase/storage";
 import { getAuth, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth"
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { Pathes } from "../core/types/utils";
-import { ValuesMap } from "../core/utils";
 
 interface FirebaseProps {
     app: ReturnType<typeof initializeApp>;
@@ -44,6 +42,13 @@ function getFirebase(): FirebaseProps {
     return firebase;
 }
 
+
+export async function documentExists(path: string) {
+    const { db } = getFirebase();
+    const firedoc = await getDoc(doc(db, path));
+
+    return firedoc.exists();
+}
 
 export async function getDocument<T>(path: string) {
     const { db } = getFirebase();
@@ -96,11 +101,19 @@ export async function deleteDocument(path: string) {
 }
 
 export async function renameDocument<T extends WithFieldValue<DocumentData>>(oldPath: string, newPath: string, deleteOld: boolean = true) {
+
     const data = await getDocument<T>(oldPath);
     await setDocument<T>(newPath, data);
 
     if (deleteOld) {
         await deleteDocument(oldPath);
+    }
+}
+
+export async function renameDocumentIfNeeded<T extends WithFieldValue<DocumentData>>(oldPath: string, newPath: string, deleteOld: boolean = true) {
+
+    if (firebasePathesAreEquivalent(oldPath, newPath)) {
+        await renameDocument<T>(oldPath, newPath, deleteOld)
     }
 }
 
@@ -203,4 +216,8 @@ export function useAuth() {
 
 export function toFirebaseKey(input: string) {
     return input.replace(/\s/g, "").toLowerCase();
+}
+
+export function firebasePathesAreEquivalent(lhs: string, rhs: string) {
+    return lhs.toLowerCase() === rhs.toLowerCase();
 }

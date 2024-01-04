@@ -7,34 +7,40 @@ import AleasSkeletonLoader from "@/components/aleas-components/aleas-skeleton-lo
 import AleasSlider from "@/components/aleas-components/aleas-slider";
 import { arrayMove, excludeIndex, insertAt } from "@/lib/services/core/arrays";
 import { AsyncDispatch } from "@/lib/services/core/types/utils";
-import { generateId, incrementId, mergeClasses, mergeConditions, withValue, withValues } from "@/lib/services/core/utils";
+import { doNothing, doNothingAsync, generateId, incrementId, mergeClasses, mergeConditions, simplyReturn, withValue, withValues } from "@/lib/services/core/utils";
 import { Validators } from "@/lib/services/core/validation";
 import { Fixtures, StageLightingPlan } from "@/lib/services/dmx/dmx512";
 import { FixtureModelInfo, LedFixtureModelInfo, listFixtureModels, useFixtureCollectionInfo, useFixtureInfo } from "@/lib/services/dmx/showControl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Dispatch, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 
 export type LightingPlanEditorProps = {
     lightingPlan: StageLightingPlan;
-    onMessage: (message: string) => void;
-    saveLightingPlan: (lightingPlan: StageLightingPlan) => Promise<void>;
+    onMessage?: Dispatch<string>;
+    saveLightingPlan: AsyncDispatch<StageLightingPlan>;
 } & ({
     canRename?: false;
+    renameValidation?: never;
     onRename?: never;
+    onRenameFail?: never;
 } | {
     canRename: true;
-    onRename: (newName: string) => Promise<void>;
+    renameValidation?: (newName: string) => Promise<boolean>;
+    onRename?: Dispatch<string>;
+    onRenameFail?: Dispatch<string>;
 })
 
 const LightingPlanEditor = (props: LightingPlanEditorProps) => {
 
     const {
         lightingPlan,
-        onMessage,
+        onMessage = doNothing,
         saveLightingPlan,
         canRename,
-        onRename
+        renameValidation = simplyReturn(true),
+        onRename = doNothing,
+        onRenameFail = doNothing
     } = props;
 
     const [workLightingPlan, setWorkLightingPlan] = useState<StageLightingPlan>();
@@ -189,12 +195,16 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
             return;
         }
 
-        const newLP = withValue(workLightingPlan, "name", newName);
-        setWorkLightingPlan(newLP);
-        setModified(true);
+        const canRename = await renameValidation(newName);
+        if (canRename) {
+            const newLP = withValue(workLightingPlan, "name", newName);
+            setWorkLightingPlan(newLP);
+            setModified(true);
 
-        if (onRename) {
             onRename(newName);
+        }
+        else {
+            onRenameFail(newName);
         }
 
     }, [workLightingPlan, onRename])

@@ -5,7 +5,7 @@ import { AleasMainLayout } from "@/components/aleas-components/aleas-layout";
 import AleasNumberInput from "@/components/aleas-components/aleas-number-input";
 import AleasTagsField from "@/components/aleas-components/aleas-tags-field";
 import AleasTextField from "@/components/aleas-components/aleas-textfield";
-import { toast } from "@/components/aleas-components/aleas-toast-container";
+import { aleasToast } from "@/components/aleas-components/aleas-toast-container";
 import AleasAudioPlayer, { AudioPlayerRef } from "@/components/audio/aleas-audio-player";
 import { importAudioClip } from "@/lib/services/api/audio";
 import { AudioClipInfo } from "@/lib/services/audio/audioControl";
@@ -27,7 +27,7 @@ const Import = () => {
 
         if (files && files.length > 0) {
             const file = files[0];
-            toast.success(`Fichier '${file.name}' importé`)
+            aleasToast.success(`Fichier '${file.name}' importé`)
             setAudioFile(file);
             setDisplayState("AudioEditSettings")
             setName(file.name.split(".")[0]);
@@ -35,7 +35,7 @@ const Import = () => {
     }, [setAudioFile, setDisplayState])
 
     const onUploadError = useCallback((files: File[]) => {
-        files.forEach(file => toast.warn(`Impossible d'importer le fichier '${file.name}'`));
+        files.forEach(file => aleasToast.warn(`Impossible d'importer le fichier '${file.name}'`));
     }, []);
 
     const [name, setName] = useState<string>("Music");
@@ -88,7 +88,7 @@ const Import = () => {
 
             
             await importAudioClip(audioFile, name, clipInfo)
-            toast.info("Fichier audio importé !");
+            aleasToast.info("Fichier audio importé !");
             
             reset();
             setAudioFile(undefined);
@@ -97,10 +97,10 @@ const Import = () => {
             console.error(e);
 
             if (typeof e === "string") {
-                toast.error(e);
+                aleasToast.error(e);
             }
             else {
-                toast.error("Une erreur est survenue lors de l'import du fichier audio");
+                aleasToast.error("Une erreur est survenue lors de l'import du fichier audio");
             }
         }
 
@@ -119,7 +119,7 @@ const Import = () => {
     return <AleasMainLayout
         title="Aléas - Import Audio"
         titleDisplay={false}
-        toasts requireAuth
+        requireAuth
     >
         <div className="full flex flex-col items-stretch justify-between gap-8">
             <div className="text-center text-4xl flex-grow-0">Importer un fichier Audio</div>
