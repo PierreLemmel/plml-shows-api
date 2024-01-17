@@ -20,4 +20,4 @@ export const AleasToastContainer = (props: AleasToastContainerProps) => {
     return <ToastContainer {...newProps} />;
 }
 
-export const toast = toastifyToast;
+export const aleasToast = toastifyToast;

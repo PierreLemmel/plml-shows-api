@@ -1,8 +1,6 @@
 import { AleasButton } from "@/components/aleas-components/aleas-buttons";
 import { AleasMainLayout } from "@/components/aleas-components/aleas-layout"
 import { isDev } from "@/lib/services/api/api";
-import { getDocument, setDocument } from "@/lib/services/api/firebase";
-import { pathCombine } from "@/lib/services/core/files";
 import { GetStaticProps } from "next";
 import { useEffect, useState } from "react";
 

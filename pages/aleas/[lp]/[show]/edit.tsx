@@ -5,27 +5,27 @@ import AleasMinMaxEditor from "@/components/aleas-components/aleas-minmax-editor
 import AleasNumberInput from "@/components/aleas-components/aleas-number-input";
 import AleasSkeletonLoader from "@/components/aleas-components/aleas-skeleton-loader";
 import AleasSlider from "@/components/aleas-components/aleas-slider";
-import { toast } from "@/components/aleas-components/aleas-toast-container";
+import { aleasToast } from "@/components/aleas-components/aleas-toast-container";
 import { getAleasShow, updateAleasShow } from "@/lib/services/aleas/aleas-api";
 import { AleasAudioItemInfo, AleasDurationItemInfo, AleasSceneItemInfo } from "@/lib/services/aleas/aleas-providers";
 import { AleasShow, AleasShowInfo, useAleasShowInfo } from "@/lib/services/aleas/aleas-setup";
+import { useRouterQuery } from "@/lib/services/api/routing";
 import { replaceFirstElement } from "@/lib/services/core/arrays";
 import { pathCombine } from "@/lib/services/core/files";
 
 import { useEffectAsync } from "@/lib/services/core/hooks";
 import { sum } from "@/lib/services/core/maths";
 import { generateId, mergeClasses, withValue } from "@/lib/services/core/utils";
-import { useShowControl, useShowInfo } from "@/lib/services/dmx/showControl";
+import { useShowContext, useShowInfo } from "@/lib/services/dmx/showControl";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { Dispatch, useCallback, useEffect, useMemo, useState } from "react";
 
 const AleasShowDisplay = () => {
 
-    const showControl = useShowControl();
-    
-    const router = useRouter();
-    const showName = router.query["show"] as string|undefined;
+    const {
+        "show": showName
+    } = useRouterQuery("show");
 
     const showInfo = useShowInfo();
 
@@ -41,12 +41,6 @@ const AleasShowDisplay = () => {
         
     }, [showName])
 
-    useEffect(() => {
-
-        if (aleasShow) {
-            showControl.loadShow(aleasShow.showName)
-        }
-    }, [aleasShow?.showName])
 
     const updateShowInfo = useCallback(async (newShowInfo: AleasShowInfo) => {
         const {
@@ -112,7 +106,7 @@ const AleasShowDisplay = () => {
         await updateAleasShow(aleasShow);
     }, [])
 
-    return <AleasMainLayout title="Aléas" navbar={true} requireAuth titleDisplay={false} toasts>
+    return <AleasMainLayout title="Aléas" navbar={true} requireAuth titleDisplay={false}>
         <div className={mergeClasses(
             "full overflow-auto max-h-[70vh]"
         )}>
@@ -193,7 +187,7 @@ const AleasShowInfoDisplay = (props: ShowDisplayProps) => {
                 const exists = existingShowScenes.some(showScene => showScene.name === aleasScene.scene.name);
                 
                 if (!exists) {
-                    toast.warn(`Scène supprimée : ${aleasScene.scene.name}`);
+                    aleasToast.warn(`Scène supprimée : ${aleasScene.scene.name}`);
                 }
                 
                 return exists;
@@ -214,7 +208,7 @@ const AleasShowInfoDisplay = (props: ShowDisplayProps) => {
                 }
 
                 updatedScenes.push(newScene);
-                toast.success(`Scène ajoutée : ${showScene.name}`);
+                aleasToast.success(`Scène ajoutée : ${showScene.name}`);
             }
         })
         

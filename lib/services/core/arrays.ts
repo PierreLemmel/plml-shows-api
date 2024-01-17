@@ -1,5 +1,3 @@
-import { randomRange } from "./utils";
-
 export const createArray = <T>(length: number, val: T|((i: number) => T))  => {
 
     if(typeof val === "function") {

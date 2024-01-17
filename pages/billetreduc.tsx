@@ -7,8 +7,8 @@ import { AleasButton, AleasRoundButton } from '@/components/aleas-components/ale
 import AleasHead from '@/components/aleas-components/aleas-head';
 import { AleasModalContainer, AleasTitle } from '@/components/aleas-components/aleas-layout';
 import { getBilletReducReviews, getBilletReducSettings } from '@/lib/services/api/billetreduc';
-import { AleasToastContainer, toast } from '@/components/aleas-components/aleas-toast-container';
 import { useEffectOnce } from '@/lib/services/core/hooks';
+import { aleasToast } from '@/components/aleas-components/aleas-toast-container';
 
 interface BilletReducProps {
     reviews: string[],
@@ -61,7 +61,7 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
 
     const onCopied = () => {
         navigator.clipboard.writeText(review)
-        toast('Ajouté au presse-papier')
+        aleasToast('Ajouté au presse-papier')
     }
 
     return <>
@@ -198,7 +198,6 @@ export default function BilletReduc(props: InferGetStaticPropsType<typeof getSta
                     </AleasButton>
                 </AleasModalContainer>
             </motion.div>
-            <AleasToastContainer />
             
         </main>
         

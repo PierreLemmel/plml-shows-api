@@ -1,4 +1,4 @@
-import { HasId, Named } from "../core/types/utils";
+import { HasId, Named, ShortNamed } from "../core/types/utils";
 
 
 export module Chans {
@@ -19,40 +19,107 @@ export module Chans {
     ] as const;
     export type NumberChannelType = typeof numberChannelTypes[number];
 
+    export interface NumberChannelDefinition {
+        type: NumberChannelType;
+    }
+
     const colorChannelTypes = [
         "Color"
     ] as const;
     export type ColorChannelType = typeof colorChannelTypes[number];
 
-    const channelTypes = [
+    export interface ColorChannelDefinition {
+        type: ColorChannelType;
+    }
+
+    export interface ColorArrayChannelDefinition {
+        readonly type: "ColorArray";
+        readonly size: number;
+    }
+
+    export interface ValueArrayChannelDefinition {
+        readonly type: "ValueArray";
+        readonly size: number;
+    }
+
+    export interface UnusedChannelDefinition {
+        readonly type: "UNUSED";
+    }
+
+    export type ChannelDefinition = NumberChannelDefinition|ColorChannelDefinition|ColorArrayChannelDefinition|ValueArrayChannelDefinition|UnusedChannelDefinition;
+    export const channelTypes = [
         ...numberChannelTypes,
         ...colorChannelTypes,
         "ColorArray",
         "ValueArray",
         "UNUSED"
     ] as const;
+
     export type ChannelType = typeof channelTypes[number];
-
-    export interface ColorArray {
-        readonly type: "ColorArray";
-        readonly size: number;
-    }
-
-    export interface ValueArray {
-        readonly type: "ValueArray";
-        readonly size: number;
-    }
 
     export function isChannelType(type: string): type is ChannelType {
         return channelTypes.includes(type as ChannelType);
     }
 
-    export function isNumberChannel(chan: ChannelType): chan is NumberChannelType {
-        return numberChannelTypes.includes(chan as NumberChannelType);
+    export function isNumberChannel(chan: ChannelDefinition): chan is NumberChannelDefinition {
+        return isNumberChannelType(chan.type);
     }
 
-    export function isColorChannel(chan: ChannelType): chan is ColorChannelType {
-        return colorChannelTypes.includes(chan as ColorChannelType);
+    export function isNumberChannelType(type: ChannelType): type is NumberChannelType {
+        return numberChannelTypes.includes(type as NumberChannelType);
+    }
+
+    export function isColorChannel(chan: ChannelDefinition): chan is ColorChannelDefinition {
+        return isColorChannelType(chan.type);
+    }
+
+    export function isColorChannelType(type: ChannelType): type is ColorChannelType {
+        return colorChannelTypes.includes(type as ColorChannelType);
+    }
+
+    export function isValueArrayChannel(chan: ChannelDefinition): chan is ValueArrayChannelDefinition {
+        return isValueArrayChannelType(chan.type);
+    }
+
+    export function isValueArrayChannelType(type: ChannelType): type is "ValueArray" {
+        return type === "ValueArray";
+    }
+
+    export function isColorArrayChannel(chan: ChannelDefinition): chan is ColorArrayChannelDefinition {
+        return isColorArrayChannelType(chan.type);
+    }
+
+    export function isColorArrayChannelType(type: ChannelType): type is "ColorArray" {
+        return type === "ColorArray";
+    }
+    
+    export function isUnusedChannel(chan: ChannelDefinition): chan is UnusedChannelDefinition {
+        return isUnusedChannelType(chan.type);
+    }
+
+    export function isUnusedChannelType(type: ChannelType): type is "UNUSED" {
+        return type === "UNUSED";
+    }
+
+    export function getChannelLength(chan: ChannelDefinition): number {
+        if (isNumberChannel(chan)) {
+            return 1;
+        }
+        else if (isColorChannel(chan)) {
+            return 3;
+        }
+        else if (isUnusedChannel(chan)) {
+            return 1;
+        }
+        else if (isValueArrayChannel(chan)) {
+            return chan.size;
+        }
+        else if (isColorArrayChannel(chan)) {
+            return chan.size * 3;
+        }
+        else {
+            throw new Error(`Unknown channel type ${chan}`);
+        }
     }
 
     export interface ChannelInfo {
@@ -174,7 +241,7 @@ export module Fixtures {
     }
 
     export interface ChannelsDefinition {
-        readonly [position: number]: Chans.ChannelType;
+        readonly [position: number]: Chans.ChannelDefinition;
     }
 
     export interface LedFixtureModelDefinition extends FixtureModelDefinitionBase {
@@ -187,10 +254,6 @@ export module Fixtures {
         }
     }
 
-    export interface LedFixtureChannelsDefinition {
-        readonly [position: number]: Chans.ChannelType;
-    }
-
     export interface TradFixtureModelDefinition extends FixtureModelDefinitionBase {
 
         readonly manufacturer?: string;
@@ -201,7 +264,7 @@ export module Fixtures {
     export type FixtureModelDefinition = LedFixtureModelDefinition|TradFixtureModelDefinition;
     
     
-    export interface FixtureModelCollection extends Named, HasId {
+    export interface FixtureModelCollection extends Named, ShortNamed, HasId {
     
         readonly fixtureModels: {
             readonly [shortName: string]: FixtureModelDefinition;
