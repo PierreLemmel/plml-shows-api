@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions";
-import { getAudioClip, getAudioClipCollection } from "@/lib/services/api/audio";
+import { getAudioClip, getAudioClipCollection, updateAudioClipInfo } from "@/lib/services/api/audio";
+import { AudioClipInfo } from "@/lib/services/audio/audioControl";
+
 
 const AudioPlayer = () => {
   const waveformRef = useRef<WaveSurfer | null>(null);
@@ -36,7 +38,6 @@ const AudioPlayer = () => {
       });
     });
 
-
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
 
@@ -46,26 +47,23 @@ const AudioPlayer = () => {
         }
       }
     };
-    
 
     if (waveform != null) {
       waveformRef.current = waveform;
     }
-    
+
     if (regionsPlugin != null) {
       regionsPluginRef.current = regionsPlugin;
     }
-    
-    
 
     return () => {
       waveform.destroy();
     };
-    }, [loop]);
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      
-      if (file) {
+  }, [loop]);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (file) {
       if (waveformRef.current) {
         waveformRef.current.loadBlob(file);
       }
@@ -74,13 +72,22 @@ const AudioPlayer = () => {
 
   const handleRegion = () => {
     const allRegions = regionsPluginRef.current?.getRegions() || [];
-    
+
     if (allRegions.length > 0) {
       const firstRegionStartTime = allRegions[0].start;
-      const firstRegionEndTime = allRegions[0].end
+      const firstRegionEndTime = allRegions[0].end;
+      try {
+        const clipInfo: AudioClipInfo = {
+          duration: audioPlayerRef?.current?.duration ?? 0,
+          start: firstRegionStartTime,
+        };
+
+        await updateAudioClipInfo
+      } catch (e) {
+        console.error(e);
+      }
       console.log("Start Time of the first region:", firstRegionStartTime);
       console.log("End Time of the first region:", firstRegionEndTime);
-
     } else {
       console.log("Aucune région n'est présente.");
     }
@@ -89,34 +96,31 @@ const AudioPlayer = () => {
   const handleGetClip = async (clipName: string) => {
     try {
       const audioClipData = await getAudioClip("human", clipName);
-      console.log('audioclap final' , audioClipData.url)
+      console.log("audioclap final", audioClipData.info.start);
 
       if (waveformRef.current) {
-         const response = await fetch(audioClipData.url)
-         const audioBlob = await response.blob();
+        const response = await fetch(audioClipData.url);
+        const audioBlob = await response.blob();
 
-          waveformRef.current.loadBlob(audioBlob);
+        waveformRef.current.loadBlob(audioBlob);
       }
     } catch (error) {
       console.error("Erreur lors de la récupération du clip audio :", error);
     }
   };
-  
+
   const handlePlay = () => {
     if (waveformRef.current) {
       waveformRef.current.playPause();
     }
   };
-  
-  
+
   return (
     <div>
       <input type="file" onChange={handleFileChange} accept="audio/*" />
       <button onClick={handlePlay}>Play</button>
       <button onClick={handleRegion}>GetRegion</button>
-      <button onClick={() => handleGetClip("Kirby")}>
-        Get Audio Clip
-      </button>
+      <button onClick={() => handleGetClip("Sinik")}>Get Audio Clip</button>
 
       <div id="waveform" />
     </div>

@@ -30,7 +30,7 @@ export interface AudioClipData {
     name: string;
     url: string;
     created: Timestamp;
-
+    
     info: AudioClipInfo;
 }
 
@@ -40,7 +40,8 @@ export interface AudioClipInfo {
     signature: string;
     source: string;
     author?: string;
-
+    start: number;
+    
     categories: string[];
     tags: string[];
 }
