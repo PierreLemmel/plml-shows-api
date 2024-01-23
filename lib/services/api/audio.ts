@@ -2,7 +2,7 @@ import { Timestamp } from "firebase/firestore";
 import { AudioClipData, AudioClipInfo, AudioClipCollection } from "../audio/audioControl";
 import { pathCombine } from "../core/files";
 import { generateId } from "../core/utils";
-import { getDocument, setDocument, uploadFile } from "./firebase";
+import { getDocument, setDocument, uploadFile, documentExists } from "./firebase";
 
 
 export async function importAudioClip(file: File, name: string, clipInfo: AudioClipInfo) {
@@ -35,7 +35,39 @@ export async function importAudioClip(file: File, name: string, clipInfo: AudioC
     await setDocument<AudioClipCollection>(collectionPath, { clips: newClips });
 }
 
+/*
+    updateAudioClipInfo => Added By Rgeral
+*/
+
+export async function updateAudioClipInfo(collectionName: string, clipName: string, updatedClipInfo: Partial<AudioClipInfo>) {
+    const collection = await getAudioClipCollection(collectionName);
+    const existingClip = collection.clips[clipName];
+
+    if (existingClip) {
+        const updatedInfo = {
+            ...existingClip.info,
+            ...updatedClipInfo,
+        };
+
+        const updatedClipData = {
+            ...existingClip,
+            info: updatedInfo,
+        };
+
+        const updatedClips = {
+            ...collection.clips,
+            [clipName]: updatedClipData,
+        };
+
+        const collectionPath = pathCombine("audio", collectionName.toLowerCase());
+        await setDocument<AudioClipCollection>(collectionPath, { clips: updatedClips });
+    } else {
+        throw `Audio clip '${clipName}' not found in collection '${collectionName}'`;
+    }
+}
+
 export async function getAudioClipCollection(name: string): Promise<AudioClipCollection> {
+
     const path = pathCombine("audio", name.toLowerCase());
     const result = await getDocument<AudioClipCollection>(path);
 
