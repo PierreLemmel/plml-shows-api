@@ -39,32 +39,37 @@ export async function importAudioClip(file: File, name: string, clipInfo: AudioC
     updateAudioClipInfo => Added By Rgeral
 */
 
-export async function updateAudioClipInfo(collectionName: string, clipName: string, updatedClipInfo: Partial<AudioClipInfo>) {
+export async function updateAudioClipInfo(
+    collectionName: string,
+    clipName: string,
+    updatedStart: number
+  ) {
     const collection = await getAudioClipCollection(collectionName);
     const existingClip = collection.clips[clipName];
-
+  
     if (existingClip) {
-        const updatedInfo = {
-            ...existingClip.info,
-            ...updatedClipInfo,
-        };
-
-        const updatedClipData = {
-            ...existingClip,
-            info: updatedInfo,
-        };
-
-        const updatedClips = {
-            ...collection.clips,
-            [clipName]: updatedClipData,
-        };
-
-        const collectionPath = pathCombine("audio", collectionName.toLowerCase());
-        await setDocument<AudioClipCollection>(collectionPath, { clips: updatedClips });
+      const updatedInfo = {
+        ...existingClip.info,
+        start: updatedStart,
+      };
+  
+      const updatedClipData = {
+        ...existingClip,
+        info: updatedInfo,
+      };
+  
+      const updatedClips = {
+        ...collection.clips,
+        [clipName]: updatedClipData,
+      };
+  
+      const collectionPath = pathCombine("audio", collectionName.toLowerCase());
+      await setDocument<AudioClipCollection>(collectionPath, { clips: updatedClips });
     } else {
-        throw `Audio clip '${clipName}' not found in collection '${collectionName}'`;
+      throw `Audio clip '${clipName}' not found in collection '${collectionName}'`;
     }
-}
+  }
+  
 
 export async function getAudioClipCollection(name: string): Promise<AudioClipCollection> {
 
