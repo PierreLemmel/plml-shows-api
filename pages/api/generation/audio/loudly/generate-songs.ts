@@ -70,16 +70,18 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         bpm
     }
     const generationResult = await generateLoudlySongs(options);
-
+console.log(generationResult)
     generationResult.forEach(async (gr) => {
 
         const { name, info, downloadUrl } = gr;
+
         const response = await fetch(downloadUrl);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+        console.log(response.status)
         const data = await response.blob();
-
+console.log(data)
         await importAudioClip(data, name, info);
     });
 	

@@ -39,7 +39,7 @@ const loudlyMusicApi: LoudlyAPI = {
     getSongs: '/b2b/songs',
     getGenres: '/b2b/ai/genres',
     getTags: 'b2b/songs/tags',
-    createSong: 'b2b/songs/create',
+    createSong: 'b2b/ai/songs',
 } as const;
 
 type CreateLoudlySongRequest = {
@@ -99,30 +99,29 @@ export async function generateLoudlySongs(options: LoudlyGenerationOptions): Pro
         apiKey
     } = getLoudlyApiCredentials();
 
-    const url = urlCombine(baseUrl, loudlyMusicApi.getGenres);
+    const url = urlCombine(baseUrl, loudlyMusicApi.createSong);
     
     const tasks = sequence(count).map(async (i) => {
         try {
             console.log(`Generating song ${i + 1} of ${count}`);
 
-            const request: CreateLoudlySongRequest = {
-                genre,
-                duration: getValueForMinMaxOrNumber(duration),
-                bpm: getValueForMinMaxOrNumber(bpm),
-            };
+            const formData = new FormData();
+            formData.append('genre', genre);
+            formData.append('duration', getValueForMinMaxOrNumber(duration)?.toString() ?? '');
+            formData.append('bpm', getValueForMinMaxOrNumber(bpm)?.toString() ?? '');
 
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     accept: 'application/json',
                     'API-KEY': apiKey,
+                    contentType: 'multiform/form-data'
                 },
-                body: JSON.stringify(request)
+                body: formData
             })
             console.log(`Generated song ${i + 1} of ${count}`);
 
             const result = await response.json() as CreateLoudlySongResponse;
-
 
             const info: AudioClipInfo = {
                 duration: result.duration,

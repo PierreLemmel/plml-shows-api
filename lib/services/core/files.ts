@@ -11,5 +11,6 @@ export function pathCombine(...parts: string[]) {
 }
 
 export function urlCombine(base: string, ...parts: string[]) {
-    return pathCombine(base, ...parts);
+    const combinedPath = pathCombine(...parts);
+    return `${base.replace(/\/+$/, '')}/${combinedPath}`;
 }
