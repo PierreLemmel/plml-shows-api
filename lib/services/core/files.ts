@@ -1,8 +1,5 @@
 import { isEmpty } from "./utils";
 
-export type PathCombineOptions = {
-
-}
 
 export function pathCombine(...parts: string[]) {
     return parts
@@ -11,4 +8,8 @@ export function pathCombine(...parts: string[]) {
         .join('/')
         .replace(/\/+/g, '/')
         .replace(/^\/+|\/+$/g, '');
+}
+
+export function urlCombine(base: string, ...parts: string[]) {
+    return pathCombine(base, ...parts);
 }

@@ -1,6 +1,7 @@
 import { AleasButton } from "@/components/aleas-components/aleas-buttons";
 import { AleasMainLayout } from "@/components/aleas-components/aleas-layout"
 import { isDev } from "@/lib/services/api/api";
+import generateLoudlySongs from "@/lib/services/generation/audio/loudly-api";
 import { GetStaticProps } from "next";
 import { useEffect, useState } from "react";
 

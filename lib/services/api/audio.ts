@@ -5,7 +5,7 @@ import { generateId } from "../core/utils";
 import { getDocument, setDocument, uploadFile } from "./firebase";
 
 
-export async function importAudioClip(file: File, name: string, clipInfo: AudioClipInfo) {
+export async function importAudioClip(data: Blob, name: string, clipInfo: AudioClipInfo) {
     name = name.trim();
     const { source } = clipInfo;
 
@@ -17,9 +17,9 @@ export async function importAudioClip(file: File, name: string, clipInfo: AudioC
     }
 
     const folderPath = pathCombine('audio', source.toLowerCase());
-    const { downloadUrl } = await uploadFile(folderPath, file, name);
+    const { downloadUrl } = await uploadFile(folderPath, data, name);
 
-    const data: AudioClipData = {
+    const audioClipData: AudioClipData = {
         id: generateId(),
         name: name,
         url: downloadUrl,
@@ -29,7 +29,7 @@ export async function importAudioClip(file: File, name: string, clipInfo: AudioC
 
     const newClips = {
         ...collection.clips,
-        [name]: data
+        [name]: audioClipData
     }
 
     await setDocument<AudioClipCollection>(collectionPath, { clips: newClips });

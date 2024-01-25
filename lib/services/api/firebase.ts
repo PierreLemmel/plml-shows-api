@@ -144,14 +144,14 @@ export interface UploadFileResult {
     downloadUrl: string;
 }
 
-export async function uploadFile(folder: string, file: File, name?: string): Promise<UploadFileResult> {
+export async function uploadFile(folder: string, data: Blob, name?: string): Promise<UploadFileResult> {
     const { storage } = getFirebase();
     
-    const fileName = name || file.name;
+    const fileName = name || data.name;
     const path = folder + '/' + fileName;
 
     const fileRef = ref(storage, path);
-    await uploadBytes(fileRef, file);
+    await uploadBytes(fileRef, data);
 
     const downloadUrl = await getDownloadURL(fileRef);
 
