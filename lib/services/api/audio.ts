@@ -2,10 +2,10 @@ import { Timestamp } from "firebase/firestore";
 import { AudioClipData, AudioClipInfo, AudioClipCollection } from "../audio/audioControl";
 import { pathCombine } from "../core/files";
 import { generateId } from "../core/utils";
-import { getDocument, setDocument, uploadFile } from "./firebase";
+import { getDocument, setDocument, uploadFile, UploadFileResult } from "./firebase";
 
 
-export async function importAudioClip(data: Blob, name: string, clipInfo: AudioClipInfo) {
+export async function importAudioClip(data: File|Blob|Uint8Array, name: string, clipInfo: AudioClipInfo, fileUploadMethod: (folder: string, data: Blob|Uint8Array|Buffer, name: string) => Promise<UploadFileResult>) {
     name = name.trim();
     const { source } = clipInfo;
 
@@ -17,7 +17,8 @@ export async function importAudioClip(data: Blob, name: string, clipInfo: AudioC
     }
 
     const folderPath = pathCombine('audio', source.toLowerCase());
-    const { downloadUrl } = await uploadFile(folderPath, data, name);
+
+    const { downloadUrl } = await fileUploadMethod(folderPath, data, name);
 
     const audioClipData: AudioClipData = {
         id: generateId(),
@@ -33,6 +34,10 @@ export async function importAudioClip(data: Blob, name: string, clipInfo: AudioC
     }
 
     await setDocument<AudioClipCollection>(collectionPath, { clips: newClips });
+}
+
+export async function importAudioClipFromClient(data: File|Blob|Uint8Array, name: string, clipInfo: AudioClipInfo) {
+    return importAudioClip(data, name, clipInfo, uploadFile);
 }
 
 export async function getAudioClipCollection(name: string): Promise<AudioClipCollection> {

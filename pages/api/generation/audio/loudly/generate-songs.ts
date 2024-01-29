@@ -1,5 +1,6 @@
 import { withAuth } from '@/lib/middlewares/withauth';
 import { importAudioClip } from '@/lib/services/api/audio';
+import { uploadFile_serverSide } from '@/lib/services/api/firebase-server';
 import { MinMax } from '@/lib/services/core/types/utils';
 import { getCorrespondingLoudlyGenre } from '@/lib/services/generation/audio/loudly';
 import generateLoudlySongs, { LoudlyGenerationOptions } from '@/lib/services/generation/audio/loudly-api';
@@ -70,7 +71,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         bpm
     }
     const generationResult = await generateLoudlySongs(options);
-console.log(generationResult)
+
     generationResult.forEach(async (gr) => {
 
         const { name, info, downloadUrl } = gr;
@@ -79,10 +80,11 @@ console.log(generationResult)
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        console.log(response.status)
+
         const data = await response.blob();
-console.log(data)
-        await importAudioClip(data, name, info);
+
+        await importAudioClip(data, name, info, uploadFile_serverSide);
+        console.log(`Clip '${name}' imported`)
     });
 	
 	res.status(200).json(generationResult);

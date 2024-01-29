@@ -1,4 +1,4 @@
-import { pathCombine, urlCombine } from "@/lib/services/core/files";
+import { ensureExtension, pathCombine, urlCombine } from "@/lib/services/core/files";
 
 describe('pathCombine', () => {
     test('should combine multiple parts into a single path', () => {
@@ -41,5 +41,43 @@ describe('urlCombine', () => {
     test('should combine multiple parts without multiple slashes 3', () => {
         const result = urlCombine('https://soundtracks-dev.loudly.com/', '/b2b/ai/genres');
         expect(result).toBe('https://soundtracks-dev.loudly.com/b2b/ai/genres');
+    });
+});
+
+describe('ensureExtension', () => {
+    test('when path already has the extension', () => {
+        const path = 'file.txt';
+        const extension = '.txt';
+        
+        const result = ensureExtension(path, extension);
+
+        expect(result).toBe('file.txt');
+    });
+
+    test('when path does not have the extension', () => {
+        const path = 'file';
+        const extension = '.txt';
+        
+        const result = ensureExtension(path, extension);
+        
+        expect(result).toBe('file.txt');
+    });
+
+    test('when extension has no dot', () => {
+        const path = 'file';
+        const extension = 'txt';
+
+        const result = ensureExtension(path, extension);
+        
+        expect(result).toBe('file.txt');
+    });
+
+    test('when has extension and extension has no dot', () => {
+        const path = 'file';
+        const extension = 'txt';
+
+        const result = ensureExtension(path, extension);
+        
+        expect(result).toBe('file.txt');
     });
 });
