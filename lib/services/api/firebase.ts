@@ -2,8 +2,7 @@ import { initializeApp } from "firebase/app";
 import { collection, doc, DocumentData, getDoc, deleteDoc, getDocs, getFirestore, initializeFirestore, setDoc, updateDoc, WithFieldValue } from "firebase/firestore";
 import { getDownloadURL, getStorage, list, ref, uploadBytes, UploadMetadata } from "firebase/storage";
 import { getAuth, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth"
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { isBlob, pathCombine } from "../core/files";
+import { createContext, useContext, useEffect, useState } from "react";
 
 interface FirebaseProps {
     app: ReturnType<typeof initializeApp>;
@@ -56,7 +55,6 @@ function getFirebase(): FirebaseProps {
 
     return firebase;
 }
-
 
 
 export async function documentExists(path: string) {
