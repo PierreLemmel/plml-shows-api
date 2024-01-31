@@ -73,7 +73,7 @@ const NextDates = () => {
 					13 juin 2024 - 20h30, Impro-en-Seine, Théâtre du Gymnase, Paris
 				</div>
 				<div>
-					Du 29 juin au 21 juillet 2024 - 21h05, Festival d'Avignon, Théâtre de la Luna
+					Du 29 juin au 21 juillet 2024 - 21h05, Festival d&apos;Avignon, Théâtre de la Luna
 				</div>
 			</div>
 		</AleasModalDialog>
