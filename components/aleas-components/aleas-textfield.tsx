@@ -10,13 +10,10 @@ const AleasTextField = (props: AleasTextFieldProps) => {
 
     const {
         value,
-        onValueChange,
+        onValueChange = doNothing,
         className,
         ...restProps
-    } = {
-        onValueChange: doNothing,
-        ...props
-    };
+    } = props;
 
     return <input
         type="text"

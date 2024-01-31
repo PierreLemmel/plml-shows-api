@@ -1,12 +1,9 @@
 import { AleasButton } from "@/components/aleas-components/aleas-buttons";
 import { AleasMainLayout } from "@/components/aleas-components/aleas-layout"
 import { isDev } from "@/lib/services/api/api";
-import { setDocument } from "@/lib/services/api/firebase";
-import { pathCombine } from "@/lib/services/core/files";
-import { useEffectAsync } from "@/lib/services/core/hooks";
-import { CompletionsData } from "@/lib/services/generation/text-gen";
+import { listFiles } from "@/lib/services/api/firebase";
 import { GetStaticProps } from "next";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface DoStuffProps {
     isDev: boolean;
@@ -32,18 +29,28 @@ const DoStuff = (props: DoStuffProps) => {
     }, [isDev]);
 
     const doStuff = async () => {
-        if (!isDev) {
-            throw new Error("This page is only available in dev mode");
-        }
 
-        console.log("Just doing stuff");
+        const files = await listFiles("audio/loudly");
+
+        files.forEach(file => {
+            
+        })
     };
 
+    const [working, setWorking] = useState<boolean>(false);
+
+    const onClick = async () => {
+        setWorking(true);
+        console.log("Doing stuff")
+        await doStuff();
+        console.log("Done doing stuff")
+        setWorking(false);
+    }
 
     return <AleasMainLayout
         navbar requireAuth
     >
-        {isDev && <AleasButton onClick={async () => await doStuff()}>Do Stuff</AleasButton>}
+        {isDev && <AleasButton spinning={working} onClick={onClick}>Do Stuff</AleasButton>}
     </AleasMainLayout>
 }
 

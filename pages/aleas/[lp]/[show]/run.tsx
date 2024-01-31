@@ -1,23 +1,25 @@
 import { AleasButton } from "@/components/aleas-components/aleas-buttons";
 import { AleasMainLayout } from "@/components/aleas-components/aleas-layout";
-import { toast } from "@/components/aleas-components/aleas-toast-container";
+import { aleasToast } from "@/components/aleas-components/aleas-toast-container";
 import { createAleasRun, getAleasShow } from "@/lib/services/aleas/aleas-api";
 import { AleasRuntime, AleasShowRun, generateAleasShowRun, useAleasRuntime } from "@/lib/services/aleas/aleas-runtime";
 import { AleasShow, useAleasShowInfo } from "@/lib/services/aleas/aleas-setup";
 import { useAuth } from "@/lib/services/api/firebase";
+import { useRouterQuery } from "@/lib/services/api/routing";
 import { useEffectAsync } from "@/lib/services/core/hooks";
 import { match } from "@/lib/services/core/utils";
-import { useShowControl, useShowInfo } from "@/lib/services/dmx/showControl";
-import { useRouter } from "next/router";
+import { useShowContext, useShowInfo } from "@/lib/services/dmx/showControl";
 import { useCallback, useEffect, useState } from "react";
 
 const AleasShowRun = () => {
 
-    const showControl = useShowControl();
+    const showControl = useShowContext();
     const auth = useAuth();
 
-    const router = useRouter();
-    const showName = router.query["show"] as string|undefined;
+    const {
+        "lp": lpName,
+        "show": showName
+    } = useRouterQuery("lp", "show");
 
     const showInfo = useShowInfo();
 
@@ -35,13 +37,6 @@ const AleasShowRun = () => {
         
     }, [showName])
 
-    useEffect(() => {
-
-        if (aleasShow) {
-            showControl.loadShow(aleasShow.showName)
-        }
-    }, [aleasShow?.showName])
-
     const canGenerate = showInfo && auth.user;
     const regenerateRun = useCallback(async () => {
 
@@ -54,13 +49,13 @@ const AleasShowRun = () => {
 
         await createAleasRun(newRun);
 
-        toast.success("Run généré !")
+        aleasToast.success("Run généré !")
     }, [showInfo, auth.user])
 
     const runtime = useAleasRuntime(run);
 
     return <AleasMainLayout
-        toasts requireAuth
+        requireAuth
         navbar={!runtime || runtime.state === "Stopped"}
         titleDisplay={false}
         title={aleasShow?.showName ?? "Aléas"}

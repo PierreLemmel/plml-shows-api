@@ -1,7 +1,7 @@
 import { sequence } from "@/lib/services/core/utils";
 import { useDmxControl } from "@/lib/services/dmx/dmxControl";
-import { useShowControl } from "@/lib/services/dmx/showControl";
-import { useEffect, useState } from "react";
+import { useShowContext } from "@/lib/services/dmx/showControl";
+import { useState } from "react";
 import DmxButton from "./dmx-button";
 import DmxSlider from "./dmx-slider";
 
@@ -22,10 +22,7 @@ const StandardConsole = (props: StandardConsoleProps) => {
     };
 
     const dmxControl = useDmxControl();
-    const showControl = useShowControl();
-    useEffect(() => {
-        showControl.setMode("Console");
-    }, [showControl])
+    const showControl = useShowContext();
 
     const [startIndex, setStartIndex] = useState(0);
 

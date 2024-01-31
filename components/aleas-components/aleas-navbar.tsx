@@ -36,7 +36,7 @@ const AleasNavbar = (props: AleasNavbarProps) => {
 
     return <div className={mergeClasses(
         "w-full py-2 px-3",
-        "flex flex-row items-center justify-between overflow-hidden",
+        "flex flex-row items-center justify-between overflow-hidden shrink-0",
         "bg-slate-800 text-white font-consolas",
         className
     )}>

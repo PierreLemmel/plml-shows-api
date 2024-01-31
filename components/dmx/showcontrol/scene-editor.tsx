@@ -4,19 +4,18 @@ import AleasSkeletonLoader from "@/components/aleas-components/aleas-skeleton-lo
 import AleasSlider from "@/components/aleas-components/aleas-slider";
 import { replaceFirstElement, sorted } from "@/lib/services/core/arrays";
 import { Color, RgbColor } from "@/lib/services/core/types/rgbColor";
-import { Action, AsyncDipsatch } from "@/lib/services/core/types/utils";
+import { Action, AsyncDispatch } from "@/lib/services/core/types/utils";
 import { mergeClasses, withValue } from "@/lib/services/core/utils";
 import { Chans } from "@/lib/services/dmx/dmx512";
-import { createDefaultValuesForFixture, FixtureInfo, orderedFixtures, Scene, SceneElement, SceneElementInfo, SceneElementValues, Show, toScene, useLightingPlanInfo, useRealtimeScene, useSceneInfo, useShowControl } from "@/lib/services/dmx/showControl";
-import { on } from "events";
+import { initializeValuesForChannels, FixtureInfo, orderedFixtures, Scene, SceneElement, SceneElementInfo, SceneElementValues, Show, toScene, useLightingPlanInfo, useRealtimeScene, useSceneInfo, useShowContext } from "@/lib/services/dmx/showControl";
 import { Dispatch, Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { DndProvider, useDrag, useDrop, XYCoord } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
 export interface SceneEditorProps {
-    show: Show|undefined;
-    scene: Scene|undefined;
-    onSave: AsyncDipsatch<Scene>|Dispatch<Scene>;
+    show: Show;
+    scene: Scene;
+    onSave: AsyncDispatch<Scene>;
     onFinished: Action;
 }
 
@@ -33,14 +32,9 @@ const SceneEditor = (props: SceneEditorProps) => {
         onFinished,
     } = props;
 
-    const showControl = useShowControl();
     const lightingPlan = useLightingPlanInfo();
 
-    useEffect(() => {
-        showControl.setMode("Show")
-    }, [showControl])
-
-    const [workScene, setWorkScene] = useState<Scene>();
+    const [workScene, setWorkScene] = useState<Scene>(structuredClone(scene));
     useEffect(() => {
         if (scene) {
             const clone = structuredClone(scene);
@@ -52,16 +46,12 @@ const SceneEditor = (props: SceneEditorProps) => {
 
     const onFixtureAdded = useCallback((fixture: FixtureInfo) => {
 
-        if (!workScene) {
-            return;
-        }
-        
         const {
             name,
-            model
+            channels
         } = fixture;
 
-        const seValues = createDefaultValuesForFixture(model);
+        const seValues = initializeValuesForChannels(channels);
 
         const newSceneElement: SceneElement = {
             fixture: name,
@@ -87,18 +77,13 @@ const SceneEditor = (props: SceneEditorProps) => {
     const applyEnabled = workScene !== undefined;
     const [isSaving, setIsSaving] = useState(false);
     const onApplyClicked = async () => {
-
-        if (!workScene) {
-            return;
-        }
-
         setIsSaving(true);
         await onSave(workScene);
         setIsSaving(false);
     }
 
     const onSceneElementValueChanged = useCallback((element: SceneElementInfo) => {
-        if (!sceneInfo || !workScene) {
+        if (!sceneInfo) {
             return;
         }
 
@@ -111,7 +96,7 @@ const SceneEditor = (props: SceneEditorProps) => {
     }, [workScene, sceneInfo]);
 
     const onSceneElementRemoved = useCallback((element: SceneElementInfo) => {
-        if (!sceneInfo || !workScene) {
+        if (!sceneInfo) {
             return;
         }
 
@@ -127,7 +112,9 @@ const SceneEditor = (props: SceneEditorProps) => {
     }, [workScene, sceneInfo])
 
     const [playScene, setPlayScene] = useState(false);
-    const track = useRealtimeScene(workScene, playScene);
+
+    const workSI = useSceneInfo(workScene);
+    const track = useRealtimeScene(workSI, playScene);
     const playEnabled = workScene !== undefined && track !== undefined;
 
     return <div className={mergeClasses(
@@ -357,7 +344,7 @@ const SEFixtureCard = (props: SEFixtureCardProps) => {
 
                 return <Fragment key={type}>
                     <div>{displayName}</div>
-                    {Chans.isNumberChannel(type) && 
+                    {Chans.isNumberChannelType(type) && 
                     <>
                         <div>
                             <AleasSlider 
@@ -384,7 +371,7 @@ const SEFixtureCard = (props: SEFixtureCardProps) => {
                         </div>
                         <div className="min-w-[2em]">{values[type]}</div>
                     </>}
-                    {Chans.isColorChannel(type) && <>
+                    {Chans.isColorChannelType(type) && <>
                         <FoldableColorPicker
                             color={Color.getColorValue(values[type]!)}
                             onColorChange={color => {

@@ -1,66 +1,50 @@
-import AleasFoldableComponent from "@/components/aleas-components/aleas-foldable-component";
 import { AleasMainLayout } from "@/components/aleas-components/aleas-layout";
-import AleasNumberInput from "@/components/aleas-components/aleas-number-input";
 import AleasSkeletonLoader from "@/components/aleas-components/aleas-skeleton-loader";
-import AleasSlider from "@/components/aleas-components/aleas-slider";
+import { aleasToast } from "@/components/aleas-components/aleas-toast-container";
 import LightingPlanEditor from "@/components/dmx/lighting-plan/lighting-plan-editor";
-import { renameDocument } from "@/lib/services/api/firebase";
+import { useRouterQuery } from "@/lib/services/api/routing";
 import { getLightingPlan, updateLightingPlan } from "@/lib/services/api/show-control-api";
-import { sorted } from "@/lib/services/core/arrays";
-import { pathCombine } from "@/lib/services/core/files";
 import { useEffectAsync } from "@/lib/services/core/hooks";
-import { AsyncDipsatch } from "@/lib/services/core/types/utils";
-import { mergeClasses, withValue } from "@/lib/services/core/utils";
-import { Fixtures, StageLightingPlan } from "@/lib/services/dmx/dmx512";
-import { useRouter } from "next/router";
-import { useCallback, useMemo, useState } from "react";
+import { StageLightingPlan } from "@/lib/services/dmx/dmx512";
+import { useCallback, useState } from "react";
 
 const LightingPlanEdit = () => {
 
-    const router = useRouter();
-    const lpName = router.query["lp"] as string|undefined;
+    const {
+        "lp": lpName
+    } = useRouterQuery("lp");
 
     useEffectAsync(async () => {
-        if (!lpName) return;
-
         const lp = await getLightingPlan(lpName)
         setLightingPlan(lp);
     }, [lpName]);
 
     const [lightingPlan, setLightingPlan] = useState<StageLightingPlan>();
+    const onMessage = (msg: string) => aleasToast.info(msg);
 
-    const orderedFixtures = useMemo(() => lightingPlan ?
-        sorted(Object.values(lightingPlan.fixtures), fixture => fixture.order ?? 0) :
-        [], [lightingPlan]);
+    const saveLightingPlan = useCallback<(lp: StageLightingPlan) => Promise<void>>(
+        async (lp: StageLightingPlan) => {
 
-    const updateFixture = useCallback(async (key: string, fixture: Fixtures.Fixture) => {
-        if (!lightingPlan) {
-            return;
-        }
-
-        const newFixtures = {
-            ...lightingPlan.fixtures,
-            [key]: fixture
-        };
-
-        const newLP = withValue(lightingPlan, "fixtures", newFixtures);
-        setLightingPlan(newLP);
-
-        await updateLightingPlan(newLP);
-
-    }, [lightingPlan])
+            await updateLightingPlan(lp);
+            setLightingPlan(lp);
+        },
+    [])
 
     return <AleasMainLayout
-        title={lpName || "Lighting Plan Edit"}
-        description={`Lighting Plan Edit - ${lpName}`}
-        toasts
+        description={`Edition du plan de feu - ${lightingPlan?.name ?? ""}`}
         requireAuth
         navbar
     >
         {lightingPlan ? <LightingPlanEditor
-            lightingPlan={lightingPlan}/> :
-            <AleasSkeletonLoader lines={8}
-        />}
+            lightingPlan={lightingPlan}
+            saveLightingPlan={saveLightingPlan}
+            onMessage={onMessage}
+        /> :
+            <div className="w-full flex flex-col gap-3 items-stretch">
+                <div className="text-xl text-center">Chargement du plan de feu...</div>
+                <AleasSkeletonLoader lines={6} />
+            </div>
+        }
     </AleasMainLayout>
 }
 

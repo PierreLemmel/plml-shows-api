@@ -3,14 +3,14 @@ import { motion } from 'framer-motion';
 import React from 'react';
 
 export interface AleasSkeletonLoaderProps extends React.HTMLAttributes<HTMLDivElement> {
-    lines: number;
+    lines?: number;
 }
 
 const AleasSkeletonLoader = (props: AleasSkeletonLoaderProps) => {
 
     const {
         className,
-        lines
+        lines = 8
      } = props;
 
     return <div className={mergeClasses(

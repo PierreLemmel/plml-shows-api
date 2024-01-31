@@ -1,6 +1,6 @@
 import { Timestamp } from "firebase/firestore";
+import { CompletionsData, batchGenerateCompletions } from "../generation/text/text-gen";
 import { getDocument, setDocument } from "./firebase";
-import { batchGenerateCompletions, CompletionsData } from "../generation/text-gen";
 
 const reviewsDocPath = "billetreduc/reviews";
 const completionsDocPath = "billetreduc/completions";
