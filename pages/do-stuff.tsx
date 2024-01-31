@@ -1,6 +1,7 @@
 import { AleasButton } from "@/components/aleas-components/aleas-buttons";
 import { AleasMainLayout } from "@/components/aleas-components/aleas-layout"
 import { isDev } from "@/lib/services/api/api";
+import { listFiles } from "@/lib/services/api/firebase";
 import { GetStaticProps } from "next";
 import { useEffect, useState } from "react";
 
@@ -29,14 +30,20 @@ const DoStuff = (props: DoStuffProps) => {
 
     const doStuff = async () => {
 
-        console.log("Just doing stuff");
+        const files = await listFiles("audio/loudly");
+
+        files.forEach(file => {
+            
+        })
     };
 
     const [working, setWorking] = useState<boolean>(false);
 
     const onClick = async () => {
         setWorking(true);
+        console.log("Doing stuff")
         await doStuff();
+        console.log("Done doing stuff")
         setWorking(false);
     }
 

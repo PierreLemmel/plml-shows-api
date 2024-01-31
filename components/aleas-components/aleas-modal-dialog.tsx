@@ -6,6 +6,7 @@ import { AleasButton } from './aleas-buttons';
 interface AleasModalDialogProps extends React.HTMLAttributes<HTMLDivElement> {
 	isOpen: boolean;
 	canValidate?: boolean;
+	hasCancel?: boolean;
 	onCancel?: Action;
 	onConfirm?: Action;
 	children: React.ReactNode;
@@ -22,6 +23,7 @@ const AleasModalDialog = (props: AleasModalDialogProps) => {
 		onCancel = doNothing,
 		onConfirm = doNothing,
 		canValidate = true,
+		hasCancel = true,
 		children,
 		className,
 		contentClassName,
@@ -56,8 +58,13 @@ const AleasModalDialog = (props: AleasModalDialogProps) => {
 		<div className={mergeClasses(
 			"bg-slate-800 rounded-lg p-6",
 		)}>
-			<div className={contentClassName}>
-				<div>{children}</div>
+			<div className={mergeClasses(
+				"flex flex-col gap-4 justify-center items-center min-h-[16rem] min-w-[50vw] gap-4",
+				contentClassName
+			)}>
+				<div className="flex flex-col items-center justify-center flex-grow">
+					{children}
+				</div>
 				<div className="flex flex-row justify-center items-center gap-3">
 					<AleasButton
 						onClick={onActualConfirm}
@@ -65,12 +72,12 @@ const AleasModalDialog = (props: AleasModalDialogProps) => {
 					>
 						{confirmText}
 					</AleasButton>
-					<AleasButton
+					{hasCancel && <AleasButton
 						onClick={onActualCancel}
 						disabled={isConfirming}
 					>
 						{cancelText}
-					</AleasButton>
+					</AleasButton>}
 				</div>
 			</div>
 		</div>
