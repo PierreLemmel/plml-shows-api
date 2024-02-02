@@ -41,6 +41,7 @@ export interface AudioClipInfo {
     source: string;
     author?: string;
     start: number;
+    end: number;
     
     categories: string[];
     tags: string[];

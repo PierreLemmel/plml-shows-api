@@ -42,7 +42,8 @@ export async function importAudioClip(file: File, name: string, clipInfo: AudioC
 export async function updateAudioClipInfo(
     collectionName: string,
     clipName: string,
-    updatedStart: number
+    updatedStart: number,
+    updatedEnd: number
   ) {
     const collection = await getAudioClipCollection(collectionName);
     const existingClip = collection.clips[clipName];
@@ -51,6 +52,7 @@ export async function updateAudioClipInfo(
       const updatedInfo = {
         ...existingClip.info,
         start: updatedStart,
+        end: updatedEnd,
       };
   
       const updatedClipData = {
