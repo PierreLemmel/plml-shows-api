@@ -23,8 +23,6 @@ const AudioPlayer = () => {
   const [clipName, setClipName] = useState<string>("");
 
   useEffect(() => {
-
-
     const waveform = WaveSurfer.create({
       container: "#waveform",
       waveColor: "rgb(200, 0, 200)",
@@ -42,17 +40,17 @@ const AudioPlayer = () => {
     }
   }, []);
 
-useEffect(() => {
-  const regionsPlugin = regionsPluginRef.current;
+  useEffect(() => {
+    const regionsPlugin = regionsPluginRef.current;
 
-  if (regionsPlugin && waveformRef.current && isPlayingRegion === true) {
-    regionsPlugin.on("region-out", (region) => {
-      if (isPlayingRegion === true && waveformRef.current) {
-        waveformRef.current.pause();
-      }
-    });
-  }
-}, [isPlayingRegion]);
+    if (regionsPlugin && waveformRef.current && isPlayingRegion === true) {
+      regionsPlugin.on("region-out", (region) => {
+        if (isPlayingRegion === true && waveformRef.current) {
+          waveformRef.current.pause();
+        }
+      });
+    }
+  }, [isPlayingRegion]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -79,7 +77,8 @@ useEffect(() => {
     } else SetEnd = 10;
 
     if (waveform && regionsPlugin && allRegions.length < 1) {
-      const random = (min, max) => Math.random() * (max - min) + min;
+      const random = (min: number, max: number) =>
+        Math.random() * (max - min) + min;
       const randomColor = () =>
         `rgba(${random(0, 255)}, ${random(0, 255)}, ${random(0, 255)}, 0.5)`;
 
@@ -115,7 +114,7 @@ useEffect(() => {
         setIsClipLoaded(true);
         handleMakeRegion(audioClipData);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(
         "Erreur lors de la récupération du clip audio :",
         error.message
@@ -134,7 +133,7 @@ useEffect(() => {
         regionsPlugin.clearRegions(); // Clear all regions
         setTimeout(() => {
           const remainingRegions = regionsPlugin.getRegions();
-        }, 1000); // Check after a delay of 1 second
+        }, 1000);
       }
 
       waveformRef.current.empty();
@@ -152,8 +151,7 @@ useEffect(() => {
       const firstRegionStartTime = allRegions[0].start;
       const firstRegionEndTime = allRegions[0].end;
       try {
-        if (clipName)
-        {
+        if (clipName) {
           await updateAudioClipInfo(
             "human",
             clipName,
@@ -168,14 +166,14 @@ useEffect(() => {
     }
   };
 
-  const handlePlay =  () => {
+  const handlePlay = () => {
     if (waveformRef.current) {
       setIsPlayingRegion(false);
       waveformRef.current.play();
     }
   };
 
-  const handleRegionPlay =  () => {
+  const handleRegionPlay = () => {
     const regionsPlugin = regionsPluginRef.current;
     const allRegions = regionsPluginRef.current?.getRegions() || [];
     if (allRegions[0]) {
@@ -202,7 +200,7 @@ useEffect(() => {
         placeholder="Nom de la musique"
       />
       <button onClick={handleGetClip}>Get Audio Clip</button>
-      <br/>
+      <br />
       <button onClick={handleUnloadClip}>Unload Clip</button>
       <br />
       <button onClick={handleRegion}>Save Start/End point</button>
