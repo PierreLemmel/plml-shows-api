@@ -11,6 +11,7 @@ import {
   AudioClipInfo,
 } from "@/lib/services/audio/audioControl";
 import { error } from "console";
+import { WaveSurferPlayerComponent } from "@/components/audio/wavesurfer-player-component";
 
 const AudioPlayer = () => {
   const [isPlayingRegion, setIsPlayingRegion] = useState<boolean | null>(null);
@@ -187,12 +188,18 @@ const AudioPlayer = () => {
   return (
     <div>
       {" "}
+    
+      <WaveSurferPlayerComponent clipName="Sinik" clipType="human" />
+     
+      {/* <input type="file" onChange={handleFileChange} accept="audio/*" />
+      <br />
       <input type="file" onChange={handleFileChange} accept="audio/*" />
       <br />
       <button onClick={handlePlay}>Play</button>
       <br />
       <button onClick={handleRegionPlay}>PlayRegion</button>
       <br />
+      
       <input
         type="text"
         value={clipName}
@@ -204,7 +211,7 @@ const AudioPlayer = () => {
       <button onClick={handleUnloadClip}>Unload Clip</button>
       <br />
       <button onClick={handleRegion}>Save Start/End point</button>
-      <div id="waveform" />
+      <div id="waveform" /> */}
     </div>
   );
 };
