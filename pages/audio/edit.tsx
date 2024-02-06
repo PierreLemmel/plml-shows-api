@@ -82,7 +82,7 @@ const AudioPlayer = () => {
         Math.random() * (max - min) + min;
       const randomColor = () =>
         `rgba(${random(0, 255)}, ${random(0, 255)}, ${random(0, 255)}, 0.5)`;
-
+console.log(regionsPlugin)
       waveform.on("decode", () => {
         regionsPlugin.addRegion({
           id: "MyRegion",
