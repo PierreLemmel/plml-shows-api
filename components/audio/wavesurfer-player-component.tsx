@@ -14,6 +14,7 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
   clipType,
 }) => {
   const waveformRef = useRef<WaveSurfer | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false); // État de la lecture
   const regionsPluginRef = useRef<RegionsPlugin | null>(null);
 
   useEffect(() => {
@@ -32,13 +33,17 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
         const audioBlob = await response.blob();
         waveformRef.current.loadBlob(audioBlob);
 
-        
         if (regionsPlugin != null) {
           regionsPluginRef.current = regionsPlugin;
         }
 
-        
+
+    if (waveform != null) {
+      waveformRef.current = waveform;
+    }
+
         waveform.on("ready", () => {
+          console.log("ready");
           handleMakeRegion(audioClipData);
         });
       }
@@ -56,6 +61,7 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
 
     console.log("in region");
     console.log("clipData in region =>", audioClipData);
+    console.log("is Waveform ok ?", waveform);
 
     if (audioClipData.info.start != -1) {
       SetStart = audioClipData.info.start;
@@ -63,29 +69,47 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
     if (audioClipData.info.end != -1) {
       SetEnd = audioClipData.info.end;
     } else SetEnd = 10;
+    console.log("SetStart", SetStart);
+    console.log("SetEnd", SetEnd);
 
-    if (waveform) {
-      console.log("in region making");
+    if (waveform && regionsPlugin) {
       const random = (min: number, max: number) =>
         Math.random() * (max - min) + min;
       const randomColor = () =>
         `rgba(${random(0, 255)}, ${random(0, 255)}, ${random(0, 255)}, 0.5)`;
-        console.log("regionPlugin", regionsPlugin)
-      waveform.on("decode", () => {
-        regionsPlugin.addRegion({
-          id: "MyRegion",
-          start: SetStart,
-          end: SetEnd,
-          resize: true,
-          drag: true,
-          content: "test",
-          color: randomColor(),
-        });
-      });
+      console.log("regionPlugin", regionsPlugin);
+          console.log("decode");
+          regionsPlugin.addRegion({
+            id: "MyRegion",
+            start: SetStart,
+            end: SetEnd,
+            resize: true,
+            drag: true,
+            content: "test",
+            color: randomColor(),
+          });
     }
   };
 
-  return <div id="waveform" />;
+  const handlePlay = () => {
+    if (waveformRef.current) {
+      waveformRef.current.play();
+    }
+  };
+
+  const handlePause = () => {
+    if (waveformRef.current) {
+      waveformRef.current.pause();
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={handlePlay}>Play</button> ||
+      <div id="waveform" />
+      <button onClick={handlePause}>Pause</button>
+    </div>
+  );
 };
 
 export default WaveSurferPlayerComponent;
