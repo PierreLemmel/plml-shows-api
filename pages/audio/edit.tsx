@@ -189,7 +189,7 @@ console.log(regionsPlugin)
     <div>
       {" "}
     
-      <WaveSurferPlayerComponent clipName="Sinik" clipType="human" />
+      <WaveSurferPlayerComponent clipName="Shurik'n Live" clipType="human" />
      
       {/* <input type="file" onChange={handleFileChange} accept="audio/*" />
       <br />

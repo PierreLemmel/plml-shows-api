@@ -95,7 +95,8 @@ const Import = () => {
         categories: [],
         tags: [],
         start: -1,
-        end: -1
+        end: -1,
+        markers: undefined,
       };
 
       await importAudioClip(audioFile, name, clipInfo);
