@@ -14,7 +14,7 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
   clipType,
 }) => {
   const waveformRef = useRef<WaveSurfer | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false); // État de la lecture
+  const [isPlaying, setIsPlaying] = useState(false);
   const regionsPluginRef = useRef<RegionsPlugin | null>(null);
   const [markerContent, setMarkerContent] = useState("");
 
@@ -132,7 +132,10 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
           for (let i = 0; i < allRegions.length; i++) {
             if (allRegions[i].id !== "MyRegion") {
               console.log("i number", i);
-              markers.set(allRegions[i].content, allRegions[i].start);
+              markers.set(
+                allRegions[i].content?.textContent || "",
+                allRegions[i].start
+              );
             }
           }
           console.log("markers before", markers.size);
@@ -155,22 +158,30 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
     const regionsPlugin = regionsPluginRef.current;
     const waveform = waveformRef.current;
     const allRegions = regionsPluginRef.current?.getRegions() || [];
-  
+    let markerExist: boolean = false;
+
+    for (let i = 1; i < allRegions.length; i++) {
+      if (allRegions[i].content?.textContent === markerContent) {
+        markerExist = true;
+        console.log("Marker already exist");
+      }
+    }
+
     const random = (min: number, max: number) =>
       Math.random() * (max - min) + min;
     const randomColor = () =>
       `rgba(${random(0, 255)}, ${random(0, 255)}, ${random(0, 255)}, 0.5)`;
-    if (regionsPlugin && waveform) {
+    if (regionsPlugin && waveform && markerContent !== "" && !markerExist) {
       regionsPlugin.addRegion({
         id: "Marker",
         drag: true,
         start: 10,
-        content: markerContent, 
+        content: markerContent,
         color: randomColor(),
       });
     }
   };
-  
+
   const removeMarker = () => {
     const allRegions = regionsPluginRef.current?.getRegions() || [];
     for (let i = 0; i < allRegions.length; i++) {

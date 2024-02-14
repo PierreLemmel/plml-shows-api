@@ -63,7 +63,6 @@ export async function updateAudioClipInfo(
   let updatedMarkers: { [key: string]: number } | undefined;
 
   if (markers) {
-    console.log("markers", markers.size);
     updatedMarkers = Object.fromEntries(markers.entries());
     }
 

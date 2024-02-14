@@ -42,8 +42,7 @@ export interface AudioClipInfo {
     author?: string;
     start: number;
     end: number;
-    markers?: Map<string, number>;
-    
+    markers: { [key: string]: number } | undefined;
     categories: string[];
     tags: string[];
 }
