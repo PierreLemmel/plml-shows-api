@@ -131,7 +131,7 @@ console.log(regionsPlugin)
         for (let i = 0; i < allRegions.length; i++) {
           allRegions[i].remove();
         }
-        regionsPlugin.clearRegions(); // Clear all regions
+        regionsPlugin.clearRegions();
         setTimeout(() => {
           const remainingRegions = regionsPlugin.getRegions();
         }, 1000);
