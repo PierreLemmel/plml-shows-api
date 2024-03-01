@@ -14,10 +14,17 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
   clipType,
 }) => {
   const waveformRef = useRef<WaveSurfer | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  // const [isPlaying, setIsPlaying] = useState(false);
   const regionsPluginRef = useRef<RegionsPlugin | null>(null);
   const [markerContent, setMarkerContent] = useState("");
   const [isPlayingRegion, setIsPlayingRegion] = useState<boolean | null>(null);
+  const isPlayingRegionRef = useRef(isPlayingRegion);
+
+  useEffect(() => {
+    console.log(isPlayingRegionRef.current);
+    isPlayingRegionRef.current = isPlayingRegion;
+    console.log("after", isPlayingRegionRef.current);
+  }, [isPlayingRegion]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,12 +61,15 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
 
   useEffect(() => {
     const regionsPlugin = regionsPluginRef.current;
-
-    if (regionsPlugin && waveformRef.current && isPlayingRegion === true) {
+    if (
+      regionsPlugin &&
+      waveformRef.current &&
+      isPlayingRegionRef.current === true
+    ) {
       regionsPlugin.on("region-out", (region) => {
         let activeRegion = region;
         if (
-          isPlayingRegion === true &&
+          isPlayingRegionRef.current === true &&
           waveformRef.current &&
           activeRegion.id == "MyRegion"
         ) {
@@ -67,7 +77,7 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
         }
       });
     }
-  }, [isPlayingRegion]);
+  });
 
   const unloadClip = () => {
     if (waveformRef.current) {
