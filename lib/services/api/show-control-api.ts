@@ -2,7 +2,7 @@ import { pathCombine } from "../core/files";
 import { Named } from "../core/types/utils";
 import { Fixtures, StageLightingPlan } from "../dmx/dmx512";
 import { Show } from "../dmx/showControl";
-import { deleteDocument, documentExists, getDocument, listDocuments, renameDocumentIfNeeded, setDocument, toFirebaseKey, updateDocument } from "./firebase";
+import { deleteDocument, documentExists, getDocument, listDocuments, renameDocumentIfNeeded, RenameDocumentOptions, setDocument, toFirebaseKey, updateDocument } from "./firebase";
 
 
 const pathToShow = (lp: string, name: string) => pathCombine(
@@ -37,11 +37,11 @@ export async function showExists(lp: string, name: string) {
     return documentExists(path);
 }
 
-export async function renameShowIfNeeded(lp: string, oldName: string, newName: string) {
+export async function renameShowIfNeeded(lp: string, oldName: string, newName: string, options?: Partial<RenameDocumentOptions>) {
     const oldPath = pathToShow(lp, oldName);
     const newPath = pathToShow(lp, newName);
 
-    await renameDocumentIfNeeded(oldPath, newPath);
+    await renameDocumentIfNeeded(oldPath, newPath, options);
 }
 
 
@@ -86,12 +86,13 @@ export async function listAllShowsInLightingPlan(plan: string): Promise<string[]
     return await listDocuments(path);
 }
 
-export async function renameLightingPlanIfNeeded(oldName: string, newName: string) {
+export async function renameLightingPlanIfNeeded(oldName: string, newName: string, options?: Partial<RenameDocumentOptions>) {
 
     const oldPath = pathToLp(oldName);
     const newPath = pathToLp(newName);
-    renameDocumentIfNeeded(oldPath, newPath);
+    return renameDocumentIfNeeded(oldPath, newPath, options);
 }
+
 
 
 

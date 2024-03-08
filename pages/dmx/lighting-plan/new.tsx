@@ -21,7 +21,7 @@ const NewLightingPlanPage = () => {
     const saveLightingPlan = useCallback<AsyncDispatch<StageLightingPlan>>(firstSaved ? 
         async (lp: StageLightingPlan) => {
 
-            await renameLightingPlanIfNeeded(lightingPlan.name, lp.name);
+            await renameLightingPlanIfNeeded(lightingPlan.name, lp.name, { waitForDocumentCreation: true});
             await updateLightingPlan(lp);
 
             setLightingPlan(lp);

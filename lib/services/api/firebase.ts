@@ -3,6 +3,7 @@ import { collection, doc, DocumentData, getDoc, deleteDoc, getDocs, getFirestore
 import { getDownloadURL, getStorage, list, ref, uploadBytes, UploadMetadata } from "firebase/storage";
 import { getAuth, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth"
 import { createContext, useContext, useEffect, useState } from "react";
+import { delay } from "../core/utils";
 
 interface FirebaseProps {
     app: ReturnType<typeof initializeApp>;
@@ -114,7 +115,22 @@ export async function deleteDocument(path: string) {
     await deleteDoc(doc(db, path));
 }
 
-export async function renameDocument<T extends WithFieldValue<DocumentData>>(oldPath: string, newPath: string, deleteOld: boolean = true) {
+
+export type RenameDocumentOptions = {
+    deleteOld: boolean;
+    waitForDocumentCreation: boolean;
+}
+
+const waitForDocumentOptions = {
+    maxTries: 10,
+    retryDelay: 100
+} as const;
+
+export async function renameDocument<T extends WithFieldValue<DocumentData>>(oldPath: string, newPath: string, options?: Partial<RenameDocumentOptions>) {
+    const {
+        deleteOld = true,
+        waitForDocumentCreation = false
+    } = options || {};
 
     const data = await getDocument<T>(oldPath);
     await setDocument<T>(newPath, data);
@@ -122,13 +138,30 @@ export async function renameDocument<T extends WithFieldValue<DocumentData>>(old
     if (deleteOld) {
         await deleteDocument(oldPath);
     }
+
+    if (waitForDocumentCreation) {
+        let count = 0;
+        const { maxTries, retryDelay } = waitForDocumentOptions;
+
+        let exists = await documentExists(newPath);
+
+        while (!exists && count++ < maxTries) {
+            await delay(retryDelay);
+            exists = await documentExists(newPath);
+        }
+    }
 }
 
-export async function renameDocumentIfNeeded<T extends WithFieldValue<DocumentData>>(oldPath: string, newPath: string, deleteOld: boolean = true) {
 
-    if (firebasePathesAreEquivalent(oldPath, newPath)) {
-        await renameDocument<T>(oldPath, newPath, deleteOld)
+
+export async function renameDocumentIfNeeded<T extends WithFieldValue<DocumentData>>(oldPath: string, newPath: string, options?: Partial<RenameDocumentOptions>) {
+
+    if (!firebasePathesAreEquivalent(oldPath, newPath)) {
+        await renameDocument<T>(oldPath, newPath, options)
+        return true;
     }
+
+    return false;
 }
 
 export async function listDocuments(path: string) {

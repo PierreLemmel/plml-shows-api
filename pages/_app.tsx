@@ -2,21 +2,20 @@ import '@/styles/globals.css'
 import 'react-toastify/dist/ReactToastify.css';
 import type { AppProps } from 'next/app'
 import { AuthContext, useNewAuth } from '@/lib/services/api/firebase';
-import { ShowContext, useNewShowContext } from '@/lib/services/dmx/showControl';
-import { DmxControlContext, useNewDmxControl } from '@/lib/services/dmx/dmxControl';
+import { ShowContext, ShowControlContext, useNewShowContext, useNewShowControl } from '@/lib/services/dmx/showControl';
 import { ReactElement } from 'react';
 
 
 export default function App({ Component, pageProps }: AppProps) {
 
 	return <AuthContextWrapper>
-		<DmxControlContextWrapper>
-			<ShowContextWrapper>
-				
+		<ShowContextWrapper>
+			<ShowControlContextWrapper>
+			
 				<Component {...pageProps} />
 
-			</ShowContextWrapper>
-		</DmxControlContextWrapper>
+			</ShowControlContextWrapper>
+		</ShowContextWrapper>
 	</AuthContextWrapper>
 }
 
@@ -28,10 +27,11 @@ const AuthContextWrapper = ({ children }: WrapperProps) => <AuthContext.Provider
 	{children}
 </AuthContext.Provider>
 
-const DmxControlContextWrapper = ({ children }: WrapperProps) => <DmxControlContext.Provider value={useNewDmxControl()}>
-	{children}
-</DmxControlContext.Provider>
 
 const ShowContextWrapper = ({ children }: WrapperProps) => <ShowContext.Provider value={useNewShowContext()}>
 	{children}
 </ShowContext.Provider>
+
+const ShowControlContextWrapper = ({ children }: WrapperProps) => <ShowControlContext.Provider value={useNewShowControl()}>
+	{children}
+</ShowControlContext.Provider>

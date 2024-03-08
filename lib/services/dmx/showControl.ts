@@ -409,7 +409,7 @@ export module Mappings {
                 fixture: fixtureName,
                 values
             } = se;
-    
+
             const fixture = lightingPlan.fixtures[fixtureName];
             const computedValues = computeDmxValues(fixture, values);
     
@@ -468,7 +468,7 @@ export function toScene(sceneInfo: SceneInfo): Scene {
             const { fixture, values} = sei;
 
             const SceneElt: SceneElement = {
-                fixture: fixture.name,
+                fixture: fixture.key,
                 values,
             }
 
@@ -840,7 +840,7 @@ export function useRealtimeScene(scene: SceneInfo|null, isPlaying: boolean = tru
                 removeTrack(currTrack)
             }
         };
-    }, [scene?.id])
+    }, [scene?.id, addTrack, removeTrack, updateTrack])
 
 
     useEffect(() => {
