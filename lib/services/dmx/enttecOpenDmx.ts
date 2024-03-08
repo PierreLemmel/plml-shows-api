@@ -1,7 +1,6 @@
-import { stat } from "fs";
+import { Dispatch } from "react";
 import { delay } from "../core/utils";
-import { DmxWriteInterface, DmxWriteInterfaceState } from "./dmx512";
-import { DmxControl } from "./dmxControl";
+import { ClosedInterface, DmxWriteInterface, DmxWriteInterfaceState, OpenedInterface, UndetectedInterface } from "./dmx512";
 
 
 const vendorId = 0x403; //1027
@@ -12,47 +11,37 @@ async function isEnttecOpenDmx(sp: SerialPort): Promise<boolean> {
     return info.usbVendorId === vendorId && info.usbProductId === openDmxProductId;
 }
 
+declare global {
+    interface Window {
+        enttecOpenDmx: DmxWriteInterfaceProvider;
+    }
+}
 
-export function createEnttecOpenDmxWriter(parent: DmxControl): DmxWriteInterface {
+interface DmxWriteInterfaceProvider {
+    state: DmxWriteInterfaceState;
+    getInterface: () => DmxWriteInterface;
+    onStateChanged?: Dispatch<DmxWriteInterfaceState>;
+}
+
+export function setupEnttecOpenDmxIfNeeded() {
+    window.enttecOpenDmx ??= createEnttecOpenDmx();
+}
+
+
+function createEnttecOpenDmx(): DmxWriteInterfaceProvider {
     
     const refreshRate = 15.0;
     let port: SerialPort|undefined;
-    let state: DmxWriteInterfaceState = "Undetected";
 
-    const findPort = async () => {
 
-        if (port) {
-            return;
-        }
+    const enttecOpenDmx: DmxWriteInterfaceProvider = {
+        state: "Undetected",
+        getInterface: () => createWriteInterfaceAccordingToState(enttecOpenDmx.state),
+        onStateChanged: undefined,
+    }
 
-        const ports = await navigator.serial?.getPorts();
-        if (ports) {
-            const enttecPort = ports.find(isEnttecOpenDmx);
-            if (enttecPort) {
 
-                enttecPort.ondisconnect = () => {
-                    
-                    port = undefined;
-                    setState("Undetected");
-                }
-
-                port = enttecPort;
-                setState("Closed");
-            }
-        }
-    };
-
-    useEffect(() => {
-        const { serial } = navigator;
-        
-        serial?.addEventListener("connect", findPort)
-
-        return () => serial?.removeEventListener("connect", findPort);
-    }, [findPort]);
-
-    useEffectAsync(findPort, []);
-
-    const foo = (state: DmxWriteInterfaceState) => {
+    const createWriteInterfaceAccordingToState = (state: DmxWriteInterfaceState): DmxWriteInterface => {
         switch (state) {
             case "Closed":
                 return {
@@ -71,17 +60,17 @@ export function createEnttecOpenDmxWriter(parent: DmxControl): DmxWriteInterface
                                 flowControl: "none"
                             };
         
-                            setState("Opening");
+                            changeState("Opening");
         
                             await port.open(openOptions);
         
-                            setState("Opened");
+                            changeState("Opened");
                         }
                         catch (e: unknown) {
                             console.warn(e);
                         }
                     }
-                }
+                } satisfies ClosedInterface;
             case "Opened":
                 return {
                     state,
@@ -109,31 +98,68 @@ export function createEnttecOpenDmxWriter(parent: DmxControl): DmxWriteInterface
                         }
     
                         try {
-                            setState("Closing");
+                            changeState("Closing");
                             
                             while (port.writable.locked) {
                                 await delay(10);
                             }
                             await port.close();
                             
-                            setState("Closed");
+                            changeState("Closed");
                         }
                         catch (e: unknown) {
                             console.warn(e);
                         }
                     }
-                }
+                } satisfies OpenedInterface;
             default:
-                return { state };
+                return {
+                    state
+                };
         }
     }
 
-    const setState = (newState: DmxWriteInterfaceState) => {
-        state = newState;
+    const changeState = (newState: DmxWriteInterfaceState) => {
+        enttecOpenDmx.state = newState;
 
-        
+        if (enttecOpenDmx.onStateChanged){
+            enttecOpenDmx.onStateChanged(newState);
+        }
     }
 
-    
-}
 
+    const setup = () => {
+
+        const findPort = async () => {
+
+            if (port) {
+                return;
+            }
+    
+            const ports = await navigator.serial?.getPorts();
+            if (ports) {
+                const enttecPort = ports.find(isEnttecOpenDmx);
+                if (enttecPort) {
+    
+                    enttecPort.ondisconnect = () => {
+                        
+                        port = undefined;
+                        changeState("Undetected");
+                    }
+    
+                    port = enttecPort;
+                    changeState("Closed");
+                }
+            }
+        };
+
+        const { serial } = navigator;
+        
+        serial?.addEventListener("connect", findPort);
+
+        findPort();
+    }
+    setup();
+
+    return enttecOpenDmx;
+}

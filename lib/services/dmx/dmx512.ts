@@ -127,7 +127,7 @@ export module Chans {
         priority: number;
     }
 
-    export const channelInfo: { [type in ChannelType]: ChannelInfo } = {
+    export const channelInfo: { readonly [type in ChannelType]: ChannelInfo } = {
         "Trad": {
             displayName: "Trad",
             priority: 0
@@ -201,7 +201,7 @@ export module Chans {
             displayName: "Non utilisé",
             priority: 1000
         },
-    }
+    } as const;
 }
 
 
@@ -310,6 +310,45 @@ export interface OpenedInterface extends WriteInterfaceBase<"Opened"> {
 
 export interface ClosingInterface extends WriteInterfaceBase<"Closing"> { }
 
-export type DmxWriteInterface = UndetectedInterface|ClosedInterface|OpeningInterface|OpenedInterface|ClosingInterface;
+export type DmxWriteInterface = UndetectedInterface
+    |ClosedInterface
+    |OpeningInterface
+    |OpenedInterface
+    |ClosingInterface;
 
 export type WriteInterfaceType = "None"|"EnttecOpenDmx";
+
+
+export interface DmxWriter {
+    canOpen: boolean;
+    canClose: boolean;
+
+    state: DmxWriteInterfaceState;
+
+    open?(): void;
+    close?(): void;
+}
+
+export function createWriterFromWriteInterface(writeInterface: DmxWriteInterface): DmxWriter {
+
+    const { state: writeState } = writeInterface;
+
+    const {
+        open,
+        close
+    } = {
+        open: undefined,
+        close: undefined,
+        ...writeInterface
+    }
+
+    const writer: DmxWriter = {
+        state: writeState,
+        canOpen: open !== undefined,
+        canClose: close !== undefined,
+        open,
+        close
+    }
+
+    return writer;
+}

@@ -1,7 +1,5 @@
 import { Dispatch } from "react";
 import { createArray } from "../core/arrays";
-import { DmxWriteInterfaceState } from "./dmx512";
-import { createEnttecOpenDmxWriter } from "./enttecOpenDmx";
 
 export type GetDmxChan = (i: number) => number;
 export type SetDmxChan = (i: number, val: number) => void;
@@ -29,22 +27,6 @@ export interface DmxControl {
 }
 
 
-interface ControlProps {
-    master: number;
-    blackout: boolean;
-    fade: number;
-}
-
-export interface DmxWriter {
-    canOpen: boolean;
-    canClose: boolean;
-
-    state: DmxWriteInterfaceState;
-
-    open?(): void;
-    close?(): void;
-}
-
 
 declare global {
     interface Window {
@@ -53,14 +35,11 @@ declare global {
 }
 
 
-export function initializeDmxControlIfNeeded() {
+export function setupDmxControlIfNeeded() {
     window.dmx ??= createDmxControl();
 }
 
-const dmxControlOptions = {
-    animationRefreshRate: 30,
-    writeRefreshRate: 30
-} as const;
+
 
 function createDmxControl(): DmxControl {
 
@@ -69,10 +48,6 @@ function createDmxControl(): DmxControl {
     const output = Buffer.alloc(512);
 
     const bounds = { min: 513, max: 0 }
-
-    const writeInterface = createEnttecOpenDmxWriter();
-
-    const { state: writeState } = writeInterface;
 
     const getValue = (i: number) => Math.round(values[i]);
     const getTarget = (i: number) => Math.round(targets[i]);
@@ -105,20 +80,6 @@ function createDmxControl(): DmxControl {
         bounds.min = 513;
         bounds.max = 0;
     };
-
-    const { open, close } = {
-        open: undefined,
-        close: undefined,
-        ...writeInterface
-    }
-
-    const writer: DmxWriter = {
-        state: writeState,
-        canOpen: open !== undefined,
-        canClose: close !== undefined,
-        open,
-        close
-    }
 
     const dmxControl = {
         master: 1.0,
