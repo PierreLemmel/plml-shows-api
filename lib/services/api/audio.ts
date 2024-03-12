@@ -7,7 +7,7 @@ import {
 import { pathCombine } from "../core/files";
 import { generateId } from "../core/utils";
 
-import { getDocument, setDocument, uploadFile, documentExists, UploadFileResult } from "./firebase";
+import { getDocument, setDocument, uploadFile } from "./firebase";
 
 
 const pathToAudioCollection = (collection: string) => pathCombine("audio", collection.toLowerCase());
@@ -15,47 +15,43 @@ const pathToAudioCollection = (collection: string) => pathCombine("audio", colle
 const pathToAudioFile = (file: string) => pathCombine("audio", file.toLowerCase());
 
 
-export async function importAudioClip(
-  file: File,
-  name: string,
-  clipInfo: AudioClipInfo
-) {
+export async function importAudioClip(data: File|Blob|Uint8Array, name: string, clipInfo: AudioClipInfo) {
   name = name.trim();
   const { source } = clipInfo;
 
-  const collectionPath = pathToAudioCollection(source);
+  const collectionPath = pathToAudioCollection(source)
   const collection = await getDocument<AudioClipCollection>(collectionPath);
 
   if (collection.clips[name]) {
-    throw `An audio clip called '${name}' already exists`;
+      throw `An audio clip called '${name}' already exists`;
   }
 
   const folderPath = pathToAudioFile(source);
-  const { downloadUrl } = await uploadFile(folderPath, file, name);
 
-  const data: AudioClipData = {
-    id: generateId(),
-    name: name,
-    url: downloadUrl,
-    created: Timestamp.now(),
-    info: clipInfo,
-  };
+  const { downloadUrl } = await uploadFile(folderPath, data, name);
+
+  const audioClipData: AudioClipData = {
+      id: generateId(),
+      name: name,
+      url: downloadUrl,
+      created: Timestamp.now(),
+      info: clipInfo
+  }
 
   const newClips = {
-    ...collection.clips,
-    [name]: data,
-  };
+      ...collection.clips,
+      [name]: audioClipData
+  }
 
   await setDocument<AudioClipCollection>(collectionPath, { clips: newClips });
-}
-
-export async function importAudioClipFromClient(data: File|Blob|Uint8Array, name: string, clipInfo: AudioClipInfo) {
-    return importAudioClip(data, name, clipInfo, uploadFile);
 }
 
 export async function getAudioClipCollection(name: string): Promise<AudioClipCollection> {
     const path = pathCombine("audio", name.toLowerCase());
     const result = await getDocument<AudioClipCollection>(path);
+
+    return result;
+}
 
 export async function updateAudioClipInfo(
   collectionName: string,
@@ -98,14 +94,6 @@ export async function updateAudioClipInfo(
   }
 }
 
-export async function getAudioClipCollection(
-  name: string
-): Promise<AudioClipCollection> {
-  const path = pathToAudioCollection(name);
-  const result = await getDocument<AudioClipCollection>(path);
-
-  return result;
-}
 
 export async function getAudioClip(
   collectionName: string,

@@ -11,7 +11,7 @@ import AleasTextField from "@/components/aleas-components/aleas-textfield";
 import { aleasToast } from "@/components/aleas-components/aleas-toast-container";
 
 import AleasAudioPlayer, { AudioPlayerRef } from "@/components/audio/aleas-audio-player";
-import { importAudioClip, importAudioClipFromClient } from "@/lib/services/api/audio";
+import { importAudioClip } from "@/lib/services/api/audio";
 
 import { AudioClipInfo } from "@/lib/services/audio/audioControl";
 import MusicSignatureEditor from "@/components/audio/music-signature-editor";
@@ -95,7 +95,7 @@ const Import = () => {
         tags: [],
       };
 
-      await importAudioClipFromClient(audioFile, name, clipInfo);
+      await importAudioClip(audioFile, name, clipInfo);
       aleasToast.info("Fichier audio importé !");
 
       reset();
