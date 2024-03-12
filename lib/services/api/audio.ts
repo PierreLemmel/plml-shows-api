@@ -13,6 +13,10 @@ import {
   documentExists,
 } from "./firebase";
 
+const pathToAudioCollection = (collection: string) => pathCombine("audio", collection.toLowerCase());
+
+const pathToAudioFile = (file: string) => pathCombine("audio", file.toLowerCase());
+
 export async function importAudioClip(
   file: File,
   name: string,
@@ -21,14 +25,14 @@ export async function importAudioClip(
   name = name.trim();
   const { source } = clipInfo;
 
-  const collectionPath = pathCombine("audio", source.toLowerCase());
+  const collectionPath = pathToAudioCollection(source);
   const collection = await getDocument<AudioClipCollection>(collectionPath);
 
   if (collection.clips[name]) {
     throw `An audio clip called '${name}' already exists`;
   }
 
-  const folderPath = pathCombine("audio", source.toLowerCase());
+  const folderPath = pathToAudioFile(source);
   const { downloadUrl } = await uploadFile(folderPath, file, name);
 
   const data: AudioClipData = {
@@ -47,9 +51,6 @@ export async function importAudioClip(
   await setDocument<AudioClipCollection>(collectionPath, { clips: newClips });
 }
 
-/*
-    updateAudioClipInfo => Added By Rgeral
-*/
 
 export async function updateAudioClipInfo(
   collectionName: string,
@@ -60,11 +61,10 @@ export async function updateAudioClipInfo(
 ) {
   const collection = await getAudioClipCollection(collectionName);
   const existingClip = collection.clips[clipName];
-  let updatedMarkers: { [key: string]: number } | undefined;
 
-  if (markers) {
-    updatedMarkers = Object.fromEntries(markers.entries());
-    }
+  const updatedMarkers = markers ? 
+    Object.fromEntries(markers.entries()) :
+    undefined;
 
   if (existingClip) {
     const updatedInfo = {
@@ -84,7 +84,7 @@ export async function updateAudioClipInfo(
       [clipName]: updatedClipData,
     };
 
-    const collectionPath = pathCombine("audio", collectionName.toLowerCase());
+    const collectionPath = pathToAudioCollection(collectionName);
     await setDocument<AudioClipCollection>(collectionPath, {
       clips: updatedClips,
     });
@@ -96,7 +96,7 @@ export async function updateAudioClipInfo(
 export async function getAudioClipCollection(
   name: string
 ): Promise<AudioClipCollection> {
-  const path = pathCombine("audio", name.toLowerCase());
+  const path = pathToAudioCollection(name);
   const result = await getDocument<AudioClipCollection>(path);
 
   return result;

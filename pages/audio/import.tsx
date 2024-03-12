@@ -17,7 +17,7 @@ import { AudioClipInfo } from "@/lib/services/audio/audioControl";
 import MusicSignatureEditor from "@/components/audio/music-signature-editor";
 import { match, mergeClasses } from "@/lib/services/core/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { musicCategories } from "@/lib/services/audio/audio";
+import { audioSources, musicCategories } from "@/lib/services/audio/audio";
 
 type DisplayState = "AudioImport" | "AudioEditSettings" | "AudioEditKeypoints";
 
@@ -54,10 +54,9 @@ const Import = () => {
 
   const [author, setAuthor] = useState<string | undefined>(undefined);
 
-  const sources = useMemo(() => ["AIVA", "Soundraw", "Human"], []);
   const sourceOptions = useMemo<DropdownOption<string>[]>(
-    () => sources.map((source) => ({ label: source, value: source })),
-    [sources]
+    () => audioSources.map((source) => ({ label: source, value: source })),
+    []
   );
   const [source, setSource] = useState<string>("Human");
 
@@ -94,9 +93,6 @@ const Import = () => {
         source,
         categories: [],
         tags: [],
-        start: -1,
-        end: -1,
-        markers: undefined,
       };
 
       await importAudioClip(audioFile, name, clipInfo);
@@ -117,7 +113,7 @@ const Import = () => {
     }
 
     setIsImporting(false);
-  }, [audioFile, tempo, signature, source, categories, tags]);
+  }, [audioFile, tempo, signature, source, categories, tags, name, reset]);
 
   const clearBtnEnabled = audioFile !== undefined;
   const onClearClicked = () => {

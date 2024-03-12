@@ -3,13 +3,16 @@ import WaveSurfer from "wavesurfer.js";
 import { getAudioClip, updateAudioClipInfo } from "@/lib/services/api/audio";
 import { AudioClipData } from "@/lib/services/audio/audioControl";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions";
+import { AleasButton } from "../aleas-components/aleas-buttons";
+import { AleasDropdownInput } from "../aleas-components/aleas-dropdowns";
+import AleasTextField from "../aleas-components/aleas-textfield";
 
 interface WaveSurferPlayerProps {
   clipName: string;
   clipType: string;
 }
 
-export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
+export const WaveSurferPlayer: React.FC<WaveSurferPlayerProps> = ({
   clipName,
   clipType,
 }) => {
@@ -40,11 +43,11 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
         const audioBlob = await response.blob();
         waveformRef.current.loadBlob(audioBlob);
 
-        if (regionsPlugin != null) {
+        if (regionsPlugin) {
           regionsPluginRef.current = regionsPlugin;
         }
 
-        if (waveform != null) {
+        if (waveform) {
           waveformRef.current = waveform;
         }
 
@@ -85,21 +88,15 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
       window.location.reload();
     }
   };
-  
 
   const handleMakeRegion = (audioClipData: AudioClipData) => {
     const regionsPlugin = regionsPluginRef.current;
     const waveform = waveformRef.current;
     const allRegions = regionsPluginRef.current?.getRegions() || [];
-    let setStart: number;
-    let setEnd: number;
 
-    if (audioClipData.info.start != -1) {
-      setStart = audioClipData.info.start;
-    } else setStart = 0;
-    if (audioClipData.info.end != -1) {
-      setEnd = audioClipData.info.end;
-    } else setEnd = 10;
+    const setStart = audioClipData.info.start ?? 0;
+    const setEnd = audioClipData.info.start ?? 10;
+
     const regioncolor = "rgb(196, 196, 196, 50%)";
     const markercolor = "rgb(0,0,0)";
 
@@ -136,7 +133,7 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
   const handleRegion = async () => {
     const invalidRegion = 0.001;
     const allRegions = regionsPluginRef.current?.getRegions() || [];
-    if (allRegions.length > 0 && allRegions[0].start != invalidRegion) {
+    if (allRegions.length > 0 && allRegions[0].start !== invalidRegion) {
       const firstRegionStartTime = allRegions[0].start;
       const firstRegionEndTime = allRegions[0].end;
       try {
@@ -151,14 +148,13 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
         if (clipName) {
           const markers = new Map<string, number>();
           const validationId = "validRegion";
-          for (let i = 0; i < allRegions.length; i++) {
-            if (allRegions[i].id !== validationId) {
-              markers.set(
-                allRegions[i].content?.textContent || "",
-                allRegions[i].start
-              );
-            }
-          }
+
+          allRegions
+            .filter((region) => region.id !== validationId)
+            .forEach((region) => {
+              markers.set(region.content?.textContent || "", region.start);
+            });
+
           await updateAudioClipInfo(
             clipType,
             clipName,
@@ -170,7 +166,6 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
       } catch (e) {
         console.error(e);
       }
-    } else {
     }
   };
 
@@ -178,13 +173,11 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
     const regionsPlugin = regionsPluginRef.current;
     const waveform = waveformRef.current;
     const allRegions = regionsPluginRef.current?.getRegions() || [];
-    let markerExist: boolean = false;
 
-    for (let i = 1; i < allRegions.length; i++) {
-      if (allRegions[i].content?.textContent === markerContent) {
-        markerExist = true;
-      }
-    }
+    const markerExist = allRegions
+      .slice(1)
+      .some((region) => region.content?.textContent === markerContent);
+
     if (regionsPlugin && waveform && markerContent !== "" && !markerExist) {
       regionsPlugin.addRegion({
         id: "Marker",
@@ -199,11 +192,10 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
   const removeMarker = () => {
     const validationId = "validRegion";
     const allRegions = regionsPluginRef.current?.getRegions() || [];
-    for (let i = 0; i < allRegions.length; i++) {
-      if (allRegions[i].id != validationId) {
-        allRegions[i].remove();
-      }
-    }
+
+    allRegions
+      .filter((region) => region.id !== validationId)
+      .forEach((region) => region.remove());
   };
 
   const handlePlay = () => {
@@ -231,23 +223,28 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
   };
 
   return (
-    <div>
-      <button onClick={handlePlay}>Play</button> ||
-      <button onClick={handleRegionPlay}>PlayRegion</button> || <br />
-      <button onClick={handlePause}> Pause</button> ||
-      <button onClick={handleMakeMarker}> Make Marker</button> ||
-      <input
-        type="text"
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-row gap-2">
+        <AleasButton onClick={handlePlay}>Play</AleasButton>
+        <AleasButton onClick={handleRegionPlay}>PlayRegion</AleasButton>
+      </div>
+      <div className="flex flex-row gap-2">
+        <AleasButton onClick={handlePause}> Pause</AleasButton>
+        <AleasButton onClick={handleMakeMarker}> Make Marker</AleasButton>
+      </div>
+      <AleasTextField
         value={markerContent}
-        onChange={(e) => setMarkerContent(e.target.value)}
+        onValueChange={newVal => setMarkerContent(newVal)}
         placeholder="Enter marker content"
       />
-      <button onClick={removeMarker}> Remove All Markers</button> || <br />
-      <button onClick={handleRegion}> Update Region</button> ||
-      <button onClick={unloadClip}>Unload clip</button>
+      <div className="flex flex-row gap-2">
+        <AleasButton onClick={removeMarker}> Remove All Markers</AleasButton>{" "}
+        <AleasButton onClick={handleRegion}> Update Region</AleasButton>
+        <AleasButton onClick={unloadClip}>Unload clip</AleasButton>
+      </div>
       <div id="waveform" />
     </div>
   );
 };
 
-export default WaveSurferPlayerComponent;
+export default WaveSurferPlayer;

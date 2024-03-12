@@ -40,9 +40,9 @@ export interface AudioClipInfo {
     signature: string;
     source: string;
     author?: string;
-    start: number;
-    end: number;
-    markers: { [key: string]: number } | undefined;
+    start?: number;
+    end?: number;
+    markers?: { [key: string]: number };
     categories: string[];
     tags: string[];
 }

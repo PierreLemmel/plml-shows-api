@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { getAudioClip } from "@/lib/services/api/audio";
-import { WaveSurferPlayerComponent } from "@/components/audio/wavesurfer-player-component";
+import { WaveSurferPlayer } from "@/components/audio/wavesurfer-player";
+import { AleasDropdownButton, DropdownOption } from "@/components/aleas-components/aleas-dropdowns";
+import AleasTextField from "@/components/aleas-components/aleas-textfield";
+import { audioSources } from "@/lib/services/audio/audio";
 
 const AudioPlayer = () => {
   const [clipName, setClipName] = useState<string>("");
@@ -9,33 +12,41 @@ const AudioPlayer = () => {
 
   const handleGetClip = async () => {
     try {
-      
       setClipName(clipName);
       setClipType(clipType);
       await getAudioClip(clipType, clipName);
-      setClipLoaded(true); 
+      setClipLoaded(true);
     } catch (error) {
-      console.error("Error while uploading clip, check the ClipName and ClipType :", error);
+      console.error(
+        "Error while uploading clip, check the ClipName and ClipType :",
+        error
+      );
     }
   };
 
+  const sourceOptions = useMemo<DropdownOption<string>[]>(
+    () => audioSources.map((source) => ({ label: source, value: source })),
+    []
+  );
+
+    
+
   return (
     <div>
-      <input
-        type="text"
+      <AleasDropdownButton
+        options={sourceOptions}
+        onValueChanged={setClipType}
+        value={clipType}
+        />
+      <AleasTextField
         value={clipName}
-        onChange={(e) => setClipName(e.target.value)}
+        onValueChange={setClipName}
         placeholder="Nom du clip"
       />
-      <input
-        type="text"
-        value={clipType}
-        onChange={(e) => setClipType(e.target.value)}
-        placeholder="Type du clip"
-      />
+
       <button onClick={handleGetClip}>Upload Clip</button>
       {clipLoaded && (
-        <WaveSurferPlayerComponent clipName={clipName} clipType={clipType} />
+        <WaveSurferPlayer clipName={clipName} clipType={clipType} />
       )}
     </div>
   );
