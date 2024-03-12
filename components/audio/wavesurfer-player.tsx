@@ -95,7 +95,7 @@ export const WaveSurferPlayer: React.FC<WaveSurferPlayerProps> = ({
     const allRegions = regionsPluginRef.current?.getRegions() || [];
 
     const setStart = audioClipData.info.start ?? 0;
-    const setEnd = audioClipData.info.start ?? 10;
+    const setEnd = audioClipData.info.end ?? 10;
 
     const regioncolor = "rgb(196, 196, 196, 50%)";
     const markercolor = "rgb(0,0,0)";
