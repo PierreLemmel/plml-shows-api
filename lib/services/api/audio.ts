@@ -7,7 +7,7 @@ import {
 import { pathCombine } from "../core/files";
 import { generateId } from "../core/utils";
 
-import { getDocument, setDocument, uploadFile } from "./firebase";
+import { UploadFileResult, getDocument, setDocument, uploadFile } from "./firebase";
 
 
 const pathToAudioCollection = (collection: string) => pathCombine("audio", collection.toLowerCase());
@@ -15,7 +15,7 @@ const pathToAudioCollection = (collection: string) => pathCombine("audio", colle
 const pathToAudioFile = (file: string) => pathCombine("audio", file.toLowerCase());
 
 
-export async function importAudioClip(data: File|Blob|Uint8Array, name: string, clipInfo: AudioClipInfo) {
+export async function importAudioClip(data: File|Blob|Uint8Array, name: string, clipInfo: AudioClipInfo, fileUploadMethod: (folder: string, data: Blob|Uint8Array|Buffer, name: string) => Promise<UploadFileResult> = uploadFile) {
   name = name.trim();
   const { source } = clipInfo;
 
