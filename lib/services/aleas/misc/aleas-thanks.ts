@@ -2,7 +2,8 @@ import { async } from "@firebase/util";
 import { Timestamp } from "firebase/firestore";
 import { getDocument, setDocument } from "../../api/firebase";
 import { pathCombine } from "../../core/files";
-import { batchGenerateCompletions, CompletionsData } from "../../generation/text-gen";
+import { batchGenerateCompletions, CompletionsData } from "../../generation/text/text-gen";
+
 
 const thanksPath = pathCombine("aleas", "messages", "thanks");
 const completionsDocPath = pathCombine(thanksPath, "completions");

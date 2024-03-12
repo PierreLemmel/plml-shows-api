@@ -6,16 +6,14 @@ import {
 } from "../audio/audioControl";
 import { pathCombine } from "../core/files";
 import { generateId } from "../core/utils";
-import {
-  getDocument,
-  setDocument,
-  uploadFile,
-  documentExists,
-} from "./firebase";
+
+import { getDocument, setDocument, uploadFile, documentExists, UploadFileResult } from "./firebase";
+
 
 const pathToAudioCollection = (collection: string) => pathCombine("audio", collection.toLowerCase());
 
 const pathToAudioFile = (file: string) => pathCombine("audio", file.toLowerCase());
+
 
 export async function importAudioClip(
   file: File,
@@ -51,6 +49,13 @@ export async function importAudioClip(
   await setDocument<AudioClipCollection>(collectionPath, { clips: newClips });
 }
 
+export async function importAudioClipFromClient(data: File|Blob|Uint8Array, name: string, clipInfo: AudioClipInfo) {
+    return importAudioClip(data, name, clipInfo, uploadFile);
+}
+
+export async function getAudioClipCollection(name: string): Promise<AudioClipCollection> {
+    const path = pathCombine("audio", name.toLowerCase());
+    const result = await getDocument<AudioClipCollection>(path);
 
 export async function updateAudioClipInfo(
   collectionName: string,

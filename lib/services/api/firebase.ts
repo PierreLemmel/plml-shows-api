@@ -1,8 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { collection, doc, DocumentData, getDoc, deleteDoc, getDocs, getFirestore, initializeFirestore, setDoc, updateDoc, WithFieldValue } from "firebase/firestore";
-import { getDownloadURL, getStorage, list, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, getStorage, list, ref, uploadBytes, UploadMetadata } from "firebase/storage";
 import { getAuth, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth"
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 interface FirebaseProps {
     app: ReturnType<typeof initializeApp>;
@@ -11,16 +11,30 @@ interface FirebaseProps {
     auth: ReturnType<typeof getAuth>;
 }
 
+export const firebasePlmlOptions = {
+    authDomain: "plml-shows.firebaseapp.com",
+    databaseUrl: "https://plml-shows-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "plml-shows",
+    storageBucket: "plml-shows.appspot.com",
+} as const;
+
 let firebase: FirebaseProps|null = null;
 function getFirebase(): FirebaseProps {
 
     if(!firebase) {
+        const {
+            authDomain,
+            databaseUrl,
+            projectId,
+            storageBucket
+        } = firebasePlmlOptions;
+
         const firebaseConfig = {
             apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-            authDomain: "plml-shows.firebaseapp.com",
-            databaseURL: "https://plml-shows-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "plml-shows",
-            storageBucket: "plml-shows.appspot.com",
+            authDomain,
+            databaseUrl,
+            projectId,
+            storageBucket,
             messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
             appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
         };
@@ -144,14 +158,15 @@ export interface UploadFileResult {
     downloadUrl: string;
 }
 
-export async function uploadFile(folder: string, file: File, name?: string): Promise<UploadFileResult> {
+export async function uploadFile(folder: string, data: Blob|Uint8Array|Buffer, name: string): Promise<UploadFileResult> {
     const { storage } = getFirebase();
     
-    const fileName = name || file.name;
+    const fileName = name;
     const path = folder + '/' + fileName;
 
     const fileRef = ref(storage, path);
-    await uploadBytes(fileRef, file);
+    
+    await uploadBytes(fileRef, data);
 
     const downloadUrl = await getDownloadURL(fileRef);
 

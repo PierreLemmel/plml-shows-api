@@ -2,9 +2,9 @@ import { randomUUID } from "crypto";
 import { backOff } from "exponential-backoff";
 import { Timestamp } from "firebase/firestore";
 import { CreateChatCompletionRequestMessage } from "openai/resources/chat";
-import { createOpenAI } from "../api/openai";
-import { flattenArray } from "../core/arrays";
-import { randomRange } from "../core/utils";
+import { createOpenAI } from "../../api/openai";
+import { flattenArray } from "../../core/arrays";
+import { randomRange } from "../../core/utils";
 
 export type CompletionsData = {
     model: 'gpt-4' | 'gpt-3.5-turbo' | 'text-davinci-003';
