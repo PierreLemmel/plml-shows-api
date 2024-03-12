@@ -21,9 +21,7 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
   const isPlayingRegionRef = useRef(isPlayingRegion);
 
   useEffect(() => {
-    console.log(isPlayingRegionRef.current);
     isPlayingRegionRef.current = isPlayingRegion;
-    console.log("after", isPlayingRegionRef.current);
   }, [isPlayingRegion]);
 
   useEffect(() => {
@@ -31,8 +29,8 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
       if (!waveformRef.current) {
         const waveform = WaveSurfer.create({
           container: "#waveform",
-          waveColor: "rgb(200, 0, 200)",
-          progressColor: "rgb(100, 0, 100)",
+          waveColor: "rgb(196, 196, 196)",
+          progressColor: "rgb(122, 250, 250)",
         });
         waveformRef.current = waveform;
         const regionsPlugin = waveform.registerPlugin(RegionsPlugin.create());
@@ -60,6 +58,7 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
   });
 
   useEffect(() => {
+    const validationId = "validRegion";
     const regionsPlugin = regionsPluginRef.current;
     if (
       regionsPlugin &&
@@ -71,7 +70,7 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
         if (
           isPlayingRegionRef.current === true &&
           waveformRef.current &&
-          activeRegion.id == "MyRegion"
+          activeRegion.id == validationId
         ) {
           waveformRef.current.pause();
         }
@@ -86,34 +85,33 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
       window.location.reload();
     }
   };
+  
 
   const handleMakeRegion = (audioClipData: AudioClipData) => {
     const regionsPlugin = regionsPluginRef.current;
     const waveform = waveformRef.current;
     const allRegions = regionsPluginRef.current?.getRegions() || [];
-    let SetStart: number;
-    let SetEnd: number;
+    let setStart: number;
+    let setEnd: number;
 
     if (audioClipData.info.start != -1) {
-      SetStart = audioClipData.info.start;
-    } else SetStart = 0;
+      setStart = audioClipData.info.start;
+    } else setStart = 0;
     if (audioClipData.info.end != -1) {
-      SetEnd = audioClipData.info.end;
-    } else SetEnd = 10;
-    const random = (min: number, max: number) =>
-      Math.random() * (max - min) + min;
-    const randomColor = () =>
-      `rgba(${random(0, 255)}, ${random(0, 255)}, ${random(0, 255)}, 0.5)`;
+      setEnd = audioClipData.info.end;
+    } else setEnd = 10;
+    const regioncolor = "rgb(196, 196, 196, 50%)";
+    const markercolor = "rgb(0,0,0)";
 
     if (waveform && regionsPlugin) {
       regionsPlugin.addRegion({
-        id: "MyRegion",
-        start: SetStart,
-        end: SetEnd,
+        id: "validRegion",
+        start: setStart,
+        end: setEnd,
         resize: true,
         drag: true,
-        content: "test",
-        color: randomColor(),
+        content: "Region",
+        color: regioncolor,
       });
     }
     if (audioClipData.info.markers && regionsPlugin) {
@@ -128,7 +126,7 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
             resize: true,
             drag: true,
             content: key,
-            color: randomColor(),
+            color: markercolor,
           });
         }
       }
@@ -136,8 +134,9 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
   };
 
   const handleRegion = async () => {
+    const invalidRegion = 0.001;
     const allRegions = regionsPluginRef.current?.getRegions() || [];
-    if (allRegions.length > 0 && allRegions[0].start != 0.001) {
+    if (allRegions.length > 0 && allRegions[0].start != invalidRegion) {
       const firstRegionStartTime = allRegions[0].start;
       const firstRegionEndTime = allRegions[0].end;
       try {
@@ -151,8 +150,9 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
         }
         if (clipName) {
           const markers = new Map<string, number>();
+          const validationId = "validRegion";
           for (let i = 0; i < allRegions.length; i++) {
-            if (allRegions[i].id !== "MyRegion") {
+            if (allRegions[i].id !== validationId) {
               markers.set(
                 allRegions[i].content?.textContent || "",
                 allRegions[i].start
@@ -185,26 +185,22 @@ export const WaveSurferPlayerComponent: React.FC<WaveSurferPlayerProps> = ({
         markerExist = true;
       }
     }
-
-    const random = (min: number, max: number) =>
-      Math.random() * (max - min) + min;
-    const randomColor = () =>
-      `rgba(${random(0, 255)}, ${random(0, 255)}, ${random(0, 255)}, 0.5)`;
     if (regionsPlugin && waveform && markerContent !== "" && !markerExist) {
       regionsPlugin.addRegion({
         id: "Marker",
         drag: true,
         start: 10,
         content: markerContent,
-        color: randomColor(),
+        color: "rgb(0,0,0)",
       });
     }
   };
 
   const removeMarker = () => {
+    const validationId = "validRegion";
     const allRegions = regionsPluginRef.current?.getRegions() || [];
     for (let i = 0; i < allRegions.length; i++) {
-      if (allRegions[i].id != "MyRegion") {
+      if (allRegions[i].id != validationId) {
         allRegions[i].remove();
       }
     }
