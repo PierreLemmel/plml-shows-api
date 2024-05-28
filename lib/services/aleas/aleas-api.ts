@@ -3,6 +3,8 @@ import { pathCombine } from "../core/files";
 import { AleasCodeFile } from "./misc/aleas-code-display";
 import { AleasShowRun } from "./aleas-runtime";
 import { AleasShow } from "./aleas-setup";
+import { batchGenerateCompletions, CompletionsData } from "../generation/text/text-gen";
+import { Timestamp } from "firebase/firestore";
 
 export async function getAleasShow(show: string): Promise<AleasShow> {
 
@@ -45,4 +47,36 @@ export async function createAleasCodeFile(file: AleasCodeFile) {
         files: [...oldFiles, file]
     }
     await setDocument<CodeDocument>("aleas/code", newCodeDoc);
+}
+
+async function getMonologuesCompletionsData(collection: string): Promise<CompletionsData> {
+    const path = pathCombine("aleas/generation/monologues", collection).toLowerCase();
+    const data = await getDocument<CompletionsData>(path);
+
+    return data;
+}
+
+export interface MonologuesData {
+    generated: Timestamp;
+    model: string;
+    reviews: string[];
+}
+
+export async function batchGenerateMonologues(collection: string) {
+
+    const completionData = await getMonologuesCompletionsData(collection);
+
+    const batchResult = await batchGenerateCompletions(completionData);
+
+	const { generated, data, model } = batchResult;
+    const result: MonologuesData = {
+        generated,
+        reviews: data,
+        model
+    }
+
+    const pathToResult = pathCombine("aleas/library/monologues", collection).toLowerCase();
+    await setDocument<MonologuesData>(pathToResult, result);
+
+    return result;
 }

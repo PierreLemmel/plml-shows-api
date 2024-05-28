@@ -133,6 +133,7 @@ export async function batchGenerateCompletions(input: CompletionsData): Promise<
                 }, {
                     startingDelay: 1000,
                     retry: (e, attemptNumber) => {
+                        log(e);
                         log(`   Request failed (${attemptNumber + 1}/${maxAttempts})`);
 
                         return attemptNumber < maxAttempts;
