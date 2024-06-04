@@ -4,7 +4,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse<AudioClipCollection>) => {
 	
-    const collection = await getAudioClipCollection();
+    const name = <string> req.query["collection"];
+
+    const collection = await getAudioClipCollection(name);
     res.status(200).json(collection);
 }
 

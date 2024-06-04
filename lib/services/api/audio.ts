@@ -5,7 +5,7 @@ import {
   AudioClipCollection,
 } from "../audio/audioControl";
 import { pathCombine } from "../core/files";
-import { generateId } from "../core/utils";
+import { generateId, stringToKey } from "../core/utils";
 
 import { UploadFileResult, getDocument, setDocument, uploadFile, listDocuments } from "./firebase";
 
@@ -30,9 +30,12 @@ export async function importAudioClip(data: File|Blob|Uint8Array, name: string, 
 
   	const { downloadUrl } = await uploadFile(folderPath, data, name);
 
+	const key = stringToKey(name);
+
   	const audioClipData: AudioClipData = {
     	id: generateId(),
       	name: name,
+		key,
       	url: downloadUrl,
       	created: Timestamp.now(),
       	info: clipInfo
@@ -40,7 +43,7 @@ export async function importAudioClip(data: File|Blob|Uint8Array, name: string, 
 
   	const newClips = {
         ...collection.clips,
-        [name]: audioClipData
+        [key]: audioClipData
     }
 
     await setDocument<AudioClipCollection>(collectionPath, { clips: newClips });
@@ -100,7 +103,8 @@ export async function getAudioClip(
 	clipName: string
 ): Promise<AudioClipData> {
 	const collection = await getAudioClipCollection(collectionName);
-	return collection.clips[clipName];
+	const clipKey = stringToKey(clipName);
+	return collection.clips[clipKey];
 }
 
 export type CollectionInfo = {
