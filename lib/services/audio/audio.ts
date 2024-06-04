@@ -27,9 +27,9 @@ export const musicCategories = [
 
 export const audioSources = [
   "Human",
+  "Suno",
   "Aiva",
   "Loudly",
-  "Soundraw",
 ] as const;
 
 export type AudioSource = (typeof audioSources)[number];
