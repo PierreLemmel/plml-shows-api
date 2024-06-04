@@ -27,10 +27,10 @@ export async function getSpectrumData(src: ArrayBuffer, sampleSize?: number): Pr
 
 export interface AudioClipData {
     id: string;
+    key: string;
     name: string;
     url: string;
     created: Timestamp;
-
     info: AudioClipInfo;
 }
 
@@ -40,7 +40,9 @@ export interface AudioClipInfo {
     signature: string;
     source: string;
     author?: string;
-
+    start?: number;
+    end?: number;
+    markers?: { [key: string]: number };
     categories: string[];
     tags: string[];
 }

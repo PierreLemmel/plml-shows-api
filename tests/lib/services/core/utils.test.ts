@@ -1,4 +1,4 @@
-import { incrementId, withValue, withValues } from "@/lib/services/core/utils";
+import { incrementId, stringToKey, withValue, withValues } from "@/lib/services/core/utils";
 
 global.structuredClone = global.structuredClone ?? jest.fn(val => {
     return JSON.parse(JSON.stringify(val));
@@ -192,5 +192,35 @@ describe("incrementId", () => {
 
     it("should deal with special case where it ends with '0'", () => {
         expect(incrementId("test")).toBe("test-01");
+    });
+})
+
+describe("stringToKey", () => {
+    it("should replace spaces with hyphens and lowercase letters", () => {
+        expect(stringToKey("Hello World")).toBe("hello-world");
+    });
+
+    it("should replace underscores with hyphens", () => {
+        expect(stringToKey("Hello_World")).toBe("hello-world");
+    });
+
+    it("should replace underscores and spaces mix with a single hyphens", () => {
+        expect(stringToKey("Hello__ _ World")).toBe("hello-world");
+    });
+
+    it("should preserve hyphens", () => {
+        expect(stringToKey("hello-world")).toBe("hello-world");
+    });
+
+    it("should avoid multiple hyphens", () => {
+        expect(stringToKey("hello  world")).toBe("hello-world");
+    });
+
+    it("should replace spaces with hyphens, lowercase letters and remove diacritics", () => {
+        expect(stringToKey("Hello Aléas")).toBe("hello-aleas");
+    });
+
+    it("should replace spaces with hyphens, lowercase letters, remove diacritics and remove special characters", () => {
+        expect(stringToKey("#Hello Aléas!")).toBe("hello-aleas");
     });
 })

@@ -205,3 +205,10 @@ export function incrementId(id: string) {
 export function isEmpty<T extends { length: number }>(array: T) {
     return array.length === 0;
 }
+
+export const stringToKey = (str: string) => str
+    .normalize('NFD')
+    .toLowerCase()
+    .replace(/(\s|_)+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
