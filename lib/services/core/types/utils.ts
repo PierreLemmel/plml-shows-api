@@ -4,7 +4,6 @@ export interface Named {
 
 export interface ShortNamed {
     readonly shortName: string;
-
 }
 
 export interface HasId {

@@ -1,7 +1,10 @@
-import { Timestamp } from "firebase/firestore";
-import { type } from "os";
+import { getDocument } from "../api/firebase";
+import { getFixtureCollection, getLightingPlan, getShow } from "../api/show-control-api";
+import { pathCombine } from "../core/files";
+import { HasId, Named, ShortNamed } from "../core/types/utils";
 import { randomRange } from "../core/utils";
-import { DmxValueSegment } from "../dmx/showControl";
+import { DmxValueSegment, Mappings, SceneInfo, ShowInfo } from "../dmx/showControl";
+import { getAudioLibraryCollection } from "./aleas-api";
 
 export type RangeOrValue = number | [ number, number ];
 
@@ -14,7 +17,8 @@ export const aleasFeatures = [
     "projections",
     "monologues",
     "confessionnal",
-    "stroboscopes"
+    "stroboscopes",
+    "smokeMachine",
 ] as const;
 
 export type AleasFeatures = typeof aleasFeatures[number];
@@ -23,6 +27,14 @@ export type AleasFeaturesMap = {
     [key in AleasFeatures]: boolean;
 };
 
+type GenerateAleasPrePostShowArgs = {
+    scene: string;
+    fade: Fade;
+}
+
+type GenerateAleasPreShowArgs = GenerateAleasPrePostShowArgs;
+type GenerateAleasPostShowArgs = GenerateAleasPrePostShowArgs;
+
 export type GenerateAleasShowArgs = {
     generation: {
         save: boolean;
@@ -30,19 +42,14 @@ export type GenerateAleasShowArgs = {
     show: {
         totalDuration: RangeOrValue;
         lightingPlan: string;
+        showName: string;
     },
     blackout: {
         duration: RangeOrValue;
         fade?: Fade;
     }
-    preshow: {
-        scene: string;
-        fade: Fade;
-    },
-    postshow: {
-        scene: string;
-        fade: Fade;
-    },
+    preshow: GenerateAleasPreShowArgs,
+    postshow: GenerateAleasPostShowArgs,
     intro: {
         duration: RangeOrValue;
         scene: string;
@@ -128,6 +135,15 @@ export type GenerationInfo = {
     values: GenerateAleasShowArgsValues;
 }
 
+export type AleasAudioLibrariesCollection = {
+    libraries: AleasAudioLibrary[];
+} & Named & ShortNamed & HasId;
+
+export type AleasAudioLibrary = {
+    name: string;
+    key: string;
+    count: number;
+}
 
 type SceneBaseInfo = {
     templateName: string;
@@ -174,14 +190,25 @@ type SceneData = SceneBaseInfo
 export type AleasShowScene = { name: string }
     & SceneData;
 
+type AleasShowStaticElements = {
+    lights?: {
+        scene: string;
+        elements: DmxValueSegment[];
+    }
+}
+
+type AleasPrePostShowElements = {
+
+}
+
+type AleasPreshowElements = AleasPrePostShowElements;
+type AleasPostShowElements = AleasPrePostShowElements;
+
 export type AleasShow = {
     generationInfo: GenerationInfo;
-    preshow: {
-        
-    },
-    postshow: {
-        
-    },
+    static: AleasShowStaticElements;
+    preshow: AleasPreshowElements;
+    postshow: AleasPostShowElements;
     scenes: AleasShowScene[];
 };
 
@@ -249,11 +276,59 @@ export type AleasLibraryElementInstatiatedTemplate<T extends object> = {
 export type AleasSceneTemplate = AleasLibraryElementTemplate<SceneData>;
 export type AleasSceneInstatiatedTemplate = AleasLibraryElementInstatiatedTemplate<SceneData>;
 
-export function generateAleasShow(args: GenerateAleasShowArgs, templates: AleasSceneTemplate[]): AleasShow {
+async function getDmxShowInfo(showName: string, lightingPlan: string) {
+    const dmxShow = await getShow(lightingPlan, showName);
+    const lp = await getLightingPlan(lightingPlan);
+    const fixtureColl = await getFixtureCollection("default");
+    const lpInfo = Mappings.computeLightingPlanInfo(lp, fixtureColl);
+    const dmxShowInfo: ShowInfo = Mappings.computeShowInfo(dmxShow, lpInfo);
+
+    return dmxShowInfo;
+}
+
+type LoadedLibrary<T> = {
+    [key: string]: T;
+}
+
+type LoadedLibraries = {
+    dmxScenes: LoadedLibrary<SceneInfo>;
+    audioLibraries: LoadedLibrary<AleasAudioLibrary>;
+}
+
+async function loadLibraries(showName: string, lightingPlan: string): Promise<LoadedLibraries> {
+    const dmxShowInfo = await getDmxShowInfo(showName, lightingPlan);
+    const audioLibrary = await getAudioLibraryCollection("aleas-2024");
+
+    const dmxScenes = dmxShowInfo.scenes.reduce((acc, scene) => {
+        acc[scene.name] = scene;
+        return acc;
+    }, {} as LoadedLibrary<SceneInfo>);
+
+    const audioLibraries = audioLibrary.libraries.reduce((acc, library) => {
+        acc[library.key] = library;
+        return acc;
+    }, {} as LoadedLibrary<AleasAudioLibrary>);
+
+    const libraries: LoadedLibraries = {
+        dmxScenes,
+        audioLibraries
+    }
+
+    return libraries;
+}
+
+
+
+export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<AleasShow> {
 
     const {
+        show: {
+            lightingPlan,
+            showName
+        },
         features
     } = args;
+
 
     const argsValues = computeShowArgsValues(args);
 
@@ -263,8 +338,12 @@ export function generateAleasShow(args: GenerateAleasShowArgs, templates: AleasS
         },
         blackout: {
             duration: blackoutDurationValue
-        }
+        },
     } = argsValues;
+
+    
+    const libraries = await loadLibraries(showName, lightingPlan);
+    const templates = await getAleasSceneTemplates(libraries);
 
 
     let currentTime = 0;
@@ -309,7 +388,9 @@ export function generateAleasShow(args: GenerateAleasShowArgs, templates: AleasS
         currentScene++;
     }
 
-    
+    const staticElements = getStaticElements(libraries);
+    const preshow = getPreshowElements(args.preshow, libraries);
+    const postshow = getPostshowElements(args.postshow, libraries);
 
     return {
         generationInfo: {
@@ -318,8 +399,9 @@ export function generateAleasShow(args: GenerateAleasShowArgs, templates: AleasS
             params: args
         },
         scenes,
-        preshow: {},
-        postshow: {},
+        static: staticElements,
+        preshow,
+        postshow,
     }
 }
 
@@ -601,18 +683,46 @@ function getNextElementFromTemplates<T extends object>(templates: AleasLibraryEl
     throw new Error("No template found");
 }
 
-export async function getAleasSceneTemplates(lightingPlan: string): Promise<AleasSceneTemplate[]> {
-    return getImprovibarSceneTemplates();
+async function getAleasSceneTemplates(libraries: LoadedLibraries): Promise<AleasSceneTemplate[]> {
+    return getImprovibarSceneTemplates(libraries);
 }
+
+
+//@TODO: Add an override function to customize values in scene
+function getValuesFromScene(library: LoadedLibrary<SceneInfo>, scene: string): DmxValueSegment[] {
+    const sceneInfo = library[scene];
+
+    if (!sceneInfo) {
+        throw new Error(`Scene ${scene} not found`);
+    }
+
+    const segments = sceneInfo.elements.map(element => {
+
+        const {
+            rawValues,
+            fixture: {
+                address
+            }
+        } = element;
+        
+        return {
+            address,
+            values: rawValues
+        }
+    });
+
+    return segments;
+}
+
 
 type HardCodedTemplateParts = {
     getBaseInfo: (args: CalculateParamValArgs) => SceneBaseInfo;
-    getLights: (args: CalculateParamValArgs, duration: number) => LightsElementsOrNoLights;
-    getAudio?: (args: CalculateParamValArgs, duration: number) => AudioElementsOrNoAudio;
-    getProjection?: (args: CalculateParamValArgs, duration: number) => ProjectionsElementsOrNoProjections;
+    getLights: (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries) => LightsElementsOrNoLights;
+    getAudio?: (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries) => AudioElementsOrNoAudio;
+    getProjection?: (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries) => ProjectionsElementsOrNoProjections;
 }
 
-function makeSceneProvider(parts: HardCodedTemplateParts): ParamProvider<SceneData> {
+function makeSceneProvider(parts: HardCodedTemplateParts, libraries: LoadedLibraries): ParamProvider<SceneData> {
 
     const {
         getBaseInfo,
@@ -627,91 +737,110 @@ function makeSceneProvider(parts: HardCodedTemplateParts): ParamProvider<SceneDa
 
         return {
             ...baseInfo,
-            ...getLights(args, duration),
-            ...getAudio(args, duration),
-            ...getProjection(args, duration)
+            ...getLights(args, duration, libraries),
+            ...getAudio(args, duration, libraries),
+            ...getProjection(args, duration, libraries)
         }
     }
 }
 
-function getImprovibarSceneTemplates(): AleasSceneTemplate[] {
+function getStaticElements(libraries: LoadedLibraries): AleasShowStaticElements {
+    return getImprovibarStaticElements(libraries);
+}
 
-    const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+function getPreshowElements(args: GenerateAleasPreShowArgs, libraries: LoadedLibraries): AleasPreshowElements {
+    return getImprovibarPreshowElements(args, libraries);
+}
 
-        const duration = randomRange(30, 600);
+function getPostshowElements(args: GenerateAleasPostShowArgs, libraries: LoadedLibraries): AleasPostShowElements {
+    return getImprovibarPostshowElements(args, libraries);
+}
 
-        return {
-            templateName: "Test - No sound, no projections",
-            duration,
-            info: "Test scene with no sound and no projections"
-        }
-    }
 
-    const getLights = (args: CalculateParamValArgs, duration: number): LightsElementsOrNoLights => {
+function getImprovibarSceneTemplates(libraries: LoadedLibraries): AleasSceneTemplate[] {
 
-        const fadeIn = randomRange(0, 5);
-        const fadeOut = randomRange(0, 5);
+    const factories: ((libraries: LoadedLibraries) => AleasSceneTemplate)[] = [
+        improvibar.templates["Pleins feux chaud"]
+    ];
 
-        return {
-            hasLights: true,
-            lights: [
-                {
-                    scene: "Plein feux chaud",
-                    amplitude: 1.0,
-                    level: [
-                        [0.0, 0.0],
-                        [fadeIn, 1.0],
-                        [duration - fadeOut, 1.0],
-                        [duration, 0.0]
-                    ],
-                    elements: [
+    const templates = factories.map(factory => factory(libraries));
+    return templates;
+};
+
+const improvibar = {
+
+    templates: {
+
+        "Pleins feux chaud": function(libraries: LoadedLibraries) {
+
+            const durationRange = [30, 600];
+
+            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+                const duration = randomRange(durationRange[0], durationRange[1]);
+        
+                return {
+                    templateName: "Pleins feux - No sound, no projections",
+                    duration,
+                    info: "Test scene with no sound and no projections"
+                }
+            }
+        
+            const getLights = (args: CalculateParamValArgs, duration: number): LightsElementsOrNoLights => {
+        
+                const fadeIn = randomRange(0, 5);
+                const fadeOut = randomRange(0, 5);
+        
+                const valueSegments = getValuesFromScene(libraries.dmxScenes, "Pleins feux chaud");
+                return {
+                    hasLights: true,
+                    lights: [
                         {
-                            address: 13,
-                            values: [255]
-                        },
-                        {
-                            address: 14,
-                            values: [255]
-                        },
-                        {
-                            address: 15,
-                            values: [255]
-                        },
-                        {
-                            address: 16,
-                            values: [255]
-                        },
+                            scene: "Pleins feux chaud",
+                            amplitude: 1.0,
+                            level: [
+                                [0.0, 0.0],
+                                [fadeIn, 1.0],
+                                [duration - fadeOut, 1.0],
+                                [duration, 0.0]
+                            ],
+                            elements: valueSegments
+                        }
                     ]
                 }
-            ]
+            }
+
+            return {
+                name: "test-01",
+                isPriority: false,
+                enabled: true,
+                weight: 10,
+                requiredFeatures: [],
+                value: makeSceneProvider({
+                    getBaseInfo,
+                    getLights,
+                }, libraries)
+            }
         }
     }
+}
 
-    const getAudio = (args: CalculateParamValArgs, duration: number): AudioElementsOrNoAudio => {
-        return {
-            hasAudio: false
-        }
+function getImprovibarStaticElements(libraries: LoadedLibraries): AleasShowStaticElements {
+
+    return {
+
     }
+}
 
-    const getProjection = (args: CalculateParamValArgs, duration: number): ProjectionsElementsOrNoProjections => {
-        return {
-            hasProjections: false
-        }
+function getImprovibarPreshowElements(args: GenerateAleasPreShowArgs, libraries: LoadedLibraries): AleasPreshowElements {
+    
+    return {
+
     }
+}
 
-    return [
-        {
-            name: "test-01",
-            isPriority: false,
-            enabled: true,
-            weight: 10,
-            requiredFeatures: [],
-            value: makeSceneProvider({
-                getBaseInfo,
-                getLights,
-                getAudio,
-                getProjection
-            })
-        }
-    ]
-};
+function getImprovibarPostshowElements(args: GenerateAleasPostShowArgs, libraries: LoadedLibraries): AleasPostShowElements {
+    return {
+        
+    }
+}

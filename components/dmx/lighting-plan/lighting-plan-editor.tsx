@@ -580,11 +580,11 @@ const FixtureEdit = (props: FixtureEditProps) => {
                                 title="Renommer"
                                 initialValue={key}
                                 canValidate={mergeConditions(
-                                    Validators.strings.regex(/^[a-zA-Z]([a-zA-Z0-9_\-]){2,11}$/),
+                                    Validators.strings.regex(/^[a-zA-Z]([a-zA-Z0-9_\-]){2,19}$/),
                                     id => !idAlreadyUsed(id)
                                 )}
                             >
-                                L&apos;identifiant doit être unique, commencer par une lettre et contenir entre 3 et 12 caractères alphanumériques, tirets et underscores
+                                L&apos;identifiant doit être unique, commencer par une lettre et contenir entre 3 et 20 caractères alphanumériques, tirets et underscores
                             </AleasPopoverTextInput>
                         </div>
                         <div className="w-full flex flex-row gap-3 items-center justify-center">

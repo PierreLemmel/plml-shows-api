@@ -212,6 +212,9 @@ export interface ShowInfo extends Named, HasId {
 
 
 export module Mappings {
+
+    
+    
     export function computeDmxValues(fixture: FixtureInfo, values: SceneElementValues): number[] {
 
         const {
@@ -322,7 +325,7 @@ export module Mappings {
             }
         }
         else {
-            throw `Unsupported type: '${type}`;
+            throw `Unsupported type: '${type}'`;
         }
     
         return modelInfo;
@@ -450,6 +453,19 @@ export module Mappings {
             id,
             fixtures
         };
+    }
+
+    export function computeShowInfo(show: Show, lightingPlan: LightingPlanInfo): ShowInfo {
+        const scenes = show.scenes.map(scene => generateSceneInfo(scene, lightingPlan));
+    
+        const result: ShowInfo = {
+            id: show.id,
+            name: show.name,
+            scenes,
+            lightingPlan
+        }
+    
+        return result;
     }
 }
 
@@ -747,16 +763,8 @@ export function useShowInfo(): ShowInfo|null {
     const lpInfo = useLightingPlanInfo();
     const result = useMemo(() => {
         if (show && lpInfo) {
-
-            const { scenes, name, id } = show;
-            const sceneInfos = scenes.map(scene => Mappings.generateSceneInfo(scene, lpInfo));
-
-            return {
-                name,
-                id,
-                scenes: sceneInfos,
-                lightingPlan: lpInfo,
-            }
+            const showInfo = Mappings.computeShowInfo(show, lpInfo);
+            return showInfo;
         }
         else {
             return null;

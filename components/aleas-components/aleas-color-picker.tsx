@@ -1,7 +1,7 @@
-import { RgbColor } from "@/lib/services/core/types/rgbColor";
+import { RgbColor, Color } from "@/lib/services/core/types/rgbColor";
 import { mergeClasses } from "@/lib/services/core/utils";
-import { Dispatch } from "react";
-import { RgbColorPicker } from "react-colorful";
+import { Dispatch, useCallback, useMemo } from "react";
+import { HexColorPicker } from "react-colorful";
 
 export interface AleasColorPickerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "color"> {
     color: RgbColor;
@@ -17,14 +17,21 @@ const AleasColorPicker = (props: AleasColorPickerProps) => {
 		...otherProps
 	} = props;
 
-  	return <RgbColorPicker
+	const hexColor = useMemo(() => Color.rgbToHex(color), [color]);
+
+	const onHexColorChange = useCallback((hexColor: string) => {
+		const rgbColor = Color.hexToRgb(hexColor);
+		onColorChange(rgbColor);
+	}, [onColorChange]);
+
+  	return <HexColorPicker
 		className={mergeClasses(
 			"",
 			className)
 		}
 		{...otherProps}
-		color={color}
-		onChange={onColorChange}
+		color={hexColor}
+		onChange={onHexColorChange}
 	/>;
 }
   

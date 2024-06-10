@@ -1,12 +1,11 @@
 import { AleasButton } from "@/components/aleas-components/aleas-buttons";
 import { AleasMainLayout } from "@/components/aleas-components/aleas-layout"
+import { AleasAudioLibrary } from "@/lib/services/aleas/aleas-generation";
 import { isDev } from "@/lib/services/api/api";
-import { getAudioClipCollection } from "@/lib/services/api/audio";
-import { listFiles, updateDocument } from "@/lib/services/api/firebase";
+import { setDocument } from "@/lib/services/api/firebase";
 import { getFixtureCollection, updateFixtureCollection } from "@/lib/services/api/show-control-api";
-import { AudioClipData } from "@/lib/services/audio/audioControl";
 import { pathCombine } from "@/lib/services/core/files";
-import { stringToKey } from "@/lib/services/core/utils";
+import { generateId } from "@/lib/services/core/utils";
 import { Fixtures } from "@/lib/services/dmx/dmx512";
 import { GetStaticProps } from "next";
 import { useEffect, useState } from "react";
@@ -35,24 +34,54 @@ const DoStuff = (props: DoStuffProps) => {
     }, [isDev]);
 
     const doStuff = async () => {
-        const coll = await getFixtureCollection("default");
 
-        const fixturesToAdd: Fixtures.FixtureModelDefinition[] = [
-
+        const libraries: AleasAudioLibrary[] = [
+            {
+                name: "Aléas - Général",
+                key: "aleas-general",
+                count: 68
+            },
+            {
+                name: "Aléas - Ambient",
+                key: "aleas-ambient",
+                count: 16
+            },
+            {
+                name: "Aléas - Loud",
+                key: "aleas-loud",
+                count: 22
+            },
+            {
+                name: "Aléas - Standalone",
+                key: "aleas-standalone",
+                count: 12
+            },
+            {
+                name: "Aléas - Text",
+                key: "aleas-text",
+                count: 7
+            },
+            {
+                name: "Aléas - WTF",
+                key: "aleas-wtf",
+                count: 3
+            },
+            {
+                name: "Aléas - Billetreduc",
+                key: "aleas-billetreduc",
+                count: 17
+            }
         ]
-        const updatedFixtures: { [shortName: string]: Fixtures.FixtureModelDefinition } = {
-            ...coll.fixtureModels
-        }
 
-        fixturesToAdd.forEach(f => {
-            updatedFixtures[f.shortName] = f;
-        });
-
-        await updateFixtureCollection({
-            name: "default",
-            fixtureModels: updatedFixtures
-        });
-        console.log(coll);
+        await setDocument(
+            pathCombine("aleas", "library", "audio", "aleas-2024"),
+            {
+                libraries,
+                id: generateId(),
+                name: "Aléas 2024",
+                shortName: "aleas-2024",
+            }
+        );
     };
 
     const [working, setWorking] = useState<boolean>(false);
