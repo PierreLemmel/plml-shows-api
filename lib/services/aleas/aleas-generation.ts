@@ -128,11 +128,14 @@ export type GenerationInfo = {
     values: GenerateAleasShowArgsValues;
 }
 
-export type AleasShowScene = {
-    name: string;
+
+type SceneBaseInfo = {
+    templateName: string;
     duration: number;
     info: string;
-} & ({
+}
+
+type LightsElementsOrNoLights = ({
     hasLights: true,
     lights: {
         scene: string;
@@ -141,7 +144,8 @@ export type AleasShowScene = {
         elements: DmxValueSegment[];
     }[],
 } | { hasLights: false })
-& ({
+
+type AudioElementsOrNoAudio = ({
     hasAudio: true,
     audio: {
         track: string;
@@ -151,7 +155,8 @@ export type AleasShowScene = {
         volume: KeyFrame[];
     }[]
 } | { hasAudio: false })
-& ({
+
+type ProjectionsElementsOrNoProjections = ({
     hasProjections: true,
     projections: {
         text: string;
@@ -161,6 +166,13 @@ export type AleasShowScene = {
         fadeOut: number;
     }[]
 } | { hasProjections: false })
+
+type SceneData = SceneBaseInfo
+    & LightsElementsOrNoLights
+    & AudioElementsOrNoAudio
+    & ProjectionsElementsOrNoProjections;
+export type AleasShowScene = { name: string }
+    & SceneData;
 
 export type AleasShow = {
     generationInfo: GenerationInfo;
@@ -188,7 +200,7 @@ export const getFadeValues = (fade: Fade|undefined): { fadeIn: number, fadeOut: 
     }
 }
 
-export type CalculateParamHistory ={
+export type CalculateParamHistory = {
     elements: {
         name: string;
         duration: number;
@@ -208,7 +220,8 @@ export type CalculateParamValArgs = {
 }
 
 type ProviderOrValueInType = number|boolean|object;
-export type ParamProviderOrValue<T extends ProviderOrValueInType> = ((args: CalculateParamValArgs) => T)|T;
+type ParamProvider<T extends ProviderOrValueInType> = (args: CalculateParamValArgs) => T;
+export type ParamProviderOrValue<T extends ProviderOrValueInType> = ParamProvider<T>|T;
 
 function calculateParamVal<T extends ProviderOrValueInType>(providerOrValue: ParamProviderOrValue<T>, args: CalculateParamValArgs): T {
     return typeof providerOrValue === "function" ? providerOrValue(args) : providerOrValue;
@@ -233,8 +246,8 @@ export type AleasLibraryElementInstatiatedTemplate<T extends object> = {
     value: ParamProviderOrValue<T>;
 }
 
-export type AleasSceneTemplate = AleasLibraryElementTemplate<AleasShowScene>;
-export type AleasSceneInstatiatedTemplate = AleasLibraryElementInstatiatedTemplate<AleasShowScene>;
+export type AleasSceneTemplate = AleasLibraryElementTemplate<SceneData>;
+export type AleasSceneInstatiatedTemplate = AleasLibraryElementInstatiatedTemplate<SceneData>;
 
 export function generateAleasShow(args: GenerateAleasShowArgs, templates: AleasSceneTemplate[]): AleasShow {
 
@@ -256,7 +269,6 @@ export function generateAleasShow(args: GenerateAleasShowArgs, templates: AleasS
 
     let currentTime = 0;
     let currentScene = 0;
-    let remainingTime = totalDuration;
     const history: CalculateParamHistory = {
         elements: [],
         counts: {}
@@ -286,12 +298,14 @@ export function generateAleasShow(args: GenerateAleasShowArgs, templates: AleasS
 
         history.counts[next.name] = (history.counts[next.name] || 0) + 1;
 
-        scenes.push(nextScene);
+        scenes.push({
+            name: `Scene-${(currentScene + 1).toString().padStart(2, "0")}`,
+            ...nextScene
+        });
 
         currentTime += nextScene.duration;
         currentTime += blackoutDurationValue;
 
-        remainingTime = totalDuration - currentTime;
         currentScene++;
     }
 
@@ -309,7 +323,7 @@ export function generateAleasShow(args: GenerateAleasShowArgs, templates: AleasS
     }
 }
 
-const oldSampleScenes: AleasShowScene[] = [
+const oldSampleScenes: any[] = [
     {
         name: "Scene-01",
         duration: 58.2,
@@ -591,7 +605,100 @@ export async function getAleasSceneTemplates(lightingPlan: string): Promise<Alea
     return getImprovibarSceneTemplates();
 }
 
+type HardCodedTemplateParts = {
+    getBaseInfo: (args: CalculateParamValArgs) => SceneBaseInfo;
+    getLights: (args: CalculateParamValArgs, duration: number) => LightsElementsOrNoLights;
+    getAudio?: (args: CalculateParamValArgs, duration: number) => AudioElementsOrNoAudio;
+    getProjection?: (args: CalculateParamValArgs, duration: number) => ProjectionsElementsOrNoProjections;
+}
+
+function makeSceneProvider(parts: HardCodedTemplateParts): ParamProvider<SceneData> {
+
+    const {
+        getBaseInfo,
+        getLights,
+        getAudio = () => ({ hasAudio: false }),
+        getProjection = () => ({ hasProjections: false })
+    } = parts;
+
+    return (args: CalculateParamValArgs) => {
+        const baseInfo = getBaseInfo(args);
+        const { duration } = baseInfo;
+
+        return {
+            ...baseInfo,
+            ...getLights(args, duration),
+            ...getAudio(args, duration),
+            ...getProjection(args, duration)
+        }
+    }
+}
+
 function getImprovibarSceneTemplates(): AleasSceneTemplate[] {
+
+    const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+        const duration = randomRange(30, 600);
+
+        return {
+            templateName: "Test - No sound, no projections",
+            duration,
+            info: "Test scene with no sound and no projections"
+        }
+    }
+
+    const getLights = (args: CalculateParamValArgs, duration: number): LightsElementsOrNoLights => {
+
+        const fadeIn = randomRange(0, 5);
+        const fadeOut = randomRange(0, 5);
+
+        return {
+            hasLights: true,
+            lights: [
+                {
+                    scene: "Plein feux chaud",
+                    amplitude: 1.0,
+                    level: [
+                        [0.0, 0.0],
+                        [fadeIn, 1.0],
+                        [duration - fadeOut, 1.0],
+                        [duration, 0.0]
+                    ],
+                    elements: [
+                        {
+                            address: 13,
+                            values: [255]
+                        },
+                        {
+                            address: 14,
+                            values: [255]
+                        },
+                        {
+                            address: 15,
+                            values: [255]
+                        },
+                        {
+                            address: 16,
+                            values: [255]
+                        },
+                    ]
+                }
+            ]
+        }
+    }
+
+    const getAudio = (args: CalculateParamValArgs, duration: number): AudioElementsOrNoAudio => {
+        return {
+            hasAudio: false
+        }
+    }
+
+    const getProjection = (args: CalculateParamValArgs, duration: number): ProjectionsElementsOrNoProjections => {
+        return {
+            hasProjections: false
+        }
+    }
+
     return [
         {
             name: "test-01",
@@ -599,50 +706,12 @@ function getImprovibarSceneTemplates(): AleasSceneTemplate[] {
             enabled: true,
             weight: 10,
             requiredFeatures: [],
-            value: (args) => {
-                const duration = randomRange(30, 600);
-                const fadeIn = randomRange(0, 5);
-                const fadeOut = randomRange(0, 5);
-
-                return {
-                    name: "Test - No sound, no projections",
-                    duration,
-                    info: "Test scene with no sound and no projections",
-                    hasLights: true,
-                    lights: [
-                        {
-                            scene: "Plein feux chaud",
-                            amplitude: 1.0,
-                            level: [
-                                [0.0, 0.0],
-                                [fadeIn, 1.0],
-                                [duration - fadeOut, 1.0],
-                                [duration, 0.0]
-                            ],
-                            elements: [
-                                {
-                                    address: 13,
-                                    values: [255]
-                                },
-                                {
-                                    address: 14,
-                                    values: [255]
-                                },
-                                {
-                                    address: 15,
-                                    values: [255]
-                                },
-                                {
-                                    address: 16,
-                                    values: [255]
-                                },
-                            ]
-                        }
-                    ],
-                    hasAudio: false,
-                    hasProjections: false
-                }
-            }
+            value: makeSceneProvider({
+                getBaseInfo,
+                getLights,
+                getAudio,
+                getProjection
+            })
         }
     ]
 };

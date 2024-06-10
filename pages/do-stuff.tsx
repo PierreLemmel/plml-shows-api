@@ -3,9 +3,11 @@ import { AleasMainLayout } from "@/components/aleas-components/aleas-layout"
 import { isDev } from "@/lib/services/api/api";
 import { getAudioClipCollection } from "@/lib/services/api/audio";
 import { listFiles, updateDocument } from "@/lib/services/api/firebase";
+import { getFixtureCollection, updateFixtureCollection } from "@/lib/services/api/show-control-api";
 import { AudioClipData } from "@/lib/services/audio/audioControl";
 import { pathCombine } from "@/lib/services/core/files";
 import { stringToKey } from "@/lib/services/core/utils";
+import { Fixtures } from "@/lib/services/dmx/dmx512";
 import { GetStaticProps } from "next";
 import { useEffect, useState } from "react";
 
@@ -33,31 +35,24 @@ const DoStuff = (props: DoStuffProps) => {
     }, [isDev]);
 
     const doStuff = async () => {
+        const coll = await getFixtureCollection("default");
 
-        const collectionName = "Aiva";
+        const fixturesToAdd: Fixtures.FixtureModelDefinition[] = [
 
-        const collection = await getAudioClipCollection(collectionName);
-        const newClips: { [key: string]: AudioClipData } = {};
-        for(const clipName in collection.clips) {
-            
-            const oldClip = collection.clips[clipName];
-            const key = stringToKey(clipName);
-            newClips[key] = {
-                ...oldClip,
-                key
-            }
+        ]
+        const updatedFixtures: { [shortName: string]: Fixtures.FixtureModelDefinition } = {
+            ...coll.fixtureModels
         }
 
-        console.log(newClips);
+        fixturesToAdd.forEach(f => {
+            updatedFixtures[f.shortName] = f;
+        });
 
-        const newCollection = {
-            ...collection,
-            clips: newClips
-        }
-
-        console.log(newCollection)
-        const pathToCollection = pathCombine("audio", collectionName).toLowerCase();
-        updateDocument(pathToCollection, newCollection);
+        await updateFixtureCollection({
+            name: "default",
+            fixtureModels: updatedFixtures
+        });
+        console.log(coll);
     };
 
     const [working, setWorking] = useState<boolean>(false);
