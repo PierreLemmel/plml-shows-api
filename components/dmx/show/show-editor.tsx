@@ -42,6 +42,7 @@ const ShowEditor = (props: ShowEditorProps) => {
         sceneEditPath
     } = props;
 
+    const showControl = useShowControl();
     const {
         master, setMaster,
         fade, setFade,
@@ -63,6 +64,8 @@ const ShowEditor = (props: ShowEditorProps) => {
 
     const onDropdownSelectionChanged = (newScene: Scene) => {
         setScene(newScene);
+        console.log("foo");
+        console.log(showControl)
     }
 
     const toggleBtnEnabled = isPlaying ? track !== null : scene !== undefined;
@@ -95,9 +98,7 @@ const ShowEditor = (props: ShowEditorProps) => {
 
         const newScenePath = sceneEditPath(newSceneName);
         router.push(newScenePath);
-        
-        router.push("", "", { })
-    }, [sceneEditPath, show]);
+    }, [sceneEditPath, newSceneName, show]);
 
 
     const deleteBtnEnabled = scene !== undefined;

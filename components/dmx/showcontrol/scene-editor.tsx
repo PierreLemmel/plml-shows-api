@@ -5,9 +5,9 @@ import AleasSlider from "@/components/aleas-components/aleas-slider";
 import { replaceFirstElement, sorted } from "@/lib/services/core/arrays";
 import { Color, RgbColor } from "@/lib/services/core/types/rgbColor";
 import { Action, AsyncDispatch } from "@/lib/services/core/types/utils";
-import { mergeClasses, withValue } from "@/lib/services/core/utils";
+import { doNothing, mergeClasses, withValue } from "@/lib/services/core/utils";
 import { Chans } from "@/lib/services/dmx/dmx512";
-import { initializeValuesForChannels, FixtureInfo, orderedFixtures, Scene, SceneElement, SceneElementInfo, SceneElementValues, Show, toScene, useLightingPlanInfo, useRealtimeScene, useSceneInfo, useShowContext } from "@/lib/services/dmx/showControl";
+import { initializeValuesForChannels, FixtureInfo, orderedFixtures, Scene, SceneElement, SceneElementInfo, SceneElementValues, Show, toScene, useLightingPlanInfo, useRealtimeScene, useSceneInfo } from "@/lib/services/dmx/showControl";
 import { Dispatch, Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { DndProvider, useDrag, useDrop, XYCoord } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -47,14 +47,14 @@ const SceneEditor = (props: SceneEditorProps) => {
     const onFixtureAdded = useCallback((fixture: FixtureInfo) => {
 
         const {
-            name,
-            channels
+            channels,
+            key: fixtureKey
         } = fixture;
 
         const seValues = initializeValuesForChannels(channels);
 
         const newSceneElement: SceneElement = {
-            fixture: name,
+            fixture: fixtureKey,
             values: seValues,
         }
 
@@ -135,7 +135,7 @@ const SceneEditor = (props: SceneEditorProps) => {
                             "w-full flex flex-col items-stretch gap-2",
                         )}>
                             {orderedFixtures(lightingPlan).map(fixture => {
-                                const enabled = workScene.elements.find(se => se.fixture === fixture.name) === undefined;
+                                const enabled = workScene.elements.find(se => se.fixture === fixture.key) === undefined;
 
                                 return <LPFixtureCard
                                     key={fixture.id}
@@ -245,6 +245,8 @@ const LPFixtureCard = (props: LPFixtureCardProps) => {
         
     })
 
+    const onClick = useCallback(enabled ? () => onAddClicked(fixture) : doNothing, [enabled, fixture]);
+
     return <div
         className={mergeClasses(
             "rounded-md p-2 relative overflow-visible",
@@ -258,8 +260,8 @@ const LPFixtureCard = (props: LPFixtureCardProps) => {
         <div>{fullName}</div>
         <div className={mergeClasses(
             "text-lg font-bold px-2",
-            "hover:scale-110 hover:cursor-pointer"
-        )} onClick={() => onAddClicked(fixture)}>+</div>
+            enabled && "hover:scale-110 hover:cursor-pointer"
+        )} onClick={onClick}>+</div>
     </div>
 }
 

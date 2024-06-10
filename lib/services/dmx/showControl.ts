@@ -1,10 +1,10 @@
 import { createContext, Dispatch, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { getFixtureCollection, getLightingPlan, getShow, createShow, updateShow } from "../api/show-control-api";
+import { getFixtureCollection, getLightingPlan, getShow } from "../api/show-control-api";
 import { replaceFirstElement } from "../core/arrays";
 import { useEffectAsync, useInterval } from "../core/hooks";
 import { Color, RgbColor, RgbNamedColor } from "../core/types/rgbColor";
 import { HasId, Named } from "../core/types/utils";
-import { doNothing, doNothingAsync, generateId, notImplemented, notImplementedAsync, withValue } from "../core/utils";
+import { doNothing, generateId, notImplemented, withValue } from "../core/utils";
 import { Chans, Fixtures, StageLightingPlan } from "./dmx512";
 import { useDmxControl } from "./dmxControl";
 
@@ -409,7 +409,7 @@ export module Mappings {
                 fixture: fixtureName,
                 values
             } = se;
-    
+
             const fixture = lightingPlan.fixtures[fixtureName];
             const computedValues = computeDmxValues(fixture, values);
     
@@ -468,7 +468,7 @@ export function toScene(sceneInfo: SceneInfo): Scene {
             const { fixture, values} = sei;
 
             const SceneElt: SceneElement = {
-                fixture: fixture.name,
+                fixture: fixture.key,
                 values,
             }
 
@@ -586,8 +586,6 @@ export const ShowControlContext = createContext<ShowControlProps>({
 export function useNewShowControl(): ShowControlProps {
     const refreshRate = 30;
 
-    const [lastUpdate, setLastUpdate] = useState<number>(0);
-
     const tracksRef = useRef<Map<TrackId, Track>>(new Map());
 
     const dmxControl = useDmxControl();
@@ -672,13 +670,21 @@ export function useNewShowControl(): ShowControlProps {
     
     }, []);
 
+    const [blackout, setBlackout] = useState(false);
+    const [fade, setFade] = useState(0);
+    const [master, setMaster] = useState(1);
+
+    useEffect(() => {
+        if (!dmxControl) {
+            return;
+        }
+
+        dmxControl.setBlackout(blackout);
+        dmxControl.setFade(fade);
+        dmxControl.setMaster(master);
+    }, [blackout, fade, master, dmxControl]);
 
     const controler = useMemo<ShowControlProps>(() => {
-        const {
-            blackout, setBlackout,
-            fade, setFade,
-            master, setMaster,
-        } = dmxControl;
 
         const tracks = tracksRef.current;
 
@@ -692,10 +698,13 @@ export function useNewShowControl(): ShowControlProps {
             updateTrack,
             removeTrack,
         }
-    }, [dmxControl, addTrack, updateTrack, removeTrack ])
+    }, [blackout, fade, master, dmxControl, addTrack, updateTrack, removeTrack ])
 
-    useInterval((props) => {
-        const { time } = props;
+    useInterval(() => {
+
+        if (!dmxControl) {
+            return;
+        }
 
         dmxControl.cleanTargets();
         const targets = dmxControl.targets;
@@ -719,9 +728,7 @@ export function useNewShowControl(): ShowControlProps {
             })
         })
 
-        setLastUpdate(time);
-
-    }, 1000 / refreshRate, []);
+    }, 1000 / refreshRate, [dmxControl]);
 
     
     return controler;
@@ -826,6 +833,7 @@ export function useRealtimeScene(scene: SceneInfo|null, isPlaying: boolean = tru
     const trackRef = useRef<Track>();
 
     useEffect(() => {
+        
         let newTrack: Track|null = null;
         if (scene) {
             newTrack = addTrack(scene);
@@ -840,7 +848,7 @@ export function useRealtimeScene(scene: SceneInfo|null, isPlaying: boolean = tru
                 removeTrack(currTrack)
             }
         };
-    }, [scene?.id])
+    }, [scene?.id, addTrack, removeTrack, updateTrack])
 
 
     useEffect(() => {
@@ -854,7 +862,6 @@ export function useRealtimeScene(scene: SceneInfo|null, isPlaying: boolean = tru
 
     }, [scene, isPlaying, updateTrack, master]);
 
-    
     return track;
 }
 
