@@ -227,11 +227,12 @@ export module Mappings {
         
         const chanMap = new Map<Chans.ChannelType, number>()
 
-        Object.entries(channels).forEach(([k, v]) => {
-            chanMap.set(v, Number.parseInt(k))
+        Object.entries(channels.map).forEach(([k, v]) => {
+            chanMap.set(v.type, Number.parseInt(k))
         });
 
         for (const chan in values) {
+            console.log(chan);
             const chanType = <Chans.ChannelType>chan;
             const chanAddr = chanMap.get(chanType);
 
@@ -421,7 +422,7 @@ export module Mappings {
                 values,
                 rawValues: computedValues
             }
-    
+    console.log(sei);
             return sei;
         });
         
