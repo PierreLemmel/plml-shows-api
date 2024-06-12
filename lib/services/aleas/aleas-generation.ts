@@ -1,16 +1,22 @@
 import { get } from "http";
+import { type } from "os";
 import { getFixtureCollection, getLightingPlan, getShow } from "../api/show-control-api";
 import { HasId, Named, ShortNamed } from "../core/types/utils";
-import { notImplemented, randomElement, randomInt, randomRange, sequence } from "../core/utils";
+import { notImplemented, randomBool, randomElement, randomInt, randomRange, sequence } from "../core/utils";
 import { DmxValueSegment, Mappings, SceneInfo, ShowInfo } from "../dmx/showControl";
-import { getAudioLibraryCollection } from "./aleas-api";
+import { getAudioLibraryCollection, getInputProjectionLibraryCollection } from "./aleas-api";
 
-export type RangeOrValue = number | [ number, number ];
-
+export type RangeOrValue = number | Range;
+type Range = [ number, number ];
 
 export type Fade = RangeOrValue | { fadeIn: RangeOrValue, fadeOut: RangeOrValue };
 
-export type KeyFrame = [ number, number ];
+export type KeyFrame = [ number, number];
+
+export type StartAndDuration = {
+    startTime: number;
+    duration: number;
+}
 
 export const aleasFeatures = [
     "projections",
@@ -144,6 +150,18 @@ export type AleasAudioLibrary = {
     count: number;
 }
 
+
+export type AleasInputProjectionLibrariesCollection = {
+    libraries: AleasInputProjectionLibrary[];
+} & Named & ShortNamed & HasId;
+
+export type AleasInputProjectionLibrary = {
+    name: string;
+    key: string;
+    elements: string[];
+}
+
+
 type SceneBaseInfo = {
     templateName: string;
     duration: number;
@@ -173,13 +191,26 @@ type AudioElementsOrNoAudio = ({
     audio: AudioElement[]
 } | { hasAudio: false })
 
-type ProjectionElement = {
-    text: string;
+type ProjectionType = "text" | "timer";
+
+type ProjectionEltBase = {
     startTime: number;
     duration: number;
     fadeIn: number;
     fadeOut: number;
 }
+
+type ProjectionTextElement = ProjectionEltBase & {
+    type: "text";
+    text: string;
+}
+
+type ProjectionTimerElement = ProjectionEltBase & {
+    type: "timer";
+    timer: number;
+}
+
+type ProjectionElement = ProjectionTextElement | ProjectionTimerElement;
 type ProjectionsElementsOrNoProjections = ({
     hasProjections: true,
     projections: ProjectionElement[]
@@ -276,7 +307,7 @@ export type AleasLibraryElementTemplate<T extends object> = {
     enabled: ParamProviderOrValue<boolean>;
     weight: ParamProviderOrValue<number>;
     requiredFeatures?: AleasFeatures[];
-    durationRange: ParamProviderOrValue<[number, number]>;
+    durationRange: ParamProviderOrValue<Range>;
 
     value: ParamProviderOrValue<T>;
 };
@@ -286,7 +317,7 @@ export type AleasLibraryElementInstatiatedTemplate<T extends object> = {
     isPriority: boolean;
     enabled: boolean;
     weight: number;
-    durationRange: [number, number];
+    durationRange: Range;
 
     value: ParamProviderOrValue<T>;
 }
@@ -311,11 +342,13 @@ type LoadedLibrary<T> = {
 type LoadedLibraries = {
     dmxScenes: LoadedLibrary<SceneInfo>;
     audioLibraries: LoadedLibrary<AleasAudioLibrary>;
+    inputProjectionLibraries: LoadedLibrary<AleasInputProjectionLibrary>;
 }
 
 async function loadLibraries(showName: string, lightingPlan: string): Promise<LoadedLibraries> {
     const dmxShowInfo = await getDmxShowInfo(showName, lightingPlan);
     const audioLibrary = await getAudioLibraryCollection("aleas-2024");
+    const inputLibrary = await getInputProjectionLibraryCollection("aleas-2024");
 
     const dmxScenes = dmxShowInfo.scenes.reduce((acc, scene) => {
         acc[scene.name] = scene;
@@ -327,9 +360,15 @@ async function loadLibraries(showName: string, lightingPlan: string): Promise<Lo
         return acc;
     }, {} as LoadedLibrary<AleasAudioLibrary>);
 
+    const inputProjectionLibraries = inputLibrary.libraries.reduce((acc, library) => {
+        acc[library.key] = library;
+        return acc;
+    }, {} as LoadedLibrary<AleasInputProjectionLibrary>);
+
     const libraries: LoadedLibraries = {
         dmxScenes,
-        audioLibraries
+        audioLibraries,
+        inputProjectionLibraries
     }
 
     return libraries;
@@ -525,44 +564,53 @@ function getRandomElementFromAudioLib(libraries: LoadedLibrary<AleasAudioLibrary
     return `${libName}-${(index + 1).toString().padStart(2, "0")}`;
 }
 
-function getRandomDuration(...durations: [number, number][]): number {
+function getRandomProjectionInput(libraries: LoadedLibrary<AleasInputProjectionLibrary>): string {
+    const lib = randomElement(Object.values(libraries));
+    return randomElement(lib.elements);
+}
+
+function getRandomDuration(...durations: Range[]): number {
     const range = randomElement(durations);
     const duration = randomRange(range[0], range[1]);
     return duration;
 }
 
-function getRandomDurationRange(...durations: [number, number][]): [number, number] {
+function getWholeRangeAmplitude(...durations: Range[]): Range {
     const min = Math.min(...durations.map(d => d[0]));
     const max = Math.max(...durations.map(d => d[1]));
 
     return [min, max];
 }
 
-type HardCodedTemplateParts = {
+type HardCodedTemplateParts<TArgs> = {
     getBaseInfo: (args: CalculateParamValArgs) => SceneBaseInfo;
-    getLights: (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries) => LightsElementsOrNoLights;
-    getAudio?: (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries) => AudioElementsOrNoAudio;
-    getProjection?: (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries) => ProjectionsElementsOrNoProjections;
+    getLights: (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries, moreArgs: TArgs) => LightsElementsOrNoLights;
+    getAudio?: (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries, moreArgs: TArgs) => AudioElementsOrNoAudio;
+    getProjection?: (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries, moreArgs: TArgs) => ProjectionsElementsOrNoProjections;
+    getMoreArgs?: (args: CalculateParamValArgs, duration: number) => TArgs;
 }
 
-function makeSceneProvider(parts: HardCodedTemplateParts, libraries: LoadedLibraries): ParamProvider<SceneData> {
+function makeSceneProvider<TArgs = any>(parts: HardCodedTemplateParts<TArgs>, libraries: LoadedLibraries): ParamProvider<SceneData> {
 
     const {
         getBaseInfo,
         getLights,
         getAudio = () => ({ hasAudio: false }),
-        getProjection = () => ({ hasProjections: false })
+        getProjection = () => ({ hasProjections: false }),
+        getMoreArgs = () => { return {} as any;}
     } = parts;
 
     return (args: CalculateParamValArgs) => {
         const baseInfo = getBaseInfo(args);
         const { duration } = baseInfo;
 
+        const moreArgs = getMoreArgs(args, duration);
+
         return {
             ...baseInfo,
-            ...getLights(args, duration, libraries),
-            ...getAudio(args, duration, libraries),
-            ...getProjection(args, duration, libraries)
+            ...getLights(args, duration, libraries, moreArgs),
+            ...getAudio(args, duration, libraries, moreArgs),
+            ...getProjection(args, duration, libraries, moreArgs)
         }
     }
 }
@@ -614,10 +662,110 @@ function createStandardLevel(args: CreateLevelArgs): KeyFrame[] {
     ];
 }
 
+type GenerateRandomDurationsArgs = {
+    totalDuration: number;
+    range: Range;
+}
+function generateRandomDurations(args: GenerateRandomDurationsArgs): number[] {
+    
+    const { totalDuration, range } = args;
+
+    const [min, max] = range;
+        
+    const result = [ 0 ];
+    
+    let time = 0;
+    
+    while (time < totalDuration) {
+        const duration = randomRange(min, max);
+        time += duration;
+        result.push(time);
+    }
+
+    const contracted = contractTimes(result, totalDuration);
+    return contracted;
+}
+
+function contractTimes(times: number[], totalDuration: number) {
+    const lastTime = times[times.length - 1];
+    const ratio = totalDuration / lastTime;
+
+    return times.map(n => n * ratio);
+}
+
+type GeneratePulseKeyFramesArgs = {
+    duration: number;
+    period: number;
+    fade: number;
+    range: Range;
+}
+
+function generatePulseKeyFrames(args: GeneratePulseKeyFramesArgs): KeyFrame[] {
+    const {
+        duration,
+        period,
+        fade,
+        range
+    } = args;
+
+    let isMin = randomBool();
+    let time = 0;
+
+    const result: KeyFrame[] = [];
+
+    while (time < duration) {
+        const [value1, value2] = isMin ?
+            [range[0], range[1]] :
+            [range[1], range[0]];
+
+        result.push(
+            [time, value1],
+            [time + fade, value2],
+        );
+
+        time += period;
+        isMin = !isMin;
+    }
+
+    return result;
+}
+
+type GeneratePeriodicEventArgs = {
+    totalDuration: number;
+    period: number;
+    duration: number;
+    offset?: number;
+}
+
+function generatePeriodicEvent(args: GeneratePeriodicEventArgs): StartAndDuration[] {
+    const {
+        totalDuration,
+        period,
+        duration,
+        offset = 0
+    } = args;
+
+    const result: StartAndDuration[] = [];
+
+    let time = offset;
+    
+    while (time < totalDuration) {
+        result.push({
+            startTime: time,
+            duration
+        });
+
+        time += period;
+    }
+
+    return result;
+}
+
+
 type GenerateAudioElementsArgs = {
     sceneDuration: number;
-    audioDurationRange: [number, number];
-    fadeDurationRange: [number, number];
+    audioDurationRange: Range;
+    fadeDurationRange: Range;
     amplitude: number;
     startEndMargin: number;
     minSpaceBetweenAudio: number;
@@ -638,50 +786,92 @@ function generateAudioElements(libraries: LoadedLibraries, args: GenerateAudioEl
         occurencesCap = 1000
     } = args;
 
-    const maxAudioDuration = audioDurationRange[1];
+    const intervals = generateItermittentIntervals({
+        totalDuration: sceneDuration,
+        eventDurationRange: audioDurationRange,
+        startMargin: startEndMargin,
+        endMargin: startEndMargin,
+        minSpaceBetweenEvents: minSpaceBetweenAudio,
+        occurencesCap
+    })
 
     const fade = randomRange(fadeDurationRange[0], fadeDurationRange[1]);
-
-    const remainingTimeAfterMaxDuration = sceneDuration - maxAudioDuration - startEndMargin * 2;
-    const maxOccurences = Math.min(
-        1 + Math.floor(remainingTimeAfterMaxDuration / (minSpaceBetweenAudio + maxAudioDuration)),
-        occurencesCap
-    );
-
-    const occurences = randomInt(1, maxOccurences);
-
     const track = getRandomElementFromAudioLib(libraries.audioLibraries, ...audioLibraries);
+    const audioElements: AudioElement[] = intervals.map(interval => {
+        const {
+            startTime,
+            duration: eltDuration
+        } = interval;
 
-    const audioElements: AudioElement[] = [];
-
-    let currentLowerBound = startEndMargin;
-    for (let i = 0 ; i < occurences ; i++) {
-
-        const eltDuration = randomRange(audioDurationRange[0], audioDurationRange[1]);
-
-        const remainingOccurences = occurences - (i + 1);
-
-        const startTimeLB = currentLowerBound;
-        const startTimeUB = sceneDuration - startEndMargin - remainingOccurences * (minSpaceBetweenAudio + maxAudioDuration);
-        const startTime = randomRange(startTimeLB, startTimeUB);
-
-        audioElements.push({
+        return {
             track,
             startTime,
             duration: eltDuration,
             amplitude,
             volume: createStandardLevel({
                 duration: eltDuration,
-                fadeIn: fade,
-                fadeOut: fade,
+                fadeIn: fadeDurationRange[0],
+                fadeOut: fadeDurationRange[1],
                 offset: startTime,
             })
-        });
+        }
+    });
 
-        currentLowerBound = startTime + eltDuration + minSpaceBetweenAudio;
-    }
 
     return audioElements;
+}
+
+type GenerateIntermittentIntervalsArgs = {
+    totalDuration: number;
+    eventDurationRange: Range;
+    startMargin?: number;
+    endMargin?: number;
+    minSpaceBetweenEvents: number;
+    occurencesCap?: number;
+}
+
+function generateItermittentIntervals(args: GenerateIntermittentIntervalsArgs): StartAndDuration[] {
+    const {
+        totalDuration,
+        eventDurationRange,
+        startMargin = 0,
+        endMargin = 0,
+        minSpaceBetweenEvents,
+        occurencesCap = 1000
+    } = args;
+
+    const maxEventDuration = eventDurationRange[1];
+
+    const remainingTimeAfterMaxDuration = totalDuration - maxEventDuration - (startMargin + endMargin);
+    const maxOccurences = Math.min(
+        1 + Math.floor(remainingTimeAfterMaxDuration / (minSpaceBetweenEvents + maxEventDuration)),
+        occurencesCap
+    );
+
+    const occurences = randomInt(1, maxOccurences);
+
+    const result: StartAndDuration[] = [];
+
+    let currentLowerBound = startMargin;
+    for (let i = 0 ; i < occurences ; i++) {
+
+        const eltDuration = randomRange(eventDurationRange[0], eventDurationRange[1]);
+
+        const remainingOccurences = occurences - (i + 1);
+
+        const startTimeLB = currentLowerBound;
+        const startTimeUB = totalDuration - endMargin - remainingOccurences * (minSpaceBetweenEvents + maxEventDuration);
+        const startTime = randomRange(startTimeLB, startTimeUB);
+
+        result.push({
+            startTime,
+            duration: eltDuration,
+        });
+
+        currentLowerBound = startTime + eltDuration + minSpaceBetweenEvents;
+    }
+
+    return result;
 }
 
 
@@ -697,7 +887,7 @@ const improEnSeine = {
                 improEnSeine.durations.standard,
             ];
 
-            const durationRange = getRandomDurationRange(...availableDurations);
+            const durationRange = getWholeRangeAmplitude(...availableDurations);
             const availableScenes: string[][] = [
                 improEnSeine.scenes.standardScenes
             ];
@@ -717,6 +907,7 @@ const improEnSeine = {
         
                 const fadeIn = randomRange(1, 6);
                 const fadeOut = randomRange(1, 6);
+                const amplitude = randomRange(0.6, 1.0);
 
                 const scene = getRandomSceneFromScenes(availableScenes);
         
@@ -733,7 +924,7 @@ const improEnSeine = {
                     lights: [
                         {
                             scene,
-                            amplitude: 1.0,
+                            amplitude,
                             level,
                             elements: valueSegments
                         }
@@ -763,9 +954,10 @@ const improEnSeine = {
                 improEnSeine.durations.standard,
             ];
 
-            const durationRange = getRandomDurationRange(...availableDurations);
+            const durationRange = getWholeRangeAmplitude(...availableDurations);
             const availableScenes: string[][] = [
-                improEnSeine.scenes.standardScenes
+                improEnSeine.scenes.standardScenes,
+                improEnSeine.scenes.specials,
             ];
 
             const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
@@ -783,6 +975,7 @@ const improEnSeine = {
         
                 const fadeIn = randomRange(2, 6);
                 const fadeOut = randomRange(2, 6);
+                const amplitude = 0.6;
 
                 const scene = getRandomSceneFromScenes(availableScenes);
         
@@ -799,7 +992,7 @@ const improEnSeine = {
                     lights: [
                         {
                             scene,
-                            amplitude: 1.0,
+                            amplitude,
                             level,
                             elements: valueSegments
                         }
@@ -840,16 +1033,488 @@ const improEnSeine = {
             }
         },
         "projection-input": function(libraries: LoadedLibraries): AleasSceneTemplate {
-            return notImplemented();
+            const templateName = "projection-input";
+            const templateInfo = "Simple scene with a projection input";
+
+            const availableDurations = [
+                improEnSeine.durations.short,
+                improEnSeine.durations.standard,
+            ];
+
+            const projectionDuration = 8;
+
+            const durationRange = getWholeRangeAmplitude(...availableDurations);
+            const availableScenes: string[][] = [
+                improEnSeine.scenes.standardScenes,
+                improEnSeine.scenes.specials,
+            ];
+
+            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+                const duration = getRandomDuration(...availableDurations);
+        
+                return {
+                    templateName,
+                    duration,
+                    info: templateInfo
+                }
+            }
+        
+            const getLights = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): LightsElementsOrNoLights => {
+        
+                const fadeIn = randomRange(2, 6);
+                const fadeOut = randomRange(2, 6);
+                const amplitude = 0.6;
+
+                const scene = getRandomSceneFromScenes(availableScenes);
+        
+                const valueSegments = getValuesFromScene(libraries.dmxScenes, scene);
+
+                const level = createStandardLevel({
+                    duration: duration - projectionDuration,
+                    fadeIn,
+                    fadeOut,
+                    offset: projectionDuration,
+                });
+
+                return {
+                    hasLights: true,
+                    lights: [
+                        {
+                            scene,
+                            amplitude,
+                            level,
+                            elements: valueSegments
+                        }
+                    ]
+                }
+            }
+
+            const getProjection = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ProjectionsElementsOrNoProjections => {
+                    
+                const text = getRandomProjectionInput(libraries.inputProjectionLibraries);
+                return {
+                    hasProjections: true,
+                    projections: [
+                        {
+                            type: "text",
+                            text,
+                            startTime: 0,
+                            duration: projectionDuration,
+                            fadeIn: 1.0,
+                            fadeOut: 1.0
+                        }
+                    ]
+                }
+            }
+
+            return {
+                name: templateName,
+                isPriority: false,
+                enabled: (args: CalculateParamValArgs) => {
+                    const {
+                        progress,
+                    } = args;
+
+                    return progress > 0.20;
+                },
+                weight: (args: CalculateParamValArgs) => {
+
+                    const {
+                        progress,
+                        history
+                    } = args;
+
+                    const penalty = 5;
+                    const occurences = history.counts[templateName] || 0;
+
+                    const base = 50;
+                    const slope = 5;
+
+                    return Math.min(
+                        base + progress * slope - occurences * penalty,
+                        0
+                    );
+                },
+                requiredFeatures: [
+                    "projections"
+                ],
+                value: makeSceneProvider({
+                    getBaseInfo,
+                    getLights,
+                    getProjection
+                }, libraries),
+                durationRange
+            }
         },
-        "confessionnal": function(libraries: LoadedLibraries): AleasSceneTemplate {
-            return notImplemented();
+        "confessionnal": function(libraries: LoadedLibraries): AleasSceneTemplate { 
+            const templateName = "confessionnal";
+            const templateInfo = "Confessionnal";
+
+            const thresholds = [ 0.33, 0.66];
+            const confessionnalsCount = thresholds.length;
+
+            const confessionnalDuration = 120;
+
+            const durationRange: Range = [confessionnalDuration, confessionnalDuration];
+            const confessionnalScene = improEnSeine.scenes.confessionnal;
+
+            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+                const duration = confessionnalDuration;
+        
+                return {
+                    templateName,
+                    duration,
+                    info: templateInfo
+                }
+            }
+        
+            const getLights = (args: CalculateParamValArgs, duration: number): LightsElementsOrNoLights => {
+        
+                const fadeIn = randomRange(1, 3);
+                const fadeOut = randomRange(3, 5);
+                const amplitude = 1;
+
+                const scene = confessionnalScene;
+        
+                const valueSegments = getValuesFromScene(libraries.dmxScenes, scene);
+
+                const level = createStandardLevel({
+                    duration,
+                    fadeIn,
+                    fadeOut,
+                });
+
+                return {
+                    hasLights: true,
+                    lights: [
+                        {
+                            scene,
+                            amplitude,
+                            level,
+                            elements: valueSegments
+                        }
+                    ]
+                }
+            }
+
+            const getProjection = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ProjectionsElementsOrNoProjections => {
+                        
+                return {
+                    hasProjections: true,
+                    projections: [
+                        {
+                            type: "timer",
+                            timer: confessionnalDuration,
+                            startTime: 0,
+                            duration,
+                            fadeIn: 1.0,
+                            fadeOut: 1.0
+                        }
+                    ]
+                }
+            }
+
+            return {
+                name: templateName,
+                isPriority: (args: CalculateParamValArgs) => {
+                    const {
+                        progress,
+                        history
+                    } = args;
+
+                    const occurences = history.counts[templateName] || 0;
+
+                    return (progress > 0.33 && occurences < 1)
+                        || (progress > 0.66 && occurences < 2);
+                },
+                enabled: (args: CalculateParamValArgs) => {
+                    const {
+                        progress,
+                        history
+                    } = args;
+
+                    const occurences = history.counts[templateName] || 0;
+
+                    return occurences > confessionnalsCount;
+                },
+                weight: 0,
+                requiredFeatures: [
+                    "confessionnal",
+                    "projections"
+                ],
+                value: makeSceneProvider({
+                    getBaseInfo,
+                    getLights,
+                    getProjection,
+                }, libraries),
+                durationRange
+            }
         },
         "crudes": function(libraries: LoadedLibraries): AleasSceneTemplate {
-            return notImplemented();
+            const templateName = "crudes";
+            const templateInfo = "Crude scenes";
+
+            const availableDurations = [
+                improEnSeine.durations.short,
+                improEnSeine.durations.standard,
+                improEnSeine.durations.long
+            ];
+
+            const durationRange = getWholeRangeAmplitude(...availableDurations);
+            const availableScenes: string[][] = [
+                improEnSeine.scenes.crudes
+            ];
+
+            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+                const duration = getRandomDuration(...availableDurations);
+        
+                return {
+                    templateName,
+                    duration,
+                    info: templateInfo
+                }
+            }
+        
+            const getLights = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): LightsElementsOrNoLights => {
+        
+                const fadeIn = randomRange(2, 5);
+                const fadeOut = randomRange(2, 5);
+                const amplitude = randomRange(0.6, 1.0);
+
+                const scene = getRandomSceneFromScenes(availableScenes);
+        
+                const valueSegments = getValuesFromScene(libraries.dmxScenes, scene);
+
+                const level = createStandardLevel({
+                    duration,
+                    fadeIn,
+                    fadeOut,
+                });
+
+                return {
+                    hasLights: true,
+                    lights: [
+                        {
+                            scene,
+                            amplitude,
+                            level,
+                            elements: valueSegments
+                        }
+                    ]
+                }
+            }
+
+            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+
+                const audioOdds = 0.6;
+
+                if (Math.random() > audioOdds) {
+                    const audio = generateAudioElements(libraries, {
+                        sceneDuration: duration,
+                        audioDurationRange: [20, 60],
+                        fadeDurationRange: [1.5, 3.0],
+                        amplitude: 0.7,
+                        startEndMargin: 10,
+                        minSpaceBetweenAudio: 40,
+                        audioLibraries: ["aleas-general"]
+                    });
+
+                    return {
+                        hasAudio: true,
+                        audio
+                    }
+                }
+                else {
+                    return {
+                        hasAudio: false
+                    }
+                }
+            }
+
+            return {
+                name: templateName,
+                isPriority: false,
+                enabled: (args: CalculateParamValArgs) => {
+                    const {
+                        progress,
+                    } = args;
+                    
+
+                    return progress > 0.08;
+                },
+                weight: (args: CalculateParamValArgs) => {
+                    const {
+                        progress,
+                        history
+                    } = args;
+
+                    const penalty = 5;
+                    const occurences = history.counts[templateName] || 0;
+
+                    const base = 10;
+                    const slope = 20;
+
+                    return Math.max(
+                        base + progress * slope - occurences * penalty,
+                        0
+                    );
+                },
+                requiredFeatures: [],
+                value: makeSceneProvider({
+                    getBaseInfo,
+                    getLights,
+                    getAudio
+                }, libraries),
+                durationRange
+            }
         },
         "crudes-alternates": function(libraries: LoadedLibraries): AleasSceneTemplate {
-            return notImplemented();
+            const templateName = "crudes-alternates";
+            const templateInfo = "Crude scenes - Alternate";
+
+            const availableDurations = [
+                improEnSeine.durations.short,
+                improEnSeine.durations.standard,
+                improEnSeine.durations.long
+            ];
+            const durationRange = getWholeRangeAmplitude(...availableDurations);
+
+            const stepRangeSeed = [6, 10];
+            const minMidDuration = 8;
+            
+            const availableScenes: string[][][] = [
+                improEnSeine.scenes.crudesAlternates
+            ];
+
+            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+                const duration = getRandomDuration(...availableDurations);
+        
+                return {
+                    templateName,
+                    duration,
+                    info: templateInfo
+                }
+            }
+        
+            const getLights = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): LightsElementsOrNoLights => {
+        
+                const fade = randomRange(2, 5);
+                const amplitude = randomRange(0.6, 1.0);
+
+                const sceneLib = randomElement(availableScenes);
+                const scenes = randomElement(sceneLib);
+
+                const seed = randomRange(stepRangeSeed[0], stepRangeSeed[1]);
+                const midDuration = Math.max(
+                    duration / seed,
+                    minMidDuration
+                );
+
+                const steps = generateRandomDurations({
+                    totalDuration: duration,
+                    range: [midDuration / 2, midDuration * 1.5]
+                });
+
+                const trackCount = scenes.length;
+                const stepsByTrack: KeyFrame[][] = sequence(trackCount).map(() => []);
+                const init = randomInt(0, trackCount - 1);
+
+                let time = 0;
+                for (let i = 0, j = init; i < steps.length ; i++, j++) {
+                    const duration = steps[i];
+                    
+                    stepsByTrack[j % trackCount].push(
+                        [time, 0.0],
+                        [time + fade, 1.0],
+                        [time + duration - fade, 1.0],
+                        [time + duration, 0.0]
+                    );
+                    time += duration;
+                }
+        
+                const lights: LightsElement[] = scenes.map((scene, i) => {
+                    const valueSegments = getValuesFromScene(libraries.dmxScenes, scene);
+
+                    return {
+                        scene,
+                        amplitude,
+                        level: stepsByTrack[i],
+                        elements: valueSegments
+                    }
+                });
+
+                return {
+                    hasLights: true,
+                    lights
+                }
+            }
+
+            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+
+                const audioOdds = 0.6;
+
+                if (Math.random() > audioOdds) {
+                    const audio = generateAudioElements(libraries, {
+                        sceneDuration: duration,
+                        audioDurationRange: [20, 60],
+                        fadeDurationRange: [1.5, 3.0],
+                        amplitude: 0.7,
+                        startEndMargin: 10,
+                        minSpaceBetweenAudio: 40,
+                        audioLibraries: ["aleas-general"]
+                    });
+
+                    return {
+                        hasAudio: true,
+                        audio
+                    }
+                }
+                else {
+                    return {
+                        hasAudio: false
+                    }
+                }
+            }
+
+            return {
+                name: templateName,
+                isPriority: false,
+                enabled: (args: CalculateParamValArgs) => {
+                    const {
+                        progress,
+                    } = args;
+
+                    return progress > 0.15;
+                },
+                weight: (args: CalculateParamValArgs) => {
+                    const {
+                        progress,
+                        history
+                    } = args;
+
+                    const occurences = history.counts[templateName] || 0;
+                    const penalty = 8;
+
+                    const base = 0;
+                    const slope = 30;
+
+                    return Math.max(
+                        base + progress * slope - occurences * penalty,
+                        0
+                    );
+                },
+                requiredFeatures: [],
+                value: makeSceneProvider({
+                    getBaseInfo,
+                    getLights,
+                    getAudio
+                }, libraries),
+                durationRange
+            }
         },
         "ultra-short": function(libraries: LoadedLibraries): AleasSceneTemplate {
 
@@ -859,7 +1524,7 @@ const improEnSeine = {
             const availableDurations = [
                 improEnSeine.durations.ultraShort
             ];
-            const durationRange = getRandomDurationRange(...availableDurations);
+            const durationRange = getWholeRangeAmplitude(...availableDurations);
             
             const availableScenes: string[][] = [
                 improEnSeine.scenes.standardScenes,
@@ -920,21 +1585,20 @@ const improEnSeine = {
 
                     const occurences = history.counts[templateName] || 0;
                     
-
                     return progress > 0.18
+                        && occurences <= 2
                         && currentScene > 3
                         && progress < 0.9;
                 },
                 weight: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
                     } = args;
 
-                    const occurences = history.counts[templateName] || 0;
-                    const base = 10;
+                    const base = 5;
+                    const slope = 40;
 
-                    return progress; 
+                    return base + progress * slope;
                 },
                 requiredFeatures: [],
                 value: makeSceneProvider({
@@ -945,13 +1609,554 @@ const improEnSeine = {
             }
         },
         "run-boy-run": function(libraries: LoadedLibraries): AleasSceneTemplate {
-            return notImplemented();
+            const templateName = "run-boy-run";
+            const templateInfo = "Make them run!";
+
+            const availableDurations = [
+                improEnSeine.durations.runBoyRun,
+            ];
+            const durationRange = getWholeRangeAmplitude(...availableDurations);
+
+            const audioLibraries = [
+                "aleas-wtf",
+                "aleas-loud",
+                "aleas-text"
+            ];
+
+            const blackoutOffset = 3;
+            const stepRange: Range = [4, 11];
+
+            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+                const duration = getRandomDuration(...availableDurations);
+        
+                return {
+                    templateName,
+                    duration,
+                    info: templateInfo
+                }
+            }
+        
+            const getLights = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): LightsElementsOrNoLights => {
+        
+                const fade = randomRange(0.05, 0.3);
+                const amplitude = randomRange(0.8, 1.0);
+                const lvlFade = randomRange(0.5, 2);
+
+                const beamAmplitude = randomRange(0.8, 1.0);
+
+                const scenes = improEnSeine.scenes.douches.elements;
+
+                const steps = generateRandomDurations({
+                    totalDuration: duration,
+                    range: stepRange
+                });
+
+                const trackCount = scenes.length;
+                const stepsByTrack: KeyFrame[][] = sequence(trackCount).map(() => []);
+                const init = randomInt(0, trackCount - 1);
+
+                let time = 0;
+                for (let i = 0, j = init; i < steps.length ; i++, j++) {
+                    const duration = steps[i];
+                    
+                    stepsByTrack[j % trackCount].push(
+                        [time, 0.0],
+                        [time + fade, 1.0],
+                        [time + duration - fade, 1.0],
+                        [time + duration, 0.0]
+                    );
+                    time += duration;
+                }
+
+                const baseScene = improEnSeine.scenes.douches.base;
+                const doucheBase: LightsElement = {
+                    scene: baseScene,
+                    amplitude: 1.0,
+                    level: [
+                        [0, 1],
+                        [duration - blackoutOffset - lvlFade, 1],
+                        [duration - blackoutOffset, 0]
+                    ],
+                    elements: getValuesFromScene(libraries.dmxScenes, baseScene)
+                }
+
+                const beamScene = improEnSeine.scenes.douches.beam;
+                const doucheBeam: LightsElement = {
+                    scene: beamScene,
+                    amplitude: beamAmplitude,
+                    level: [
+                        [0, 1],
+                        [duration, 1]
+                    ],
+                    elements: getValuesFromScene(libraries.dmxScenes, beamScene)
+                }
+
+                const douchesLights: LightsElement[] = scenes.map((scene, i) => {
+                    const valueSegments = getValuesFromScene(libraries.dmxScenes, scene);
+
+                    return {
+                        scene,
+                        amplitude,
+                        level: stepsByTrack[i],
+                        elements: valueSegments
+                    }
+                });
+
+                return {
+                    hasLights: true,
+                    lights: [
+                        doucheBase,
+                        doucheBeam,
+                        ...douchesLights
+                    ]
+                }
+            }
+
+            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+
+                const lib = randomElement(audioLibraries);
+                const track = getRandomElementFromAudioLib(libraries.audioLibraries, lib);
+
+                return {
+                    hasAudio: true,
+                    audio: [
+                        {
+                            track,
+                            startTime: 0,
+                            duration,
+                            amplitude: 1.0,
+                            volume: createStandardLevel({
+                                duration,
+                                fadeIn: 1,
+                                fadeOut: blackoutOffset,
+                            })
+                        }
+                    ]
+                }
+            }
+
+            return {
+                name: templateName,
+                isPriority: false,
+                enabled: (args: CalculateParamValArgs) => {
+                    const {
+                        progress,
+                        history
+                    } = args;
+
+                    const occurences = history.counts[templateName] || 0;
+
+                    return progress > 0.4 && occurences < 2;
+                },
+                weight: (args: CalculateParamValArgs) => {
+                    const {
+                        progress,
+                        history
+                    } = args;
+
+                    const occurences = history.counts[templateName] || 0;
+                    const penalty = 20;
+
+                    const base = 0;
+                    const slope = 30;
+
+                    return Math.max(
+                        base + progress * slope - occurences * penalty,
+                        0
+                    );
+                },
+                requiredFeatures: [],
+                value: makeSceneProvider({
+                    getBaseInfo,
+                    getLights,
+                    getAudio
+                }, libraries),
+                durationRange
+            }
         },
         "pf-bascule-ambient": function(libraries: LoadedLibraries): AleasSceneTemplate {
-            return notImplemented();
+            const templateName = "pf-bascule-ambient";
+            const templateInfo = "Plein Feux - Bascule - Ambient";
+
+            const smokeDuration = 4;
+
+            const basculeRange: Range = [15, 30];
+
+            const availableDurations = [
+                improEnSeine.durations.standard,
+                improEnSeine.durations.long
+            ];
+            const durationRange = getWholeRangeAmplitude(...availableDurations);
+
+            const standardScenes = [
+                improEnSeine.scenes.standardScenes
+            ]
+
+            const ambientScenes = [
+                improEnSeine.scenes.ambients.fullColor,
+                improEnSeine.scenes.ambients.bicolor,
+            ];
+
+            const basculeAudioLibs = [
+                "aleas-loud",
+            ]
+
+            type PfBasculeAmbientMoreArgs = {
+                bascules: StartAndDuration[];
+                fadeToAmbient: number;
+                fadeToPF: number;
+            }
+
+            const getMoreArgs = (args: CalculateParamValArgs, duration: number) => {
+                const bascules: StartAndDuration[] = generateItermittentIntervals({
+                    totalDuration: duration,
+                    eventDurationRange: basculeRange,
+                    startMargin: 30,
+                    endMargin: 10,
+                    minSpaceBetweenEvents: 20,
+                    occurencesCap: 4
+                });
+
+                const fadeToAmbient = randomRange(1, 3);
+                const fadeToPF = randomRange(2, 5);
+
+                return {
+                    bascules,
+                    fadeToAmbient,
+                    fadeToPF
+                }
+            }
+
+            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+                const duration = getRandomDuration(...availableDurations);
+        
+                return {
+                    templateName,
+                    duration,
+                    info: templateInfo
+                }
+            }
+        
+            const getLights = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries, moreArgs: PfBasculeAmbientMoreArgs): LightsElementsOrNoLights => {
+                
+                const {
+                    bascules,
+                    fadeToAmbient,
+                    fadeToPF
+                } = moreArgs;
+
+                const ambientAmplitude = randomRange(0.6, 0.8);
+                const pfAmplitude = randomRange(0.6, 1.0);
+
+                const smokeFade = 0.1;
+
+                const pfScene = getRandomSceneFromScenes(standardScenes);
+                const ambientScene = getRandomSceneFromScenes(ambientScenes);
+
+                const pfKeyFrames: KeyFrame[] = [];
+                const ambientKeyFrames: KeyFrame[] = [];
+                const smokeKeyFrames: KeyFrame[] = [];
+
+                pfKeyFrames.push(
+                    [0, 0],
+                    [fadeToPF, 1],
+                )
+
+                ambientKeyFrames.push(
+                    [0, 0],
+                )
+
+                smokeKeyFrames.push(
+                    [0, 0],
+                )
+
+                for (const bascule of bascules) {
+                    const {
+                        startTime,
+                        duration: eltDuration
+                    } = bascule;
+
+                    pfKeyFrames.push(
+                        [startTime, 1],
+                        [startTime + fadeToAmbient, 0],
+                        [startTime + eltDuration - fadeToPF, 0],
+                        [startTime + eltDuration, 1]
+                    );
+
+                    ambientKeyFrames.push(
+                        [startTime, 0],
+                        [startTime + fadeToAmbient, 1],
+                        [startTime + eltDuration - fadeToPF, 1],
+                        [startTime + eltDuration, 0]
+                    );
+
+                    smokeKeyFrames.push(
+                        [startTime, 0],
+                        [startTime + smokeFade, 1],
+                        [startTime + smokeDuration, 1],
+                        [startTime + smokeDuration + smokeFade, 0]
+                    );
+                }
+
+                const pfElement: LightsElement = {
+                    scene: pfScene,
+                    amplitude: pfAmplitude,
+                    level: pfKeyFrames,
+                    elements: getValuesFromScene(libraries.dmxScenes, pfScene)
+                }
+
+                const ambientElement: LightsElement = {
+                    scene: ambientScene,
+                    amplitude: ambientAmplitude,
+                    level: ambientKeyFrames,
+                    elements: getValuesFromScene(libraries.dmxScenes, ambientScene)
+                }
+
+                const smokeScene = improEnSeine.scenes.smoke;
+                const smokeElement: LightsElement = {
+                    scene: smokeScene,
+                    amplitude: 1.0,
+                    level: smokeKeyFrames,
+                    elements: getValuesFromScene(libraries.dmxScenes, smokeScene)
+                }
+
+                return {
+                    hasLights: true,
+                    lights: [
+                        pfElement,
+                        ambientElement,
+                        smokeElement
+                    ]
+                }
+            }
+
+            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries, moreArgs: PfBasculeAmbientMoreArgs): AudioElementsOrNoAudio => {
+
+                const { bascules } = moreArgs;
+
+                const audioFade = randomRange(0.5, 1.5);
+                const audioAmplitude = 0.9;
+
+                const audioLib = randomElement(basculeAudioLibs);
+                const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
+
+                const audio = bascules.map(bascule => {
+                    const { startTime, duration: eltDuration } = bascule;
+
+                    return {
+                        track,
+                        startTime,
+                        duration: eltDuration,
+                        amplitude: audioAmplitude,
+                        volume: createStandardLevel({
+                            duration: eltDuration,
+                            fadeIn: audioFade,
+                            fadeOut: audioFade,
+                        })
+                    }
+                })
+
+                return {
+                    hasAudio: true,
+                    audio
+                }
+            }
+
+            return {
+                name: templateName,
+                isPriority: false,
+                enabled: (args: CalculateParamValArgs) => {
+                    const {
+                        progress,
+                    } = args;
+
+                    return progress > 0.25;
+                },
+                weight: (args: CalculateParamValArgs) => {
+                    const {
+                        progress,
+                        history
+                    } = args;
+
+                    const occurences = history.counts[templateName] || 0;
+                    const penalty = 8;
+
+                    const base = 10;
+                    const slope = 10;
+
+                    return Math.max(
+                        base + progress * slope - occurences * penalty,
+                        0
+                    );
+                },
+                requiredFeatures: ["smokeMachine"],
+                value: makeSceneProvider<PfBasculeAmbientMoreArgs>({
+                    getBaseInfo,
+                    getLights,
+                    getAudio,
+                    getMoreArgs
+                }, libraries),
+                durationRange
+            }
         },
-        "pf-bascule-isolation": function(libraries: LoadedLibraries): AleasSceneTemplate {
-            return notImplemented();
+        "ambient-with-smoke": function(libraries: LoadedLibraries): AleasSceneTemplate {
+            const templateName = "ambient-with-smoke";
+            const templateInfo = "Ambient with smoke";
+
+            const smokeDuration = 4;
+
+            const smokeInterval = 40;
+
+            const availableDurations = [
+                improEnSeine.durations.short,
+                improEnSeine.durations.standard,
+                improEnSeine.durations.long,
+            ];
+            const durationRange = getWholeRangeAmplitude(...availableDurations);
+
+            const ambientScenes = [
+                improEnSeine.scenes.ambients.fullColor,
+                improEnSeine.scenes.ambients.bicolor,
+            ];
+            const audioLibs = [
+                "aleas-ambient",
+            ]
+
+            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+                const duration = getRandomDuration(...availableDurations);
+        
+                return {
+                    templateName,
+                    duration,
+                    info: templateInfo
+                }
+            }
+        
+            const getLights = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): LightsElementsOrNoLights => {
+                
+                generatePeriodicEvent({
+                    totalDuration: 100,
+                    period: 40,
+                    duration: 10
+                })
+
+                const ambientAmplitude = randomRange(0.4, 0.7);
+                const blackoutOffset = 3;
+                const fadeIn = randomRange(2, 5);
+                const fadeOut = randomRange(2, 5);
+
+                const smokeFade = 0.1;
+
+                const ambientScene = getRandomSceneFromScenes(ambientScenes);
+
+                const ambientElement: LightsElement = {
+                    scene: ambientScene,
+                    amplitude: ambientAmplitude,
+                    level: createStandardLevel({
+                        duration: duration - blackoutOffset,
+                        fadeIn,
+                        fadeOut,
+                    }),
+                    elements: getValuesFromScene(libraries.dmxScenes, ambientScene)
+                }
+
+                const smokeKeyFrames: KeyFrame[] = []; 
+                const events = generatePeriodicEvent({
+                    totalDuration: duration,
+                    period: smokeInterval,
+                    duration: smokeDuration
+                })
+                events.forEach(event => {
+                    const { startTime } = event;
+
+                    smokeKeyFrames.push(
+                        [startTime, 0],
+                        [startTime + smokeFade, 1],
+                        [startTime + smokeDuration, 1],
+                        [startTime + smokeDuration + smokeFade, 0]
+                    );
+                });
+
+                const smokeScene = improEnSeine.scenes.smoke;
+                const smokeElement: LightsElement = {
+                    scene: smokeScene,
+                    amplitude: 1.0,
+                    level: smokeKeyFrames,
+                    elements: getValuesFromScene(libraries.dmxScenes, smokeScene)
+                }
+
+                return {
+                    hasLights: true,
+                    lights: [
+                        ambientElement,
+                        smokeElement
+                    ]
+                }
+            }
+
+            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+
+                const fadeIn = randomRange(2, 5);
+                const fadeOut = randomRange(2, 4);
+                const audioAmplitude = 0.3;
+
+                const audioLib = randomElement(audioLibs);
+                const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
+
+                return {
+                    hasAudio: true,
+                    audio: [{
+                        track,
+                        startTime: 0,
+                        duration,
+                        amplitude: audioAmplitude,
+                        volume: createStandardLevel({
+                            duration,
+                            fadeIn,
+                            fadeOut,
+                        })
+                    }]
+                }
+            }
+
+            return {
+                name: templateName,
+                isPriority: false,
+                enabled: (args: CalculateParamValArgs) => {
+                    const {
+                        progress,
+                    } = args;
+
+                    return progress > 0.1;
+                },
+                weight: (args: CalculateParamValArgs) => {
+                    const {
+                        progress,
+                        history
+                    } = args;
+
+                    const occurences = history.counts[templateName] || 0;
+                    const penalty = 6;
+
+                    const base = 20;
+                    const slope = 5;
+
+                    return Math.max(
+                        base + progress * slope - occurences * penalty,
+                        0
+                    );
+                },
+                requiredFeatures: ["smokeMachine"],
+                value: makeSceneProvider({
+                    getBaseInfo,
+                    getLights,
+                    getAudio,
+                }, libraries),
+                durationRange
+            }
         }
     } satisfies { [key: string]: (libraries: LoadedLibraries) => AleasSceneTemplate },
     scenes: {
@@ -1040,9 +2245,10 @@ const improEnSeine = {
     durations: {
         ultraShort: [5, 12],
         short: [30, 80],
+        runBoyRun: [30, 110],
         standard: [90, 450],
         long: [500, 900],
-    } satisfies { [key: string]: [number, number] }
+    } satisfies { [key: string]: Range }
 }
 
 function getImproEnSeineStaticElements(libraries: LoadedLibraries): AleasShowStaticElements {
