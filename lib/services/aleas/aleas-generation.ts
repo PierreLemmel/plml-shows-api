@@ -1,6 +1,7 @@
+import { get } from "http";
 import { getFixtureCollection, getLightingPlan, getShow } from "../api/show-control-api";
 import { HasId, Named, ShortNamed } from "../core/types/utils";
-import { randomElement, randomInt, randomRange } from "../core/utils";
+import { notImplemented, randomElement, randomInt, randomRange } from "../core/utils";
 import { DmxValueSegment, Mappings, SceneInfo, ShowInfo } from "../dmx/showControl";
 import { getAudioLibraryCollection } from "./aleas-api";
 
@@ -149,36 +150,39 @@ type SceneBaseInfo = {
     info: string;
 }
 
+type LightsElement = {
+    scene: string;
+    amplitude: number;
+    level: KeyFrame[];
+    elements: DmxValueSegment[];
+}
 type LightsElementsOrNoLights = ({
     hasLights: true,
-    lights: {
-        scene: string;
-        amplitude: number;
-        level: KeyFrame[];
-        elements: DmxValueSegment[];
-    }[],
+    lights: LightsElement[],
 } | { hasLights: false })
 
+type AudioElement = {
+    track: string;
+    startTime: number;
+    duration: number;
+    amplitude: number;
+    volume: KeyFrame[];
+}
 type AudioElementsOrNoAudio = ({
     hasAudio: true,
-    audio: {
-        track: string;
-        startTime: number;
-        duration: number;
-        amplitude: number;
-        volume: KeyFrame[];
-    }[]
+    audio: AudioElement[]
 } | { hasAudio: false })
 
+type ProjectionElement = {
+    text: string;
+    startTime: number;
+    duration: number;
+    fadeIn: number;
+    fadeOut: number;
+}
 type ProjectionsElementsOrNoProjections = ({
     hasProjections: true,
-    projections: {
-        text: string;
-        startTime: number;
-        duration: number;
-        fadeIn: number;
-        fadeOut: number;
-    }[]
+    projections: ProjectionElement[]
 } | { hasProjections: false })
 
 type SceneData = SceneBaseInfo
@@ -272,6 +276,8 @@ export type AleasLibraryElementTemplate<T extends object> = {
     enabled: ParamProviderOrValue<boolean>;
     weight: ParamProviderOrValue<number>;
     requiredFeatures?: AleasFeatures[];
+    durationRange: ParamProviderOrValue<[number, number]>;
+
     value: ParamProviderOrValue<T>;
 };
 
@@ -280,6 +286,7 @@ export type AleasLibraryElementInstatiatedTemplate<T extends object> = {
     isPriority: boolean;
     enabled: boolean;
     weight: number;
+    durationRange: [number, number];
 
     value: ParamProviderOrValue<T>;
 }
@@ -416,226 +423,6 @@ export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<Al
     }
 }
 
-const oldSampleScenes: any[] = [
-    {
-        name: "Scene-01",
-        duration: 58.2,
-        info: "Test scene with projections, audio and lights",
-        hasLights: true,
-        lights: [
-            {
-                scene: "testDmxScene",
-                amplitude: 1.0,
-                level: [
-                    [0.0, 0.0],
-                    [4.2, 1.0],
-                    [54.0, 1.0],
-                    [58.2, 0.0]
-                ],
-                elements: [
-                    {
-                        address: 1,
-                        values: [255, 0, 255, 0, 255, 0]
-                    },
-                    {
-                        address: 7,
-                        values: [0, 255, 255, 0, 255, 0]
-                    },
-                    {
-                        address: 13,
-                        values: [50]
-                    },
-                    {
-                        address: 14,
-                        values: [50]
-                    },
-                    {
-                        address: 15,
-                        values: [50]
-                    },
-                    {
-                        address: 16,
-                        values: [50]
-                    },
-                ]
-            },
-        ],
-        hasAudio: true,
-        audio: [
-            {
-                track: "beat1",
-                startTime: 12.0,
-                duration: 30.0,
-                amplitude: 0.85,
-                volume: [
-                    [ 0.0, 0.0 ],
-                    [ 4.5, 0.7 ],
-                    [ 12, 0.7 ],
-                    [ 13.5, 1.0 ],
-                    [ 20.3, 1.0 ],
-                    [ 22.0, 0.3 ],
-                    [ 28.0, 0.3 ],
-                    [ 30.0, 0.0 ]
-                ]
-            }
-        ],
-        hasProjections: true,
-        projections: [
-            {
-                text: "Salut",
-                startTime: 12.0,
-                duration: 4.0,
-                fadeIn: 0.5,
-                fadeOut: 0.5,
-            },
-            {
-                text: "Ca va ?",
-                startTime: 16.2,
-                duration: 4.0,
-                fadeIn: 0.5,
-                fadeOut: 0.5,
-            },
-            {
-                text: "Tu passes une bonne journée ?",
-                startTime: 20.4,
-                duration: 6.0,
-                fadeIn: 0.5,
-                fadeOut: 0.5,
-            }
-        ]
-    },
-    {
-        name: "Scene-02",
-        duration: 121.2,
-        info: "Test scene with only lights",
-        hasLights: true,
-        lights: [
-            {
-                scene: "testDmxScene 2",
-                amplitude: 1.0,
-                level: [
-                    [0.0, 0.0],
-                    [2.1, 1.0],
-                    [119.1, 1.0],
-                    [121.2, 0.0]
-                ],
-                elements: [
-                    {
-                        address: 13,
-                        values: [255]
-                    },
-                    {
-                        address: 14,
-                        values: [255]
-                    },
-                    {
-                        address: 15,
-                        values: [255]
-                    },
-                    {
-                        address: 16,
-                        values: [255]
-                    },
-                ]
-            },
-        ],
-        hasAudio: false,
-        hasProjections: false,
-    },
-    {
-        name: "Scene-03",
-        duration: 605,
-        info: "Long test scene with lights and audio",
-        hasLights: true,
-        lights: [
-            {
-                scene: "testDmxScene 2",
-                amplitude: 1.0,
-                level: [
-                    [0.0, 0.0],
-                    [2.1, 1.0],
-                    [602.9, 1.0],
-                    [605, 0.0]
-                ],
-                elements: [
-                    {
-                        address: 13,
-                        values: [255]
-                    },
-                    {
-                        address: 14,
-                        values: [255]
-                    },
-                    {
-                        address: 15,
-                        values: [255]
-                    },
-                    {
-                        address: 16,
-                        values: [255]
-                    },
-                    {
-                        address: 17,
-                        values: [255]
-                    },
-                    {
-                        address: 18,
-                        values: [255]
-                    },
-                    {
-                        address: 19,
-                        values: [255]
-                    },
-                    {
-                        address: 20,
-                        values: [255]
-                    }
-                ]
-            },
-        ],
-        hasAudio: true,
-        audio: [
-            {
-                track: "acid-meltdown",
-                startTime: 100.0,
-                duration: 20.0,
-                amplitude: 1.0,
-                volume: [
-                    [ 0.0, 0.0 ],
-                    [ 2.0, 1.0 ],
-                    [ 18.0, 1.0 ],
-                    [ 20.0, 0.0 ],
-                ]
-            },
-            {
-                track: "acid-meltdown",
-                startTime: 200.0,
-                duration: 20.0,
-                amplitude: 1.0,
-                volume: [
-                    [ 0.0, 0.0 ],
-                    [ 2.0, 1.0 ],
-                    [ 18.0, 1.0 ],
-                    [ 20.0, 0.0 ],
-                ]
-            },
-            {
-                track: "acid-meltdown",
-                startTime: 300.0,
-                duration: 20.0,
-                amplitude: 1.0,
-                volume: [
-                    [ 0.0, 0.0 ],
-                    [ 2.0, 1.0 ],
-                    [ 18.0, 1.0 ],
-                    [ 20.0, 0.0 ],
-                ]
-            },
-        ],
-        hasProjections: false,
-    }
-];
-
 function getNextElementFromTemplates<T extends object>(templates: AleasLibraryElementTemplate<T>[], features: Partial<AleasFeaturesMap>, args: CalculateParamValArgs): AleasLibraryElementInstatiatedTemplate<T> {
     const instantiatedTemplates: AleasLibraryElementInstatiatedTemplate<T>[] = templates
         .filter(template => {
@@ -651,7 +438,8 @@ function getNextElementFromTemplates<T extends object>(templates: AleasLibraryEl
                 isPriority,
                 enabled,
                 weight,
-                value
+                value,
+                durationRange
             } = template;
 
             return {
@@ -659,6 +447,7 @@ function getNextElementFromTemplates<T extends object>(templates: AleasLibraryEl
                 isPriority: calculateParamVal(isPriority, args),
                 enabled: calculateParamVal(enabled, args),
                 weight: calculateParamVal(weight, args),
+                durationRange: calculateParamVal(durationRange, args),
                 value
             }
         })
@@ -695,11 +484,10 @@ function getNextElementFromTemplates<T extends object>(templates: AleasLibraryEl
 }
 
 async function getAleasSceneTemplates(libraries: LoadedLibraries): Promise<AleasSceneTemplate[]> {
-    return getImprovibarSceneTemplates(libraries);
+    return getImproEnSeineSceneTemplates(libraries);
 }
 
 
-//@TODO: Add an override function to customize values in scene
 function getValuesFromScene(library: LoadedLibrary<SceneInfo>, scene: string): DmxValueSegment[] {
     const sceneInfo = library[scene];
 
@@ -725,13 +513,26 @@ function getValuesFromScene(library: LoadedLibrary<SceneInfo>, scene: string): D
     return segments;
 }
 
-function getRandomElementFromAudioLib(libraries: LoadedLibrary<AleasAudioLibrary>, libName: string): string {
+function getRandomElementFromAudioLib(libraries: LoadedLibrary<AleasAudioLibrary>, ...libs: string[]): string {
+    const libName = randomElement(libs);
     const lib = libraries[libName];
     const index = randomInt(0, lib.count);
 
     return `${libName}-${(index + 1).toString().padStart(2, "0")}`;
 }
 
+function getRandomDuration(...durations: [number, number][]): number {
+    const range = randomElement(durations);
+    const duration = randomRange(range[0], range[1]);
+    return duration;
+}
+
+function getDurationRange(...durations: [number, number][]): [number, number] {
+    const min = Math.min(...durations.map(d => d[0]));
+    const max = Math.max(...durations.map(d => d[1]));
+
+    return [min, max];
+}
 
 type HardCodedTemplateParts = {
     getBaseInfo: (args: CalculateParamValArgs) => SceneBaseInfo;
@@ -767,78 +568,164 @@ function getStaticElements(libraries: LoadedLibraries): AleasShowStaticElements 
 }
 
 function getPreshowElements(args: GenerateAleasPreShowArgs, libraries: LoadedLibraries): AleasPreshowElements {
-    return getImprovibarPreshowElements(args, libraries);
+    return getImproEnSeinePreshowElements(args, libraries);
 }
 
 function getPostshowElements(args: GenerateAleasPostShowArgs, libraries: LoadedLibraries): AleasPostShowElements {
-    return getImprovibarPostshowElements(args, libraries);
+    return getImproEnSeinePostshowElements(args, libraries);
 }
 
 
-function getImprovibarSceneTemplates(libraries: LoadedLibraries): AleasSceneTemplate[] {
+function getImproEnSeineSceneTemplates(libraries: LoadedLibraries): AleasSceneTemplate[] {
 
-    const factories: ((libraries: LoadedLibraries) => AleasSceneTemplate)[] = [
-        improvibar.templates["Mid scene - lights only"],
-        improvibar.templates["Mid scene - with music"],
-        improvibar.templates["Mid scene - with projection at start"]
-    ];
+    const factories: ((libraries: LoadedLibraries) => AleasSceneTemplate)[] = Object.values(improEnSeine.templates);
 
     const templates = factories.map(factory => factory(libraries));
     return templates;
 };
 
-const improvibarScenes = [
-    "Pleins feux chaud",
-    "Pleins feux froid",
-    "Barre + bleu",
-    "Glauque"
-]
+type CreateLevelArgs = {
+    duration: number;
+    fadeIn: number;
+    fadeOut: number;
+    offset?: number;
+    level?: number;
+}
 
-type ImprovibarScene = typeof improvibarScenes[number];
-const improvibar = {
+function createStandardLevel(args: CreateLevelArgs): KeyFrame[] {
 
+    const {
+        duration,
+        fadeIn,
+        fadeOut,
+        offset = 0,
+        level = 1.0
+    } = args;
+
+    return [
+        [offset + 0.0, 0.0],
+        [offset + fadeIn, level],
+        [offset + duration - fadeOut, level],
+        [offset + duration, 0.0]
+    ];
+}
+
+type GenerateAudioElementsArgs = {
+    sceneDuration: number;
+    audioDurationRange: [number, number];
+    fadeDurationRange: [number, number];
+    amplitude: number;
+    startEndMargin: number;
+    minSpaceBetweenAudio: number;
+    occurencesCap?: number;
+    audioLibraries: string[];
+}
+
+function generateAudioElements(libraries: LoadedLibraries, args: GenerateAudioElementsArgs): AudioElement[] {
+
+    const {
+        sceneDuration,
+        audioDurationRange,
+        fadeDurationRange,
+        amplitude,
+        startEndMargin,
+        minSpaceBetweenAudio,
+        audioLibraries,
+        occurencesCap = 1000
+    } = args;
+
+    const maxAudioDuration = audioDurationRange[1];
+
+    const fade = randomRange(fadeDurationRange[0], fadeDurationRange[1]);
+
+    const remainingTimeAfterMaxDuration = sceneDuration - maxAudioDuration - startEndMargin * 2;
+    const maxOccurences = Math.min(
+        1 + Math.floor(remainingTimeAfterMaxDuration / (minSpaceBetweenAudio + maxAudioDuration)),
+        occurencesCap
+    );
+
+    const occurences = randomInt(1, maxOccurences);
+
+    const track = getRandomElementFromAudioLib(libraries.audioLibraries, ...audioLibraries);
+
+    const audioElements: AudioElement[] = [];
+
+    let currentLowerBound = startEndMargin;
+    for (let i = 0 ; i < occurences ; i++) {
+
+        const eltDuration = randomRange(audioDurationRange[0], audioDurationRange[1]);
+
+        const remainingOccurences = occurences - (i + 1);
+
+        const startTimeLB = currentLowerBound;
+        const startTimeUB = sceneDuration - startEndMargin - remainingOccurences * (minSpaceBetweenAudio + maxAudioDuration);
+        const startTime = randomRange(startTimeLB, startTimeUB);
+
+        audioElements.push({
+            track,
+            startTime,
+            duration: eltDuration,
+            amplitude,
+            volume: createStandardLevel({
+                duration: eltDuration,
+                fadeIn: fade,
+                fadeOut: fade,
+                offset: startTime,
+            })
+        });
+
+        currentLowerBound = startTime + eltDuration + minSpaceBetweenAudio;
+    }
+
+    return audioElements;
+}
+
+
+const improEnSeine = {
     templates: {
+        "simple-standard-duration": function(libraries: LoadedLibraries): AleasSceneTemplate {
+            
+            const durations = [
+                improEnSeine.durations.short,
+                improEnSeine.durations.standard,
+            ];
 
-        "Mid scene - lights only": function(libraries: LoadedLibraries): AleasSceneTemplate {
-
-            const durationRange = [30, 360];
-
-            const scenes: ImprovibarScene[] = [
-                "Pleins feux chaud",
-                "Pleins feux froid",
-            ]
+            const durationRange = getDurationRange(...durations);
+            const scenes: string[] = improEnSeine.scenes.standardScenes;
 
             const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
 
-                const duration = randomRange(durationRange[0], durationRange[1]);
+                const duration = getRandomDuration(...durations);
         
                 return {
-                    templateName: "Mid scene - lights only",
+                    templateName: "simple - standard duration",
                     duration,
-                    info: "Mid scene with lights only"
+                    info: "Simple scene with basic lights and standard duration"
                 }
             }
         
             const getLights = (args: CalculateParamValArgs, duration: number): LightsElementsOrNoLights => {
         
-                const fadeIn = randomRange(0, 5);
-                const fadeOut = randomRange(0, 5);
+                const fadeIn = randomRange(1, 6);
+                const fadeOut = randomRange(1, 6);
 
                 const scene = randomElement(scenes);
         
                 const valueSegments = getValuesFromScene(libraries.dmxScenes, scene);
+
+                const level = createStandardLevel({
+                    duration,
+                    fadeIn,
+                    fadeOut,
+                });
+
                 return {
                     hasLights: true,
                     lights: [
                         {
-                            scene: "Pleins feux chaud",
+                            scene,
                             amplitude: 1.0,
-                            level: [
-                                [0.0, 0.0],
-                                [fadeIn, 1.0],
-                                [duration - fadeOut, 1.0],
-                                [duration, 0.0]
-                            ],
+                            level,
                             elements: valueSegments
                         }
                     ]
@@ -846,7 +733,7 @@ const improvibar = {
             }
 
             return {
-                name: "Mid scene - lights only",
+                name: "simple-standard-duration",
                 isPriority: false,
                 enabled: true,
                 weight: 10,
@@ -854,205 +741,238 @@ const improvibar = {
                 value: makeSceneProvider({
                     getBaseInfo,
                     getLights,
-                }, libraries)
+                }, libraries),
+                durationRange
             }
         },
+        "simple-with-music": function(libraries: LoadedLibraries): AleasSceneTemplate {
+            
+            const durations = [
+                improEnSeine.durations.standard,
+            ];
 
-        "Mid scene - with music": function(libraries: LoadedLibraries): AleasSceneTemplate {
-
-            const durationRange = [45, 360];
-
-            const scenes: ImprovibarScene[] = [
-                "Pleins feux chaud",
-                "Pleins feux froid",
-                "Barre + bleu",
-                "Glauque"
-            ]
-
-            const audioLib = "aleas-general";
-            const audioDurationRange = [30, 100];
-            const audioVolumeRange = [0.5, 0.7];
+            const durationRange = getDurationRange(...durations);
+            const scenes: string[] = improEnSeine.scenes.standardScenes;
 
             const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
 
-                const duration = randomRange(durationRange[0], durationRange[1]);
+                const duration = getRandomDuration(...durations);
         
                 return {
-                    templateName: "Mid scene - with music",
+                    templateName: "simple-with-music",
                     duration,
-                    info: "Mid scene - with music"
+                    info: "Simple scene with basic lights, standard duration and music"
                 }
             }
         
-            const getLights = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): LightsElementsOrNoLights => {
+            const getLights = (args: CalculateParamValArgs, duration: number): LightsElementsOrNoLights => {
         
-                const fadeIn = randomRange(0, 5);
-                const fadeOut = randomRange(0, 5);
+                const fadeIn = randomRange(2, 6);
+                const fadeOut = randomRange(2, 6);
 
                 const scene = randomElement(scenes);
         
                 const valueSegments = getValuesFromScene(libraries.dmxScenes, scene);
+
+                const level = createStandardLevel({
+                    duration,
+                    fadeIn,
+                    fadeOut,
+                });
+
                 return {
                     hasLights: true,
                     lights: [
                         {
                             scene,
                             amplitude: 1.0,
-                            level: [
-                                [0.0, 0.0],
-                                [fadeIn, 1.0],
-                                [duration - fadeOut, 1.0],
-                                [duration, 0.0]
-                            ],
+                            level,
                             elements: valueSegments
                         }
                     ]
                 }
             }
 
-            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+            const getAudio = (args: CalculateParamValArgs, duration: number): AudioElementsOrNoAudio => {
 
-                const margin = 5;
-                const maxAudioDuration = Math.min(
-                    duration - 2 * margin,
-                    audioDurationRange[1]
-                );
+                const audioDurationRange = [20, 60];
+                const maxAudioDuration = audioDurationRange[1];
 
-                const audioDuration = randomRange(
-                    audioDurationRange[0],
-                    maxAudioDuration
-                );
-                const fadeIn = randomRange(0, 5);
-                const fadeOut = randomRange(0, 5);
-                const amplitude = randomRange(audioVolumeRange[0], audioVolumeRange[1]);
+                const fadeDuration = [1.5, 2.5];
+                const fade = randomRange(fadeDuration[0], fadeDuration[1]);
 
-                const audioStartTime = randomRange(0, duration - audioDuration - margin);
-                const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
-                    
+                const amplitude = 0.5;
+
+                const startEndMargin = 10;
+
+                const minSpaceBetweenAudio = 40;
+
+                const remainingTimeAfterMaxDuration = duration - maxAudioDuration - startEndMargin * 2;
+                const maxOccurences = 1 + Math.floor(remainingTimeAfterMaxDuration / (minSpaceBetweenAudio + maxAudioDuration));
+
+                const occurences = randomInt(1, maxOccurences);
+
+                const track = getRandomElementFromAudioLib(libraries.audioLibraries, "aleas-general");
+
+                const audioElements: AudioElement[] = [];
+
+                let currentLowerBound = startEndMargin;
+                for (let i = 0 ; i < occurences ; i++) {
+
+                    const eltDuration = randomRange(audioDurationRange[0], audioDurationRange[1]);
+
+                    const remainingOccurences = occurences - (i + 1);
+
+                    const startTimeLB = currentLowerBound;
+                    const startTimeUB = duration - startEndMargin - remainingOccurences * (minSpaceBetweenAudio + maxAudioDuration);
+                    const startTime = randomRange(startTimeLB, startTimeUB);
+
+                    audioElements.push({
+                        track,
+                        startTime,
+                        duration: eltDuration,
+                        amplitude,
+                        volume: createStandardLevel({
+                            duration: eltDuration,
+                            fadeIn: fade,
+                            fadeOut: fade,
+                            offset: startTime,
+                        })
+                    });
+
+                    currentLowerBound = startTime + eltDuration + minSpaceBetweenAudio;
+                }
+
                 return {
                     hasAudio: true,
-                    audio: [
-                        {
-                            track: track,
-                            startTime: audioStartTime,
-                            duration: audioDuration,
-                            amplitude,
-                            volume: [
-                                [0.0, 0.0],
-                                [fadeIn, 1.0],
-                                [duration - fadeOut, 1.0],
-                                [duration, 0.0]
-                            ]
-                        }
-                    ]
+                    audio: audioElements
                 }
             }
 
             return {
-                name: "Mid scene - With audio",
+                name: "simple-with-music",
                 isPriority: false,
                 enabled: true,
-                weight: 20,
-                requiredFeatures: [
-                    
-                ],
+                weight: 10,
+                requiredFeatures: [],
                 value: makeSceneProvider({
                     getBaseInfo,
                     getLights,
                     getAudio
-                }, libraries)
+                }, libraries),
+                durationRange
             }
         },
-
-        "Mid scene - with projection at start": function(libraries: LoadedLibraries): AleasSceneTemplate {
-                
-            const durationRange = [45, 360];
-
-            const scenes: ImprovibarScene[] = [
-                "Pleins feux chaud",
-                "Pleins feux froid",
-                "Barre + bleu",
-                "Glauque"
-            ]
-
-            const shortProjectionDuration = 2.5;
-            const projectionFade = 0.25;
-
-            const texts = [
-                "Salut",
-                "Ca va ?",
-                "Ceci est un test",
-            ]
-
-            const projectionDuration = texts.length * shortProjectionDuration;
-
-            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
-
-                const duration = randomRange(durationRange[0], durationRange[1]);
-        
-                return {
-                    templateName: "Mid scene - with projection",
-                    duration,
-                    info: "Mid scene - with projection"
-                }
-            }
-        
-            const getLights = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): LightsElementsOrNoLights => {
-        
-                const fadeIn = randomRange(0, 5);
-                const fadeOut = randomRange(0, 5);
-
-                const scene = randomElement(scenes);
-        
-                const valueSegments = getValuesFromScene(libraries.dmxScenes, scene);
-                return {
-                    hasLights: true,
-                    lights: [
-                        {
-                            scene,
-                            amplitude: 1.0,
-                            level: [
-                                [projectionDuration, 0.0],
-                                [projectionDuration + fadeIn, 1.0],
-                                [duration - fadeOut, 1.0],
-                                [duration, 0.0]
-                            ],
-                            elements: valueSegments
-                        }
-                    ]
-                }
-            }
-            
-            const getProjection = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ProjectionsElementsOrNoProjections => {
-                return {
-                    hasProjections: true,
-                    projections: texts.map((text, i) => ({
-                        text,
-                        startTime: i * shortProjectionDuration,
-                        duration: shortProjectionDuration,
-                        fadeIn: projectionFade,
-                        fadeOut: projectionFade
-                    }))
-                }
-            }
-
-            return {
-                name: "Mid scene - With projection",
-                isPriority: false,
-                enabled: true,
-                weight: 10,
-                requiredFeatures: [
-                    "projections"
-                ],
-                value: makeSceneProvider({
-                    getBaseInfo,
-                    getLights,
-                    getProjection
-                }, libraries)
-            
-            }
+        "projection-input": function(libraries: LoadedLibraries): AleasSceneTemplate {
+            return notImplemented();
+        },
+        "confessionnal": function(libraries: LoadedLibraries): AleasSceneTemplate {
+            return notImplemented();
+        },
+        "crudes": function(libraries: LoadedLibraries): AleasSceneTemplate {
+            return notImplemented();
+        },
+        "crudes-alternates": function(libraries: LoadedLibraries): AleasSceneTemplate {
+            return notImplemented();
+        },
+        "ultra-short": function(libraries: LoadedLibraries): AleasSceneTemplate {
+            return notImplemented();
+        },
+        "run-boy-run": function(libraries: LoadedLibraries): AleasSceneTemplate {
+            return notImplemented();
+        },
+        "pf-bascule-ambient": function(libraries: LoadedLibraries): AleasSceneTemplate {
+            return notImplemented();
+        },
+        "pf-bascule-isolation": function(libraries: LoadedLibraries): AleasSceneTemplate {
+            return notImplemented();
         }
-    }
+    } satisfies { [key: string]: (libraries: LoadedLibraries) => AleasSceneTemplate },
+    scenes: {
+        public: "public",
+        static: "static",
+        intro: {
+            base: "intro-outro-base",
+            elements: [
+                "intro-outro-01",
+                "intro-outro-02",
+                "intro-outro-03",
+                "intro-outro-04",
+                "intro-outro-05",
+            ]
+        },
+        outro: {
+            base: "intro-outro-base",
+            elements: [
+                "intro-outro-01",
+                "intro-outro-02",
+                "intro-outro-03",
+                "intro-outro-04",
+                "intro-outro-05",
+            ]
+        },
+        confessionnal: "confessionnal",
+        standardScenes: [
+            "faces-chaudes",
+            "faces-froides",
+            "pf chaud",
+            "pf froid",
+        ],
+        standardAlternates: [
+            [
+                "chaud-jar",
+                "chaud-cour"
+            ],
+            [
+                "froid-jar",
+                "froid-cour"
+            ]
+        ],
+        smoke: "smoke",
+        isolations: [
+            "douche-centrale",
+        ],
+        crudes: [
+            "diag-jar-cour",
+            "diag-cour-jar",
+            "rasant-jar",
+            "rasant-cour",
+        ],
+        specials: [
+            "double-diag",
+            "double-douches",
+            "face-fond-bleu",
+        ],
+        crudesAlternates: [
+            [
+                "diag-jar-cour",
+                "diag-cour-jar",
+            ],
+            [
+                "rasant-jar",
+                "rasant-cour",
+            ],
+            [
+                "lateraux-chaud-jar",
+                "lateraux-chaud-cour",
+            ]
+        ],
+        douches: {
+            base: "douches-base",
+            beam: "douches-beam",
+            elements: [
+                "douche-01",
+                "douche-02",
+                "douche-03",
+            ]
+        }
+    },
+    durations: {
+        ultraShort: [5, 12],
+        short: [30, 80],
+        standard: [90, 450],
+        long: [500, 900],
+    } satisfies { [key: string]: [number, number] }
 }
 
 function getImproEnSeineStaticElements(libraries: LoadedLibraries): AleasShowStaticElements {
@@ -1065,14 +985,14 @@ function getImproEnSeineStaticElements(libraries: LoadedLibraries): AleasShowSta
     }
 }
 
-function getImprovibarPreshowElements(args: GenerateAleasPreShowArgs, libraries: LoadedLibraries): AleasPreshowElements {
+function getImproEnSeinePreshowElements(args: GenerateAleasPreShowArgs, libraries: LoadedLibraries): AleasPreshowElements {
     
     return {
 
     }
 }
 
-function getImprovibarPostshowElements(args: GenerateAleasPostShowArgs, libraries: LoadedLibraries): AleasPostShowElements {
+function getImproEnSeinePostshowElements(args: GenerateAleasPostShowArgs, libraries: LoadedLibraries): AleasPostShowElements {
     return {
         
     }
