@@ -3,10 +3,11 @@ import { AleasMainLayout } from "@/components/aleas-components/aleas-layout"
 import { AleasAudioLibrary } from "@/lib/services/aleas/aleas-generation";
 import { isDev } from "@/lib/services/api/api";
 import { setDocument } from "@/lib/services/api/firebase";
-import { getFixtureCollection, updateFixtureCollection } from "@/lib/services/api/show-control-api";
+import { getShow, updateShow } from "@/lib/services/api/show-control-api";
 import { pathCombine } from "@/lib/services/core/files";
-import { generateId } from "@/lib/services/core/utils";
-import { Fixtures } from "@/lib/services/dmx/dmx512";
+import { Color } from "@/lib/services/core/types/rgbColor";
+import { generateId, sequence } from "@/lib/services/core/utils";
+import { Scene } from "@/lib/services/dmx/showControl";
 import { GetStaticProps } from "next";
 import { useEffect, useState } from "react";
 
@@ -35,53 +36,61 @@ const DoStuff = (props: DoStuffProps) => {
 
     const doStuff = async () => {
 
-        const libraries: AleasAudioLibrary[] = [
-            {
-                name: "Aléas - Général",
-                key: "aleas-general",
-                count: 68
-            },
-            {
-                name: "Aléas - Ambient",
-                key: "aleas-ambient",
-                count: 16
-            },
-            {
-                name: "Aléas - Loud",
-                key: "aleas-loud",
-                count: 22
-            },
-            {
-                name: "Aléas - Standalone",
-                key: "aleas-standalone",
-                count: 12
-            },
-            {
-                name: "Aléas - Text",
-                key: "aleas-text",
-                count: 7
-            },
-            {
-                name: "Aléas - WTF",
-                key: "aleas-wtf",
-                count: 3
-            },
-            {
-                name: "Aléas - Billetreduc",
-                key: "aleas-billetreduc",
-                count: 17
-            }
-        ]
+        const lp = "impro-en-seine";
+        const showName = "aléas2024";
+        const show = await getShow(lp, showName);
 
-        await setDocument(
-            pathCombine("aleas", "library", "audio", "aleas-2024"),
-            {
-                libraries,
+        const scenes = show.scenes;
+        const template = scenes[scenes.length - 1];
+
+        const colorCount = 12;
+        const saturation = 0.7;
+        const value = 1;        
+        const scenesToAdd: Scene[] = sequence(colorCount).map(i => {
+
+            const hue1 = i * 360 / colorCount;
+            const hue2 = (hue1 + 180) % 360;
+
+            const hsv1 = Color.hsv(hue1, saturation, value);
+            const hsv2 = Color.hsv(hue2, saturation, value);
+            const rgb1 = Color.hsvToRgb(hsv1);
+            const rgb2 = Color.hsvToRgb(hsv2);
+            const { elements } = template;
+
+            const newElements = structuredClone(elements);
+            
+            newElements.forEach(element => {
+                const { fixture, values } = element;
+
+                if(!values["Color"]) {
+                    return;
+                }
+                
+                if (fixture.startsWith("parLed")) {
+                    element.values["Color"] = rgb1;
+                }
+                else if (fixture.startsWith("rampeLed")) {
+                    element.values["Color"] = rgb2;
+                }
+            })
+            return {
                 id: generateId(),
-                name: "Aléas 2024",
-                shortName: "aleas-2024",
+                name: `ambient-bicolor-${(i + 1).toString().padStart(2, "0")}`,
+                elements: newElements
             }
-        );
+        });
+
+        console.log("Added scenes");
+        console.log(scenesToAdd)
+
+        // await updateShow({
+        //     name: showName,
+        //     lightingPlan: lp,
+        //     scenes: [
+        //         ...scenes,
+        //         ...scenesToAdd
+        //     ]
+        // })
     };
 
     const [working, setWorking] = useState<boolean>(false);

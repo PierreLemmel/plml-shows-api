@@ -763,7 +763,7 @@ function makeSceneProvider(parts: HardCodedTemplateParts, libraries: LoadedLibra
 }
 
 function getStaticElements(libraries: LoadedLibraries): AleasShowStaticElements {
-    return getImprovibarStaticElements(libraries);
+    return getImproEnSeineStaticElements(libraries);
 }
 
 function getPreshowElements(args: GenerateAleasPreShowArgs, libraries: LoadedLibraries): AleasPreshowElements {
@@ -1055,7 +1055,7 @@ const improvibar = {
     }
 }
 
-function getImprovibarStaticElements(libraries: LoadedLibraries): AleasShowStaticElements {
+function getImproEnSeineStaticElements(libraries: LoadedLibraries): AleasShowStaticElements {
 
     return {
         lights: {
