@@ -232,7 +232,7 @@ export module Mappings {
         });
 
         for (const chan in values) {
-            console.log(chan);
+            
             const chanType = <Chans.ChannelType>chan;
             const chanAddr = chanMap.get(chanType);
 
@@ -422,7 +422,7 @@ export module Mappings {
                 values,
                 rawValues: computedValues
             }
-    console.log(sei);
+            
             return sei;
         });
         

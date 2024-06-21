@@ -1,8 +1,6 @@
-import { get } from "http";
-import { type } from "os";
 import { getFixtureCollection, getLightingPlan, getShow } from "../api/show-control-api";
 import { HasId, Named, ShortNamed } from "../core/types/utils";
-import { notImplemented, randomBool, randomElement, randomInt, randomRange, sequence } from "../core/utils";
+import { randomBool, randomElement, randomInt, randomRange, sequence } from "../core/utils";
 import { DmxValueSegment, Mappings, SceneInfo, ShowInfo } from "../dmx/showControl";
 import { getAudioLibraryCollection, getInputProjectionLibraryCollection } from "./aleas-api";
 
@@ -195,14 +193,14 @@ type ProjectionType = "text" | "timer";
 
 type ProjectionEltBase = {
     startTime: number;
-    duration: number;
-    fadeIn: number;
-    fadeOut: number;
 }
 
 type ProjectionTextElement = ProjectionEltBase & {
     type: "text";
     text: string;
+    duration: number;
+    fadeIn: number;
+    fadeOut: number;
 }
 
 type ProjectionTimerElement = ProjectionEltBase & {
@@ -216,11 +214,14 @@ type ProjectionsElementsOrNoProjections = ({
     projections: ProjectionElement[]
 } | { hasProjections: false })
 
-type SceneData = SceneBaseInfo
+export type SceneData = SceneBaseInfo
     & LightsElementsOrNoLights
     & AudioElementsOrNoAudio
     & ProjectionsElementsOrNoProjections;
-export type AleasShowScene = { name: string }
+export type AleasShowScene = {
+    name: string,
+    displayName: string
+}
     & SceneData;
 
 type AleasShowStaticElements = {
@@ -301,7 +302,7 @@ function calculateParamVal<T extends ProviderOrValueInType>(providerOrValue: Par
 }
 
 
-export type AleasLibraryElementTemplate<T extends object> = {
+export type AleasSceneTemplate = {
     name: string;
     isPriority: ParamProviderOrValue<boolean>;
     enabled: ParamProviderOrValue<boolean>;
@@ -309,21 +310,18 @@ export type AleasLibraryElementTemplate<T extends object> = {
     requiredFeatures?: AleasFeatures[];
     durationRange: ParamProviderOrValue<Range>;
 
-    value: ParamProviderOrValue<T>;
+    value: ParamProviderOrValue<SceneData>;
 };
 
-export type AleasLibraryElementInstatiatedTemplate<T extends object> = {
+export type AleasSceneInstatiatedTemplate = {
     name: string;
     isPriority: boolean;
     enabled: boolean;
     weight: number;
     durationRange: Range;
 
-    value: ParamProviderOrValue<T>;
+    value: ParamProviderOrValue<SceneData>;
 }
-
-export type AleasSceneTemplate = AleasLibraryElementTemplate<SceneData>;
-export type AleasSceneInstatiatedTemplate = AleasLibraryElementInstatiatedTemplate<SceneData>;
 
 async function getDmxShowInfo(showName: string, lightingPlan: string) {
     const dmxShow = await getShow(lightingPlan, showName);
@@ -403,14 +401,25 @@ export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<Al
     const templates = await getAleasSceneTemplates(libraries);
 
 
+    
     let currentTime = 0;
     let currentScene = 0;
     const history: CalculateParamHistory = {
         elements: [],
         counts: {}
     };
-
+    
     const scenes: AleasShowScene[] = [];
+    const intro = generateIntroScene(args, libraries);
+
+    currentTime += intro.duration;
+    currentTime += blackoutDurationValue;
+
+    scenes.push({
+        ...intro,
+        name: "Intro",
+        displayName: "Intro"
+    });
 
     while (currentTime < totalDuration) {
 
@@ -432,10 +441,12 @@ export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<Al
             duration: nextScene.duration
         });
 
-        history.counts[next.name] = (history.counts[next.name] || 0) + 1;
+        const newOccurencesCount = (history.counts[next.name] || 0) + 1;
+        history.counts[next.name] = newOccurencesCount;
 
         scenes.push({
             name: `Scene-${(currentScene + 1).toString().padStart(2, "0")}`,
+            displayName: `Scene-${(currentScene + 1).toString().padStart(2, "0")} - ${next.name} - ${newOccurencesCount.toString().padStart(2, "0")}`,
             ...nextScene
         });
 
@@ -444,6 +455,14 @@ export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<Al
 
         currentScene++;
     }
+
+    const outro = generateOutroScene(args, libraries);
+
+    scenes.push({
+        ...outro,
+        name: "Outro",
+        displayName: "Outro"
+    });
 
     const staticElements = getStaticElements(libraries);
     const preshow = getPreshowElements(args.preshow, libraries);
@@ -462,33 +481,234 @@ export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<Al
     }
 }
 
-function getNextElementFromTemplates<T extends object>(templates: AleasLibraryElementTemplate<T>[], features: Partial<AleasFeaturesMap>, args: CalculateParamValArgs): AleasLibraryElementInstatiatedTemplate<T> {
-    const instantiatedTemplates: AleasLibraryElementInstatiatedTemplate<T>[] = templates
+export async function generateSceneFromTemplate(args: GenerateAleasShowArgs, templateName: string): Promise<SceneData> {
+
+    const {
+        show: {
+            lightingPlan,
+            showName
+        },
+    } = args;
+
+
+    const argsValues = computeShowArgsValues(args);
+
+    
+    const libraries = await loadLibraries(showName, lightingPlan);
+    const templates = await getAleasSceneTemplates(libraries);
+
+    const template = templates.find(t => t.name === templateName);
+
+    if (!template) {
+        throw new Error(`Template ${templateName} not found`);
+    }
+
+    const cpva: CalculateParamValArgs = {
+        currentTime: 0,
+        totalTime: argsValues.show.totalDuration,
+        remainingTime: argsValues.show.totalDuration,
+        currentScene: 0,
+        progress: 0,
+        history: {
+            elements: [],
+            counts: {}
+        }
+    }
+
+    const instantiatedTemplate = instantiateTemplate(template, cpva);
+
+    const result = calculateParamVal(instantiatedTemplate.value, cpva);
+
+    return result;
+}
+
+function generateIntroScene(args: GenerateAleasShowArgs, libraries: LoadedLibraries): SceneData {
+    
+    const {
+        intro: {
+            duration,
+        }
+    } = args;
+
+    const durationValue = getValue(duration);
+
+    const intro = generateIntroOutro(durationValue, libraries);
+    return intro;
+}
+
+function generateOutroScene(args: GenerateAleasShowArgs, libraries: LoadedLibraries): SceneData {
+    
+    const {
+        outro: {
+            duration,
+        }
+    } = args;
+
+    const durationValue = getValue(duration);
+
+    const outro = generateIntroOutro(durationValue, libraries);
+    return outro;
+}
+
+function generateIntroOutro(durationValue: number, libraries: LoadedLibraries): SceneData {
+    const blackoutOffset = 3;
+    const startOffset = 6.5;
+
+    const lightAmplitude = 1;
+    const introBaseScene = "pf chaud"
+;    // const introBaseScene = "intro-outro-base";
+    const lightFade = randomRange(0.2, 0.4);
+
+    const introBaseElement: LightsElement = {
+        scene: introBaseScene,
+        amplitude: 1.0,
+        level: createStandardLevel({
+            duration: durationValue,
+            fadeIn: 1,
+            fadeOut: 1,
+        }),
+        elements: getValuesFromScene(libraries.dmxScenes, introBaseScene)
+    }
+
+    // const eltCount = 5;
+    // const lightKeyFrames: KeyFrame[][] = sequence(eltCount, 1)
+    //     .map(i => [
+    //         [0, 0],
+    //         [startOffset, 0]
+    //     ]);
+
+    // const durations = generateRandomDurations({
+    //     totalDuration: durationValue - blackoutOffset - startOffset,
+    //     range: [2, 5.5]
+    // })
+
+    // let trackIndex = randomInt(0, eltCount);
+    // let time = startOffset;
+    // durations.forEach((duration, i) => {
+    //     lightKeyFrames[trackIndex].push(
+    //         [time, 0],
+    //         [time + lightFade, 1],
+    //         [time + duration, 1],
+    //         [time + duration + lightFade, 0]
+    //     )
+
+    //     const availableIndices = sequence(eltCount).filter(j => j !== trackIndex);
+    //     const nextIndex = randomElement(availableIndices);
+    //     trackIndex = nextIndex;
+
+    //     time += duration;
+    // });
+
+    // lightKeyFrames.forEach(frames => frames.push(
+    //     [durationValue - blackoutOffset + lightFade, 0],
+    //     [durationValue, 0]
+    // ))
+
+    const lightsElements = [
+        introBaseElement,
+        // ...lightKeyFrames.map((keyFrames, i) => {
+        //     const sceneName = `intro-outro-${(i + 1).toString().padStart(2, "0")}`;
+
+        //     return {
+        //         scene: sceneName,
+        //         amplitude: lightAmplitude,
+        //         level: keyFrames,
+        //         elements: getValuesFromScene(libraries.dmxScenes, sceneName)
+        //     }
+        // })
+    ];
+
+    // const valueSegments = getValuesFromScene(libraries.dmxScenes, scene);
+
+    const audioFadeIn = randomRange(1, 4);
+    const audioFadeOut = randomRange(1, 4);
+    const audioLevel = createStandardLevel({
+        duration: durationValue,
+        fadeIn: audioFadeIn,
+        fadeOut: audioFadeOut,
+    });
+
+    return {
+        templateName: "intro",
+        duration: durationValue,
+        info: "Intro scene",
+        hasLights: true,
+        lights: lightsElements,
+        hasAudio: true,
+        audio: [
+            {
+                track: "intro-01",
+                startTime: 0,
+                duration: durationValue,
+                amplitude: 1.0,
+                volume: audioLevel
+            }
+        ],
+        hasProjections: false
+    }
+}
+
+export async function generateIntroSceneForTest(args: GenerateAleasShowArgs): Promise<SceneData> {
+    const {
+        show: {
+            lightingPlan,
+            showName
+        },
+    } = args;
+
+    const libraries = await loadLibraries(showName, lightingPlan);
+
+    return generateIntroScene(args, libraries);
+}
+
+export async function generateOutroSceneForTest(args: GenerateAleasShowArgs): Promise<SceneData> {
+    const {
+        show: {
+            lightingPlan,
+            showName
+        },
+    } = args;
+
+    const libraries = await loadLibraries(showName, lightingPlan);
+
+    return generateOutroScene(args, libraries);
+}
+
+function instantiateTemplate(template: AleasSceneTemplate, args: CalculateParamValArgs): AleasSceneInstatiatedTemplate {
+
+    const {
+        name,
+        isPriority,
+        enabled,
+        weight,
+        durationRange,
+        value
+    } = template;
+
+    return {
+        name,
+        isPriority: calculateParamVal(isPriority, args),
+        enabled: calculateParamVal(enabled, args),
+        weight: calculateParamVal(weight, args),
+        durationRange: calculateParamVal(durationRange, args),
+        value
+    }
+}
+
+function getNextElementFromTemplates(templates: AleasSceneTemplate[], features: Partial<AleasFeaturesMap>, args: CalculateParamValArgs): AleasSceneInstatiatedTemplate {
+
+    const instantiatedTemplates: AleasSceneInstatiatedTemplate[] = templates
         .filter(template => {
             const {
                 requiredFeatures = []
             } = template;
             
-            return requiredFeatures.every(feature => features[feature] === true);
+            const hasRequiredFeatures = requiredFeatures.every(feature => features[feature] === true);
+            return hasRequiredFeatures;
         })
         .map(template => {
-            const {
-                name,
-                isPriority,
-                enabled,
-                weight,
-                value,
-                durationRange
-            } = template;
-
-            return {
-                name,
-                isPriority: calculateParamVal(isPriority, args),
-                enabled: calculateParamVal(enabled, args),
-                weight: calculateParamVal(weight, args),
-                durationRange: calculateParamVal(durationRange, args),
-                value
-            }
+            const result = instantiateTemplate(template, args);
+            return result;
         })
         .filter(template => template.enabled);
 
@@ -633,6 +853,7 @@ function getImproEnSeineSceneTemplates(libraries: LoadedLibraries): AleasSceneTe
     const factories: ((libraries: LoadedLibraries) => AleasSceneTemplate)[] = Object.values(improEnSeine.templates);
 
     const templates = factories.map(factory => factory(libraries));
+
     return templates;
 };
 
@@ -672,14 +893,14 @@ function generateRandomDurations(args: GenerateRandomDurationsArgs): number[] {
 
     const [min, max] = range;
         
-    const result = [ 0 ];
+    const result = [];
     
     let time = 0;
     
     while (time < totalDuration) {
         const duration = randomRange(min, max);
         time += duration;
-        result.push(time);
+        result.push(duration);
     }
 
     const contracted = contractTimes(result, totalDuration);
@@ -687,8 +908,8 @@ function generateRandomDurations(args: GenerateRandomDurationsArgs): number[] {
 }
 
 function contractTimes(times: number[], totalDuration: number) {
-    const lastTime = times[times.length - 1];
-    const ratio = totalDuration / lastTime;
+    const totalTime = times.reduce((acc, n) => acc + n, 0);
+    const ratio = totalDuration / totalTime;
 
     return times.map(n => n * ratio);
 }
@@ -786,7 +1007,7 @@ function generateAudioElements(libraries: LoadedLibraries, args: GenerateAudioEl
         occurencesCap = 1000
     } = args;
 
-    const intervals = generateItermittentIntervals({
+    const intervals = generateIntermittentIntervals({
         totalDuration: sceneDuration,
         eventDurationRange: audioDurationRange,
         startMargin: startEndMargin,
@@ -795,7 +1016,8 @@ function generateAudioElements(libraries: LoadedLibraries, args: GenerateAudioEl
         occurencesCap
     })
 
-    const fade = randomRange(fadeDurationRange[0], fadeDurationRange[1]);
+    const fadeIn = randomRange(fadeDurationRange[0], fadeDurationRange[1]);
+    const fadeOut = randomRange(fadeDurationRange[0], fadeDurationRange[1]);
     const track = getRandomElementFromAudioLib(libraries.audioLibraries, ...audioLibraries);
     const audioElements: AudioElement[] = intervals.map(interval => {
         const {
@@ -810,9 +1032,8 @@ function generateAudioElements(libraries: LoadedLibraries, args: GenerateAudioEl
             amplitude,
             volume: createStandardLevel({
                 duration: eltDuration,
-                fadeIn: fadeDurationRange[0],
-                fadeOut: fadeDurationRange[1],
-                offset: startTime,
+                fadeIn,
+                fadeOut,
             })
         }
     });
@@ -828,27 +1049,35 @@ type GenerateIntermittentIntervalsArgs = {
     endMargin?: number;
     minSpaceBetweenEvents: number;
     occurencesCap?: number;
+    maxUnusedOccurences?: number;
 }
 
-function generateItermittentIntervals(args: GenerateIntermittentIntervalsArgs): StartAndDuration[] {
+function generateIntermittentIntervals(args: GenerateIntermittentIntervalsArgs): StartAndDuration[] {
     const {
         totalDuration,
         eventDurationRange,
         startMargin = 0,
         endMargin = 0,
         minSpaceBetweenEvents,
-        occurencesCap = 1000
+        occurencesCap = 1000,
+        maxUnusedOccurences = 2,
     } = args;
 
     const maxEventDuration = eventDurationRange[1];
 
     const remainingTimeAfterMaxDuration = totalDuration - maxEventDuration - (startMargin + endMargin);
+
     const maxOccurences = Math.min(
         1 + Math.floor(remainingTimeAfterMaxDuration / (minSpaceBetweenEvents + maxEventDuration)),
         occurencesCap
     );
 
-    const occurences = randomInt(1, maxOccurences);
+    const minOccurences = Math.max(
+        1,
+        maxOccurences - maxUnusedOccurences
+    );
+
+    const occurences = randomInt(minOccurences, maxOccurences);
 
     const result: StartAndDuration[] = [];
 
@@ -860,7 +1089,13 @@ function generateItermittentIntervals(args: GenerateIntermittentIntervalsArgs): 
         const remainingOccurences = occurences - (i + 1);
 
         const startTimeLB = currentLowerBound;
-        const startTimeUB = totalDuration - endMargin - remainingOccurences * (minSpaceBetweenEvents + maxEventDuration);
+        const startTimeUB = totalDuration
+            - (endMargin + remainingOccurences * (minSpaceBetweenEvents + maxEventDuration))
+            - maxEventDuration;
+
+        if (startTimeUB < startTimeLB) {
+            throw new Error("Oops lower bound should be lower than upper bound");
+        }
         const startTime = randomRange(startTimeLB, startTimeUB);
 
         result.push({
@@ -1022,7 +1257,7 @@ const improEnSeine = {
                 name: templateName,
                 isPriority: false,
                 enabled: true,
-                weight: 25,
+                weight: 20,
                 requiredFeatures: [],
                 value: makeSceneProvider({
                     getBaseInfo,
@@ -1125,13 +1360,13 @@ const improEnSeine = {
                         history
                     } = args;
 
-                    const penalty = 5;
+                    const penalty = 9;
                     const occurences = history.counts[templateName] || 0;
 
                     const base = 50;
                     const slope = 5;
 
-                    return Math.min(
+                    return Math.max(
                         base + progress * slope - occurences * penalty,
                         0
                     );
@@ -1208,9 +1443,6 @@ const improEnSeine = {
                             type: "timer",
                             timer: confessionnalDuration,
                             startTime: 0,
-                            duration,
-                            fadeIn: 1.0,
-                            fadeOut: 1.0
                         }
                     ]
                 }
@@ -1226,8 +1458,8 @@ const improEnSeine = {
 
                     const occurences = history.counts[templateName] || 0;
 
-                    return (progress > 0.33 && occurences < 1)
-                        || (progress > 0.66 && occurences < 2);
+                    return (progress > thresholds[0] && occurences < 1)
+                        || (progress > thresholds[1] && occurences < 2);
                 },
                 enabled: (args: CalculateParamValArgs) => {
                     const {
@@ -1237,7 +1469,8 @@ const improEnSeine = {
 
                     const occurences = history.counts[templateName] || 0;
 
-                    return occurences > confessionnalsCount;
+                    return (progress > thresholds[0] && occurences < 1)
+                        || (progress > thresholds[1] && occurences < 2);
                 },
                 weight: 0,
                 requiredFeatures: [
@@ -1423,18 +1656,41 @@ const improEnSeine = {
                 const stepsByTrack: KeyFrame[][] = sequence(trackCount).map(() => []);
                 const init = randomInt(0, trackCount - 1);
 
+                for (let i = 0; i < trackCount; i++) {
+
+                    if (i !== init) {
+                        stepsByTrack[i].push([0, 0]);
+                    }
+                }
+
                 let time = 0;
-                for (let i = 0, j = init; i < steps.length ; i++, j++) {
+                let j = init;
+                for (let i = 0; i < steps.length ; i++, j++) {
                     const duration = steps[i];
                     
-                    stepsByTrack[j % trackCount].push(
+                    const trackIndex = j % trackCount;
+
+                    stepsByTrack[trackIndex].push(
                         [time, 0.0],
                         [time + fade, 1.0],
-                        [time + duration - fade, 1.0],
-                        [time + duration, 0.0]
                     );
+
+                    if (i < steps.length - 1) {
+                        stepsByTrack[trackIndex].push(
+                            [time + duration, 1.0],
+                            [time + duration + fade, 0.0]
+                        );
+                    }
+                    else {
+                        stepsByTrack[trackIndex].push(
+                            [time + duration - fade, 1.0],
+                            [time + duration, 0.0]
+                        );
+                    }
+
                     time += duration;
                 }
+
         
                 const lights: LightsElement[] = scenes.map((scene, i) => {
                     const valueSegments = getValuesFromScene(libraries.dmxScenes, scene);
@@ -1593,173 +1849,14 @@ const improEnSeine = {
                 weight: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                    } = args;
-
-                    const base = 5;
-                    const slope = 40;
-
-                    return base + progress * slope;
-                },
-                requiredFeatures: [],
-                value: makeSceneProvider({
-                    getBaseInfo,
-                    getLights,
-                }, libraries),
-                durationRange
-            }
-        },
-        "run-boy-run": function(libraries: LoadedLibraries): AleasSceneTemplate {
-            const templateName = "run-boy-run";
-            const templateInfo = "Make them run!";
-
-            const availableDurations = [
-                improEnSeine.durations.runBoyRun,
-            ];
-            const durationRange = getWholeRangeAmplitude(...availableDurations);
-
-            const audioLibraries = [
-                "aleas-wtf",
-                "aleas-loud",
-                "aleas-text"
-            ];
-
-            const blackoutOffset = 3;
-            const stepRange: Range = [4, 11];
-
-            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
-
-                const duration = getRandomDuration(...availableDurations);
-        
-                return {
-                    templateName,
-                    duration,
-                    info: templateInfo
-                }
-            }
-        
-            const getLights = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): LightsElementsOrNoLights => {
-        
-                const fade = randomRange(0.05, 0.3);
-                const amplitude = randomRange(0.8, 1.0);
-                const lvlFade = randomRange(0.5, 2);
-
-                const beamAmplitude = randomRange(0.8, 1.0);
-
-                const scenes = improEnSeine.scenes.douches.elements;
-
-                const steps = generateRandomDurations({
-                    totalDuration: duration,
-                    range: stepRange
-                });
-
-                const trackCount = scenes.length;
-                const stepsByTrack: KeyFrame[][] = sequence(trackCount).map(() => []);
-                const init = randomInt(0, trackCount - 1);
-
-                let time = 0;
-                for (let i = 0, j = init; i < steps.length ; i++, j++) {
-                    const duration = steps[i];
-                    
-                    stepsByTrack[j % trackCount].push(
-                        [time, 0.0],
-                        [time + fade, 1.0],
-                        [time + duration - fade, 1.0],
-                        [time + duration, 0.0]
-                    );
-                    time += duration;
-                }
-
-                const baseScene = improEnSeine.scenes.douches.base;
-                const doucheBase: LightsElement = {
-                    scene: baseScene,
-                    amplitude: 1.0,
-                    level: [
-                        [0, 1],
-                        [duration - blackoutOffset - lvlFade, 1],
-                        [duration - blackoutOffset, 0]
-                    ],
-                    elements: getValuesFromScene(libraries.dmxScenes, baseScene)
-                }
-
-                const beamScene = improEnSeine.scenes.douches.beam;
-                const doucheBeam: LightsElement = {
-                    scene: beamScene,
-                    amplitude: beamAmplitude,
-                    level: [
-                        [0, 1],
-                        [duration, 1]
-                    ],
-                    elements: getValuesFromScene(libraries.dmxScenes, beamScene)
-                }
-
-                const douchesLights: LightsElement[] = scenes.map((scene, i) => {
-                    const valueSegments = getValuesFromScene(libraries.dmxScenes, scene);
-
-                    return {
-                        scene,
-                        amplitude,
-                        level: stepsByTrack[i],
-                        elements: valueSegments
-                    }
-                });
-
-                return {
-                    hasLights: true,
-                    lights: [
-                        doucheBase,
-                        doucheBeam,
-                        ...douchesLights
-                    ]
-                }
-            }
-
-            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
-
-                const lib = randomElement(audioLibraries);
-                const track = getRandomElementFromAudioLib(libraries.audioLibraries, lib);
-
-                return {
-                    hasAudio: true,
-                    audio: [
-                        {
-                            track,
-                            startTime: 0,
-                            duration,
-                            amplitude: 1.0,
-                            volume: createStandardLevel({
-                                duration,
-                                fadeIn: 1,
-                                fadeOut: blackoutOffset,
-                            })
-                        }
-                    ]
-                }
-            }
-
-            return {
-                name: templateName,
-                isPriority: false,
-                enabled: (args: CalculateParamValArgs) => {
-                    const {
-                        progress,
-                        history
-                    } = args;
-
-                    const occurences = history.counts[templateName] || 0;
-
-                    return progress > 0.4 && occurences < 2;
-                },
-                weight: (args: CalculateParamValArgs) => {
-                    const {
-                        progress,
                         history
                     } = args;
 
                     const occurences = history.counts[templateName] || 0;
                     const penalty = 20;
 
-                    const base = 0;
-                    const slope = 30;
+                    const base = 5;
+                    const slope = 60;
 
                     return Math.max(
                         base + progress * slope - occurences * penalty,
@@ -1770,16 +1867,203 @@ const improEnSeine = {
                 value: makeSceneProvider({
                     getBaseInfo,
                     getLights,
-                    getAudio
                 }, libraries),
                 durationRange
             }
         },
+        // "run-boy-run": function(libraries: LoadedLibraries): AleasSceneTemplate {
+        //     const templateName = "run-boy-run";
+        //     const templateInfo = "Make them run!";
+
+        //     const availableDurations = [
+        //         improEnSeine.durations.runBoyRun,
+        //     ];
+        //     const durationRange = getWholeRangeAmplitude(...availableDurations);
+
+        //     const audioLibraries = [
+        //         "aleas-wtf",
+        //         "aleas-loud",
+        //         "aleas-text"
+        //     ];
+
+        //     const blackoutOffset = 3;
+        //     const stepRange: Range = [4, 11];
+
+        //     const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+        //         const duration = getRandomDuration(...availableDurations);
+        
+        //         return {
+        //             templateName,
+        //             duration,
+        //             info: templateInfo
+        //         }
+        //     }
+        
+        //     const getLights = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): LightsElementsOrNoLights => {
+        
+        //         const fade = randomRange(0.05, 0.3);
+        //         const amplitude = randomRange(0.8, 1.0);
+        //         const lvlFade = randomRange(0.5, 2);
+
+        //         const beamAmplitude = randomRange(0.8, 1.0);
+
+        //         const scenes = improEnSeine.scenes.douches.elements;
+
+        //         const steps = generateRandomDurations({
+        //             totalDuration: duration,
+        //             range: stepRange
+        //         });
+
+        //         const trackCount = scenes.length;
+        //         const stepsByTrack: KeyFrame[][] = sequence(trackCount).map(() => []);
+        //         const init = randomInt(0, trackCount - 1);
+
+        //         for (let i = 0; i < trackCount; i++) {
+
+        //             if (i !== init) {
+        //                 stepsByTrack[i].push([0, 0]);
+        //             }
+        //         }
+
+        //         let time = 0;
+        //         for (let i = 0, j = init; i < steps.length ; i++, j++) {
+        //             const duration = steps[i];
+
+        //             const trackIndex = j % trackCount;
+
+        //             stepsByTrack[trackIndex].push(
+        //                 [time, 0.0],
+        //                 [time + fade, 1.0],
+        //             );
+
+        //             if (i < steps.length - 1) {
+        //                 stepsByTrack[trackIndex].push(
+        //                     [time + duration, 1.0],
+        //                     [time + duration + fade, 0.0]
+        //                 );
+        //             }
+        //             else {
+        //                 stepsByTrack[trackIndex].push(
+        //                     [time + duration - fade, 1.0],
+        //                     [time + duration, 0.0]
+        //                 );
+        //             }
+
+        //             time += duration;
+        //         }
+
+        //         const baseScene = improEnSeine.scenes.douches.base;
+        //         const doucheBase: LightsElement = {
+        //             scene: baseScene,
+        //             amplitude: 1.0,
+        //             level: [
+        //                 [0, 1],
+        //                 [duration - blackoutOffset - lvlFade, 1],
+        //                 [duration - blackoutOffset, 0]
+        //             ],
+        //             elements: getValuesFromScene(libraries.dmxScenes, baseScene)
+        //         }
+
+        //         const beamScene = improEnSeine.scenes.douches.beam;
+        //         const doucheBeam: LightsElement = {
+        //             scene: beamScene,
+        //             amplitude: beamAmplitude,
+        //             level: [
+        //                 [0, 1],
+        //                 [duration, 1]
+        //             ],
+        //             elements: getValuesFromScene(libraries.dmxScenes, beamScene)
+        //         }
+
+        //         const douchesLights: LightsElement[] = scenes.map((scene, i) => {
+        //             const valueSegments = getValuesFromScene(libraries.dmxScenes, scene);
+
+        //             return {
+        //                 scene,
+        //                 amplitude,
+        //                 level: stepsByTrack[i],
+        //                 elements: valueSegments
+        //             }
+        //         });
+
+        //         return {
+        //             hasLights: true,
+        //             lights: [
+        //                 doucheBase,
+        //                 doucheBeam,
+        //                 ...douchesLights
+        //             ]
+        //         }
+        //     }
+
+        //     const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+
+        //         const lib = randomElement(audioLibraries);
+        //         const track = getRandomElementFromAudioLib(libraries.audioLibraries, lib);
+
+        //         return {
+        //             hasAudio: true,
+        //             audio: [
+        //                 {
+        //                     track,
+        //                     startTime: 0,
+        //                     duration,
+        //                     amplitude: 1.0,
+        //                     volume: createStandardLevel({
+        //                         duration,
+        //                         fadeIn: 1,
+        //                         fadeOut: blackoutOffset,
+        //                     })
+        //                 }
+        //             ]
+        //         }
+        //     }
+
+        //     return {
+        //         name: templateName,
+        //         isPriority: false,
+        //         enabled: (args: CalculateParamValArgs) => {
+        //             const {
+        //                 progress,
+        //                 history
+        //             } = args;
+
+        //             const occurences = history.counts[templateName] || 0;
+
+        //             return progress > 0.4 && occurences < 2;
+        //         },
+        //         weight: (args: CalculateParamValArgs) => {
+        //             const {
+        //                 progress,
+        //                 history
+        //             } = args;
+
+        //             const occurences = history.counts[templateName] || 0;
+        //             const penalty = 20;
+
+        //             const base = 10;
+        //             const slope = 80;
+
+        //             return Math.max(
+        //                 base + progress * slope - occurences * penalty,
+        //                 0
+        //             );
+        //         },
+        //         requiredFeatures: [],
+        //         value: makeSceneProvider({
+        //             getBaseInfo,
+        //             getLights,
+        //             getAudio
+        //         }, libraries),
+        //         durationRange
+        //     }
+        // },
         "pf-bascule-ambient": function(libraries: LoadedLibraries): AleasSceneTemplate {
             const templateName = "pf-bascule-ambient";
             const templateInfo = "Plein Feux - Bascule - Ambient";
 
-            const smokeDuration = 4;
+            const smokeDuration = 7;
 
             const basculeRange: Range = [15, 30];
 
@@ -1809,7 +2093,7 @@ const improEnSeine = {
             }
 
             const getMoreArgs = (args: CalculateParamValArgs, duration: number) => {
-                const bascules: StartAndDuration[] = generateItermittentIntervals({
+                const bascules: StartAndDuration[] = generateIntermittentIntervals({
                     totalDuration: duration,
                     eventDurationRange: basculeRange,
                     startMargin: 30,
@@ -1849,6 +2133,7 @@ const improEnSeine = {
 
                 const ambientAmplitude = randomRange(0.6, 0.8);
                 const pfAmplitude = randomRange(0.6, 1.0);
+                const blackoutFade = randomRange(2.0, 5.0);
 
                 const smokeFade = 0.1;
 
@@ -1899,6 +2184,11 @@ const improEnSeine = {
                         [startTime + smokeDuration + smokeFade, 0]
                     );
                 }
+
+                pfKeyFrames.push(
+                    [duration - blackoutFade, 1],
+                    [duration, 0]
+                );
 
                 const pfElement: LightsElement = {
                     scene: pfScene,
@@ -1981,10 +2271,10 @@ const improEnSeine = {
                     } = args;
 
                     const occurences = history.counts[templateName] || 0;
-                    const penalty = 8;
+                    const penalty = 4;
 
-                    const base = 10;
-                    const slope = 10;
+                    const base = 25;
+                    const slope = 70;
 
                     return Math.max(
                         base + progress * slope - occurences * penalty,
@@ -2005,7 +2295,7 @@ const improEnSeine = {
             const templateName = "ambient-with-smoke";
             const templateInfo = "Ambient with smoke";
 
-            const smokeDuration = 4;
+            const smokeDuration = 5.5;
 
             const smokeInterval = 40;
 
@@ -2130,7 +2420,7 @@ const improEnSeine = {
                         progress,
                     } = args;
 
-                    return progress > 0.1;
+                    return progress > 0.23;
                 },
                 weight: (args: CalculateParamValArgs) => {
                     const {
@@ -2139,10 +2429,10 @@ const improEnSeine = {
                     } = args;
 
                     const occurences = history.counts[templateName] || 0;
-                    const penalty = 6;
+                    const penalty = 10;
 
                     const base = 20;
-                    const slope = 5;
+                    const slope = 20;
 
                     return Math.max(
                         base + progress * slope - occurences * penalty,
@@ -2211,7 +2501,7 @@ const improEnSeine = {
         ],
         specials: [
             "double-diag",
-            "double-douches",
+            "double-rasants",
             "face-fond-bleu",
         ],
         crudesAlternates: [
@@ -2246,8 +2536,8 @@ const improEnSeine = {
         ultraShort: [5, 12],
         short: [30, 80],
         runBoyRun: [30, 110],
-        standard: [90, 450],
-        long: [500, 900],
+        standard: [90, 300],
+        long: [350, 600],
     } satisfies { [key: string]: Range }
 }
 
