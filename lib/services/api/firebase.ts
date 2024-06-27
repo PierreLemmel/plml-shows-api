@@ -236,3 +236,19 @@ export function toFirebaseKey(input: string) {
 export function firebasePathesAreEquivalent(lhs: string, rhs: string) {
     return lhs.toLowerCase() === rhs.toLowerCase();
 }
+
+function sanitizeNestedArraysForFirestore_inPlace(obj: any) {
+    for (const key in obj) {
+        if (Array.isArray(obj[key])) {
+            obj[key] = JSON.stringify(obj[key]);
+        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+            sanitizeNestedArraysForFirestore_inPlace(obj[key]);
+        }
+    }
+}
+export function sanitizeNestedArraysForFirestore(obj: any): any {
+    
+    const clone = structuredClone(obj);
+    sanitizeNestedArraysForFirestore_inPlace(clone);
+    return clone;
+}

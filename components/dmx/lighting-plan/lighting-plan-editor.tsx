@@ -31,6 +31,54 @@ export type LightingPlanEditorProps = {
     onRenameFail?: Dispatch<string>;
 })
 
+
+const increasedElement = (elt: string): string|null => {
+    const pattern = /([0-9]+)$/;
+    const match = elt.match(pattern);
+
+    if (match) {
+        const number = Number.parseInt(match[1]);
+        return elt.replace(pattern, (number + 1).toString().padStart(2, "0"));
+    }
+
+    return null;
+}
+
+const createNextName = (name: string) => increasedElement(name)
+    ?? jardinCourName(name)
+    ?? `${name} (copie)`;
+
+
+const jardinCourName = (name: string): string|null => {
+
+    const pattern = /(Jardin|Jar)$/i;
+    const match = name.match(pattern);
+
+    if (match) {
+        return name.replace(pattern, "Cour");
+    }
+
+    return null;
+}
+
+
+const createNextKey = (name: string) => increasedElement(name)
+    ?? jardinCourKey(name)
+    ?? generateId({ type: "LettersOnly", length: 12 });
+
+const jardinCourKey = (name: string): string|null => {
+
+    const pattern = /Jar$/i;
+    const match = name.match(pattern);
+
+    if (match) {
+        return name.replace(pattern, "Cour");
+    }
+
+    return null;
+}
+
+
 const LightingPlanEditor = (props: LightingPlanEditorProps) => {
 
     const {
@@ -139,18 +187,14 @@ const LightingPlanEditor = (props: LightingPlanEditorProps) => {
 
         const newId = generateId();
 
-        let newKey = incrementId(fixture.key);
-
-        const checkIfExists = idAlreadyUsed(-1);
-        while (checkIfExists(newKey)) {
-            newKey = incrementId(newKey);
-        }
+        const chanCount = fixture.mode ?? 1;
 
         const newFixture: Fixtures.Fixture = {
             ...fixture,
-            name: `${fixture.name} (copie)`,
+            name: createNextName(fixture.name),
             id: newId,
-            key: incrementId(fixture.key),
+            address: fixture.address + chanCount,
+            key: createNextKey(fixture.key),
         }
 
         const newFixtures = insertAt(workLightingPlan.fixtures, index + 1, newFixture);
@@ -492,13 +536,14 @@ const FixtureEdit = (props: FixtureEditProps) => {
             name,
             key,
             model,
+            address,
             mode
         } = fixtureInfo;
 
         drag(drop(dndRef));
         return <div ref={dndRef} className={isDragging ? "bg-slate-400/20 rounded-md" : undefined}>
             <div className={isDragging ? "opacity-25" : undefined}> 
-                <AleasFoldableComponent title={name}>
+                <AleasFoldableComponent title={name} extraInfo={`(${address.toString().padStart(3, "0")})`}>
                     <div className="flex flex-col w-full gap-6">
                         <div className="grid grid-cols-[auto_1fr_auto_1fr] gap-x-6 gap-y-3 items-center">
                             <FixtureEditLabel>Nom :</FixtureEditLabel>

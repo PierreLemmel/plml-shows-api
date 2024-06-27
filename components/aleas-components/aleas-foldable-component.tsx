@@ -3,6 +3,7 @@ import { useState } from "react";
 
 export interface AleasFoldableComponentProps extends React.HTMLAttributes<HTMLDivElement>{
     title: string;
+    extraInfo?: string;
     children: React.ReactNode;
     defaultOpen?: boolean;
     containerClassName?: string;
@@ -11,6 +12,7 @@ export interface AleasFoldableComponentProps extends React.HTMLAttributes<HTMLDi
 const AleasFoldableComponent = (props: AleasFoldableComponentProps) => {
     const {
         title,
+        extraInfo,
         children,
         defaultOpen = false,
         className,
@@ -32,7 +34,10 @@ const AleasFoldableComponent = (props: AleasFoldableComponentProps) => {
         )}
             onClick={() => setIsOpen(!isOpen)}    
         >
-            <div>{title}</div>
+            <div>
+                {title}
+                {extraInfo && <span className="text-xs pl-2"> {extraInfo}</span>}
+            </div>
             <div className="h-6 w-6">
                 <svg
                     className={mergeClasses(
