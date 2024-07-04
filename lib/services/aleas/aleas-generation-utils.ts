@@ -2,10 +2,34 @@ import { randomBool, randomElement, randomInt, randomRange } from "../core/utils
 import { DmxValueSegment, SceneInfo } from "../dmx/showControl";
 import { Range, LoadedLibraries, LoadedLibrary, AleasAudioLibrary, AleasInputProjectionLibrary, KeyFrame, StartAndDuration, AudioElement } from "./aleas-generation"
 
-export function getRandomSceneFromScenes(libraries: string[][]): string {
-    const scenes = randomElement(libraries);
-    return randomElement(scenes);
+export function getRandomSceneFromScenes(libraries: ScenesGroup): string {
+    const eltOrSubgroup = randomElement(libraries);
+
+    if (typeof eltOrSubgroup === "string") {
+        const scene = eltOrSubgroup;
+        return scene;
+    }
+    else {
+        const subGroup = eltOrSubgroup;
+        return getRandomSceneFromScenes(subGroup);
+    }
 }
+
+export function getRandomStepsContainerFromGroup(group: StepsContainerGroup): StepsContainer {
+
+    const eltOrSubgroup = randomElement(group);
+
+    if (Array.isArray(eltOrSubgroup[0])) {
+        const subGroup = eltOrSubgroup as StepsContainerGroup;
+        return getRandomStepsContainerFromGroup(subGroup);
+    }
+    else {
+        const container = eltOrSubgroup as StepsContainer;
+        return container;
+    }
+
+}
+
 
 export function getValuesFromScene(library: LoadedLibrary<SceneInfo>, scene: string): DmxValueSegment[] {
     const sceneInfo = library[scene];
@@ -185,6 +209,14 @@ export function generatePeriodicEvent(args: GeneratePeriodicEventArgs): StartAnd
     return result;
 }
 
+export type ScenesGroup = (string|ScenesGroup)[];
+
+export type StepsContainer = string[]
+export type StepsContainerGroup = (StepsContainer|StepsContainerGroup)[]
+
+export function isSubGroup(group: StepsContainerGroup): group is StepsContainerGroup {
+    return Array.isArray(group[0]);
+}
 
 export type GenerateAudioElementsArgs = {
     sceneDuration: number;

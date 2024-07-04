@@ -1,11 +1,9 @@
-import { setDocument } from "../api/firebase";
 import { getFixtureCollection, getLightingPlan, getShow } from "../api/show-control-api";
 import { HasId, Named, ShortNamed } from "../core/types/utils";
 import { randomRange } from "../core/utils";
 import { DmxValueSegment, Mappings, SceneInfo, ShowInfo } from "../dmx/showControl";
 import { getAudioLibraryCollection, getInputProjectionLibraryCollection } from "./aleas-api";
-import { createStandardLevel } from "./aleas-generation-utils";
-import { generateImproEnSeineIntroScene, generateImproEnSeineOutroScene, getImproEnSeinePostshowElements, getImproEnSeinePreshowElements, getImproEnSeineSceneTemplates, getImproEnSeineStaticElements } from "./templates/impro-en-seine";
+import { generateAuCoinDeLaLuneIntroScene, generateAuCoinDeLaLuneOutroScene, getAuCoinDeLaLunePostshowElements, getAuCoinDeLaLunePreshowElements, getAuCoinDeLaLuneSceneTemplates, getAuCoinDeLaLuneStaticElements } from "./templates/au-coin-de-la-lune";
 
 export type RangeOrValue = number | Range;
 export type Range = [ number, number ];
@@ -25,6 +23,7 @@ export const aleasFeatures = [
     "confessionnal",
     "stroboscopes",
     "smokeMachine",
+    "timedScenes",
 ] as const;
 
 export type AleasFeatures = typeof aleasFeatures[number];
@@ -34,12 +33,40 @@ export type AleasFeaturesMap = {
 };
 
 type GenerateAleasPrePostShowArgs = {
-    scene: string;
-    fade: Fade;
+    fade: number;
+    elementDuration: number;
+    elementCount: number;
+    volume: number;
 }
 
 export type GenerateAleasPreShowArgs = GenerateAleasPrePostShowArgs;
 export type GenerateAleasPostShowArgs = GenerateAleasPrePostShowArgs;
+
+export type DepresentationInfo = {
+    hasDepresentation: false;
+} | {
+    hasDepresentation: true;
+    scene: string;
+    duration: number;
+    amplitude: number;
+    fade: number;
+    musicDuration: number;
+    musicFade: number;
+    musicVolume: number;
+}
+
+export type GenerateAleasIntroOutroArgs = {
+    duration: RangeOrValue;
+    fade: Fade;
+    volume: number;
+}
+
+export type GenerateAleasIntroArgs = GenerateAleasIntroOutroArgs;
+export type GenerateAleasOutroArgs = GenerateAleasIntroOutroArgs & {
+    preOutroBlackout: number;
+    postOutroBlackout: number;
+    depresentation: DepresentationInfo;
+};
 
 export type GenerateAleasShowArgs = {
     generation: {
@@ -56,16 +83,8 @@ export type GenerateAleasShowArgs = {
     }
     preshow: GenerateAleasPreShowArgs,
     postshow: GenerateAleasPostShowArgs,
-    intro: {
-        duration: RangeOrValue;
-        scene: string;
-        fade: Fade;
-    },
-    outro: {
-        duration: RangeOrValue;
-        scene: string;
-        fade: Fade;
-    },
+    intro: GenerateAleasIntroArgs,
+    outro: GenerateAleasOutroArgs,
     features: Partial<AleasFeaturesMap>,
 }
 
@@ -79,12 +98,10 @@ export type GenerateAleasShowArgsValues = {
         fadeOut: number;
     }
     preshow: {
-        fadeIn: number;
-        fadeOut: number;
+        fade: number;
     },
     postshow: {
-        fadeIn: number;
-        fadeOut: number;
+        fade: number;
     },
     intro: {
         duration: number;
@@ -95,13 +112,16 @@ export type GenerateAleasShowArgsValues = {
         duration: number;
         fadeIn: number;
         fadeOut: number;
+        depresentation: DepresentationInfo;
+        preOutroBlackout: number;
+        postOutroBlackout: number;
     },
 }
 
 function computeShowArgsValues(args: GenerateAleasShowArgs): GenerateAleasShowArgsValues {
     const blackoutFade = getFadeValues(args.blackout.fade);
-    const preshowFade = getFadeValues(args.preshow.fade);
-    const postshowFade = getFadeValues(args.postshow.fade);
+    const preshowFade = args.preshow.fade;
+    const postshowFade = args.postshow.fade;
     const introFade = getFadeValues(args.intro.fade);
     const outroFade = getFadeValues(args.outro.fade);
 
@@ -115,12 +135,10 @@ function computeShowArgsValues(args: GenerateAleasShowArgs): GenerateAleasShowAr
             fadeOut: blackoutFade.fadeOut
         },
         preshow: {
-            fadeIn: preshowFade.fadeIn,
-            fadeOut: preshowFade.fadeOut
+            fade: preshowFade,
         },
         postshow: {
-            fadeIn: postshowFade.fadeIn,
-            fadeOut: postshowFade.fadeOut
+            fade: postshowFade,
         },
         intro: {
             duration: getValue(args.intro.duration),
@@ -130,7 +148,10 @@ function computeShowArgsValues(args: GenerateAleasShowArgs): GenerateAleasShowAr
         outro: {
             duration: getValue(args.outro.duration),
             fadeIn: outroFade.fadeIn,
-            fadeOut: outroFade.fadeOut
+            fadeOut: outroFade.fadeOut,
+            depresentation: structuredClone(args.outro.depresentation),
+            preOutroBlackout: args.outro.preOutroBlackout,
+            postOutroBlackout: args.outro.postOutroBlackout,
         }
     }
 }
@@ -236,18 +257,11 @@ export type AleasShowStaticElements = {
     }
 }
 
-type AleasPrePostShowElements = {
-
-}
-
-export type AleasPreshowElements = AleasPrePostShowElements;
-export type AleasPostShowElements = AleasPrePostShowElements;
-
 export type AleasShow = {
     generationInfo: GenerationInfo;
     static: AleasShowStaticElements;
-    preshow: AleasPreshowElements;
-    postshow: AleasPostShowElements;
+    preshow: AleasShowScene[];
+    postshow: AleasShowScene[];
     scenes: AleasShowScene[];
 };
 
@@ -309,8 +323,8 @@ function calculateParamVal<T extends ProviderOrValueInType>(providerOrValue: Par
 
 export type AleasSceneTemplate = {
     name: string;
-    isPriority: ParamProviderOrValue<boolean>;
-    enabled: ParamProviderOrValue<boolean>;
+    isPriority?: ParamProviderOrValue<boolean>;
+    enabled?: ParamProviderOrValue<boolean>;
     weight: ParamProviderOrValue<number>;
     requiredFeatures?: AleasFeatures[];
     durationRange: ParamProviderOrValue<Range>;
@@ -528,11 +542,11 @@ export async function generateSceneFromTemplate(args: GenerateAleasShowArgs, tem
 }
 
 function generateIntroScene(args: GenerateAleasShowArgs, libraries: LoadedLibraries): SceneData {
-    return generateImproEnSeineIntroScene(args, libraries);
+    return generateAuCoinDeLaLuneIntroScene(args, libraries);
 }
 
 function generateOutroScene(args: GenerateAleasShowArgs, libraries: LoadedLibraries): SceneData {
-    return generateImproEnSeineOutroScene(args, libraries);
+    return generateAuCoinDeLaLuneOutroScene(args, libraries);
 }
 
 
@@ -576,8 +590,8 @@ function instantiateTemplate(template: AleasSceneTemplate, args: CalculateParamV
 
     return {
         name,
-        isPriority: calculateParamVal(isPriority, args),
-        enabled: calculateParamVal(enabled, args),
+        isPriority: isPriority !== undefined ? calculateParamVal(isPriority, args) : false,
+        enabled: enabled !== undefined ? calculateParamVal(enabled, args) : true,
         weight: calculateParamVal(weight, args),
         durationRange: calculateParamVal(durationRange, args),
         value
@@ -665,18 +679,18 @@ export function makeSceneProvider<TArgs = any>(parts: HardCodedTemplateParts<TAr
 }
 
 function getAleasSceneTemplates(libraries: LoadedLibraries): AleasSceneTemplate[] {
-    return getImproEnSeineSceneTemplates(libraries);
+    return getAuCoinDeLaLuneSceneTemplates(libraries);
 }
 
 function getStaticElements(libraries: LoadedLibraries): AleasShowStaticElements {
-    return getImproEnSeineStaticElements(libraries);
+    return getAuCoinDeLaLuneStaticElements(libraries);
 }
 
-function getPreshowElements(args: GenerateAleasPreShowArgs, libraries: LoadedLibraries): AleasPreshowElements {
-    return getImproEnSeinePreshowElements(args, libraries);
+function getPreshowElements(args: GenerateAleasPreShowArgs, libraries: LoadedLibraries): AleasShowScene[] {
+    return getAuCoinDeLaLunePreshowElements(args, libraries);
 }
 
-function getPostshowElements(args: GenerateAleasPostShowArgs, libraries: LoadedLibraries): AleasPostShowElements {
-    return getImproEnSeinePostshowElements(args, libraries);
+function getPostshowElements(args: GenerateAleasPostShowArgs, libraries: LoadedLibraries): AleasShowScene[] {
+    return getAuCoinDeLaLunePostshowElements(args, libraries);
 }
 

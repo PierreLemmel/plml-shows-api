@@ -1444,28 +1444,6 @@ export function getImproEnSeineSceneTemplates(libraries: LoadedLibraries): Aleas
 };
 
 
-export function getImproEnSeineStaticElements(libraries: LoadedLibraries): AleasShowStaticElements {
-
-    return {
-        lights: {
-            scene: "static",
-            elements: getValuesFromScene(libraries.dmxScenes, "static")
-        }
-    }
-}
-
-export function getImproEnSeinePreshowElements(args: GenerateAleasPreShowArgs, libraries: LoadedLibraries): AleasPreshowElements {
-    
-    return {
-
-    }
-}
-
-export function getImproEnSeinePostshowElements(args: GenerateAleasPostShowArgs, libraries: LoadedLibraries): AleasPostShowElements {
-    return {
-        
-    }
-}
 
 function generateIntroOutro(durationValue: number, libraries: LoadedLibraries): SceneData {
     const blackoutOffset = 3;
