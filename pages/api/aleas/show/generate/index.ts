@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         res.status(405).end();
     }
 
-    const args = req.body as GenerateAleasShowArgs;
+    const args = req.body as GenerateAleasShowArgs; 
 
     const result = await generateAleasShow(args);
     

@@ -76,6 +76,7 @@ export type GenerateAleasShowArgs = {
         totalDuration: RangeOrValue;
         lightingPlan: string;
         showName: string;
+        startOffset: number;
     },
     blackout: {
         duration: RangeOrValue;
@@ -91,6 +92,7 @@ export type GenerateAleasShowArgs = {
 export type GenerateAleasShowArgsValues = {
     show: {
         totalDuration: number;
+        startOffset: number;
     },
     blackout: {
         duration: number;
@@ -127,7 +129,8 @@ function computeShowArgsValues(args: GenerateAleasShowArgs): GenerateAleasShowAr
 
     return {
         show: {
-            totalDuration: getValue(args.show.totalDuration)
+            totalDuration: getValue(args.show.totalDuration),
+            startOffset: args.show.startOffset
         },
         blackout: {
             duration: getValue(args.blackout.duration),
@@ -303,14 +306,21 @@ export type CalculateParamHistory = {
     }
 }
 
-export type CalculateParamValArgs = {
+export type CalculateParamProgressionArgs = {
     totalTime: number;
     currentScene: number;
     currentTime: number;
     remainingTime: number;
     progress: number;
-    history: CalculateParamHistory;
 }
+
+export type CalculateParamHistoryArgs = {
+    history: CalculateParamHistory;
+    occurences: number;
+}
+
+export type CalculateParamValArgs = CalculateParamProgressionArgs
+                                & CalculateParamHistoryArgs;
 
 type ProviderOrValueInType = number|boolean|object;
 type ParamProvider<T extends ProviderOrValueInType> = (args: CalculateParamValArgs) => T;
@@ -418,8 +428,6 @@ export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<Al
     
     const libraries = await loadLibraries(showName, lightingPlan);
     const templates = await getAleasSceneTemplates(libraries);
-
-
     
     let currentTime = 0;
     let currentScene = 0;
@@ -442,18 +450,23 @@ export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<Al
 
     while (currentTime < totalDuration) {
 
-        const paramValArgs: CalculateParamValArgs = {
+        const progressionArgs: CalculateParamProgressionArgs = {
             currentTime,
             totalTime: totalDuration,
             remainingTime: totalDuration - currentTime,
             currentScene,
             progress: currentTime / totalDuration,
-            history
         };
 
         
-        const next = getNextElementFromTemplates(templates, features, paramValArgs);
-        const nextScene = calculateParamVal(next.value, paramValArgs);
+        const next = getNextElementFromTemplates(templates, features, progressionArgs, history);
+
+        const args: CalculateParamValArgs = {
+            ...progressionArgs,
+            history,
+            occurences: history.counts[next.name] || 0
+        }
+        const nextScene = calculateParamVal(next.value, args);
 
         history.elements.push({
             name: next.name,
@@ -531,7 +544,8 @@ export async function generateSceneFromTemplate(args: GenerateAleasShowArgs, tem
         history: {
             elements: [],
             counts: {}
-        }
+        },
+        occurences: 0
     }
 
     const instantiatedTemplate = instantiateTemplate(template, cpva);
@@ -598,7 +612,7 @@ function instantiateTemplate(template: AleasSceneTemplate, args: CalculateParamV
     }
 }
 
-function getNextElementFromTemplates(templates: AleasSceneTemplate[], features: Partial<AleasFeaturesMap>, args: CalculateParamValArgs): AleasSceneInstatiatedTemplate {
+function getNextElementFromTemplates(templates: AleasSceneTemplate[], features: Partial<AleasFeaturesMap>, progArgs: CalculateParamProgressionArgs, history: CalculateParamHistory): AleasSceneInstatiatedTemplate {
 
     const instantiatedTemplates: AleasSceneInstatiatedTemplate[] = templates
         .filter(template => {
@@ -610,6 +624,14 @@ function getNextElementFromTemplates(templates: AleasSceneTemplate[], features: 
             return hasRequiredFeatures;
         })
         .map(template => {
+            const occurences = history.counts[template.name] || 0;
+
+            const args: CalculateParamValArgs = {
+                ...progArgs,
+                history,
+                occurences
+            }
+
             const result = instantiateTemplate(template, args);
             return result;
         })

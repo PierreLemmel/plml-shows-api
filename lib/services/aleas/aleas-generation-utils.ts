@@ -82,7 +82,7 @@ export function getWholeRangeAmplitude(...durations: Range[]): Range {
     return [min, max];
 }
 
-export type CreateLevelArgs = {
+export type CreateStandardLevelArgs = {
     duration: number;
     fadeIn: number;
     fadeOut: number;
@@ -90,7 +90,7 @@ export type CreateLevelArgs = {
     level?: number;
 }
 
-export function createStandardLevel(args: CreateLevelArgs): KeyFrame[] {
+export function createStandardLevel(args: CreateStandardLevelArgs): KeyFrame[] {
 
     const {
         duration,
@@ -107,6 +107,72 @@ export function createStandardLevel(args: CreateLevelArgs): KeyFrame[] {
         [offset + duration, 0.0]
     ];
 }
+
+export type CreatePulseLevelArgs = {
+    duration: number;
+    range: Range;
+    period: number;
+    offset?: number;
+}
+
+export function createPulseLevel(args: CreatePulseLevelArgs): KeyFrame[] {
+    const result: KeyFrame[] = [];
+
+    const {
+        duration,
+        range: [minValue, maxValue],
+        period,
+        offset
+    } = args;
+
+    const halfPeriod = period / 2;
+
+    let goUp = true;
+    let time = 0;
+
+    if (offset) {
+        const trueOffset = offset % period;
+        goUp = trueOffset < halfPeriod ? true : false;
+
+        if (goUp) {
+            const val = minValue + ((halfPeriod - trueOffset) / halfPeriod) * (maxValue - minValue);
+
+            result.push([0, val]);
+        }
+        else {
+            const val = maxValue - ((halfPeriod - trueOffset) / halfPeriod) * (maxValue - minValue);
+
+            result.push([0, val]);
+        }
+
+        goUp = !goUp;
+
+        time = trueOffset;
+    }
+
+    while (time < duration) {
+
+        const val = goUp ? minValue : maxValue;
+        result.push([time, val])
+
+        time += halfPeriod;
+        goUp = !goUp;
+    }
+
+    const remaining = duration - time;
+
+    const a = remaining / halfPeriod;
+    const lastVal = goUp ?
+        minValue + a * (maxValue - minValue) : 
+        maxValue - a * (maxValue - minValue)
+
+    result.push([duration, lastVal])
+
+    return result;
+}
+
+
+
 
 export type GenerateRandomDurationsArgs = {
     totalDuration: number;

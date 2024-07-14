@@ -1,5 +1,5 @@
 import { randomElement, randomInt, randomRange, sequence } from "../../core/utils";
-import { CalculateParamValArgs, GenerateAleasPreShowArgs, LoadedLibraries, StartAndDuration, Range, makeSceneProvider, AleasSceneTemplate, AleasPreshowElements, GenerateAleasPostShowArgs, AleasPostShowElements, AleasShowStaticElements, SceneBaseInfo, LightsElementsOrNoLights, AudioElementsOrNoAudio, KeyFrame, LightsElement, ProjectionsElementsOrNoProjections, SceneData, GenerateAleasShowArgs, getValue } from "../aleas-generation";
+import { CalculateParamValArgs, LoadedLibraries, StartAndDuration, Range, makeSceneProvider, AleasSceneTemplate, SceneBaseInfo, LightsElementsOrNoLights, AudioElementsOrNoAudio, KeyFrame, LightsElement, ProjectionsElementsOrNoProjections, SceneData, GenerateAleasShowArgs, getValue } from "../aleas-generation";
 import { createStandardLevel, generateAudioElements, generateIntermittentIntervals, generatePeriodicEvent, generateRandomDurations, getRandomDuration, getRandomElementFromAudioLib, getRandomProjectionInput, getRandomSceneFromScenes, getValuesFromScene, getWholeRangeAmplitude } from "../aleas-generation-utils";
 
 export const improEnSeine = {

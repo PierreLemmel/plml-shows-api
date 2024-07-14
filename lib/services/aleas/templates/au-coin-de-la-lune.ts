@@ -1,7 +1,7 @@
 import { progress } from "framer-motion";
 import { flattenArray, shuffleArray } from "../../core/arrays";
 import { randomElement, randomInt, randomRange, sequence } from "../../core/utils";
-import { CalculateParamValArgs, GenerateAleasPreShowArgs, LoadedLibraries, StartAndDuration, Range, makeSceneProvider, AleasSceneTemplate, GenerateAleasPostShowArgs, AleasShowStaticElements, SceneBaseInfo, LightsElementsOrNoLights, AudioElementsOrNoAudio, KeyFrame, LightsElement, SceneData, GenerateAleasShowArgs, getValue, AleasShowScene, GenerateAleasIntroOutroArgs, getFadeValues } from "../aleas-generation";
+import { CalculateParamValArgs, GenerateAleasPreShowArgs, LoadedLibraries, StartAndDuration, Range, makeSceneProvider, AleasSceneTemplate, GenerateAleasPostShowArgs, AleasShowStaticElements, SceneBaseInfo, LightsElementsOrNoLights, AudioElementsOrNoAudio, KeyFrame, LightsElement, SceneData, GenerateAleasShowArgs, getValue, AleasShowScene, GenerateAleasIntroOutroArgs, getFadeValues, ProjectionsElementsOrNoProjections } from "../aleas-generation";
 import { ScenesGroup, StepsContainerGroup, createStandardLevel, generateAudioElements, generateIntermittentIntervals, generatePeriodicEvent, generateRandomDurations, getRandomDuration, getRandomElementFromAudioLib, getRandomProjectionInput, getRandomSceneFromScenes, getRandomStepsContainerFromGroup, getValuesFromScene, getWholeRangeAmplitude } from "../aleas-generation-utils";
 
 export const auCoinDeLaLune = {
@@ -65,7 +65,7 @@ export const auCoinDeLaLune = {
                 name: templateName,
                 isPriority: false,
                 enabled: true,
-                weight: 10,
+                weight: 8,
                 requiredFeatures: [],
                 value: makeSceneProvider({
                     getBaseInfo,
@@ -152,7 +152,7 @@ export const auCoinDeLaLune = {
                 name: templateName,
                 isPriority: false,
                 enabled: true,
-                weight: 20,
+                weight: 12,
                 requiredFeatures: [],
                 value: makeSceneProvider({
                     getBaseInfo,
@@ -219,10 +219,8 @@ export const auCoinDeLaLune = {
                 isPriority: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
-
-                    const occurences = history.counts[templateName] || 0;
 
                     return (progress > thresholds[0] && occurences < 1)
                         || (progress > thresholds[1] && occurences < 2);
@@ -230,10 +228,9 @@ export const auCoinDeLaLune = {
                 enabled: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
 
-                    const occurences = history.counts[templateName] || 0;
 
                     return occurences < confessionnalsCount && (
                         (progress > thresholds[0] && occurences < 1) ||
@@ -347,10 +344,9 @@ export const auCoinDeLaLune = {
                 weight: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
 
-                    const occurences = history.counts[templateName] || 0;
                     const penalty = 10;
 
                     const base = 20;
@@ -387,6 +383,7 @@ export const auCoinDeLaLune = {
                 auCoinDeLaLune.scenes.ambients.fullColor,
                 auCoinDeLaLune.scenes.ambients.bicolor,
             ];
+
             const audioLibs = [
                 "aleas-ambient",
             ]
@@ -424,12 +421,21 @@ export const auCoinDeLaLune = {
 
                 const smokeScene = auCoinDeLaLune.scenes.smoke;
                 const smokeDuration = 2.1;
+                const smokeFade = 0.1;
                 const smokeInterval = 150;
 
                 let smokeTime = 0;
                 const smokeKeyFrames: KeyFrame[] = [];
                 const smokeOffsetToEnd = 30;
-                while (smokeTime < duration - smokeOffsetToEnd) {
+                while (smokeTime < duration - smokeOffsetToEnd) {                    
+                    const smokeFrames = createStandardLevel({
+                        duration: smokeDuration,
+                        fadeIn: smokeFade,
+                        fadeOut: smokeFade,
+                        offset: smokeTime
+                    })
+                    smokeKeyFrames.push(...smokeFrames);
+
                     smokeTime += smokeInterval;
                 }
 
@@ -480,24 +486,21 @@ export const auCoinDeLaLune = {
                 enabled: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
-
-                    const occurences = history.counts[templateName] || 0;
 
                     return progress > 0.47 && occurences < 2;
                 },
                 weight: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
 
-                    const occurences = history.counts[templateName] || 0;
                     const penalty = 10;
 
                     const base = 20;
-                    const slope = 30;
+                    const slope = 50;
 
                     return Math.max(
                         base + progress * slope - occurences * penalty,
@@ -575,11 +578,9 @@ export const auCoinDeLaLune = {
                 isPriority: false,
                 enabled: (args: CalculateParamValArgs) => {
                     const {
-                        history,
+                        occurences,
                         progress
                     } = args;
-
-                    const occurences = history.counts[templateName] || 0;
 
                     return progress > 0.1
                         && progress < 0.9
@@ -588,10 +589,9 @@ export const auCoinDeLaLune = {
                 weight: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
 
-                    const occurences = history.counts[templateName] || 0;
                     const penalty = 8;
 
                     const base = 15;
@@ -695,25 +695,17 @@ export const auCoinDeLaLune = {
             return {
                 name: templateName,
                 isPriority: false,
-                enabled: (args: CalculateParamValArgs) => {
-                    const {
-                        progress,
-                    } = args;
-                    
-
-                    return progress > 0.08;
-                },
+                enabled: true,
                 weight: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
 
                     const penalty = 5;
-                    const occurences = history.counts[templateName] || 0;
 
-                    const base = 10;
-                    const slope = 20;
+                    const base = 20;
+                    const slope = 15;
 
                     return Math.max(
                         base + progress * slope - occurences * penalty,
@@ -761,8 +753,8 @@ export const auCoinDeLaLune = {
         
             const getLights = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): LightsElementsOrNoLights => {
         
-                const fade = randomRange(2, 5);
-                const amplitude = randomRange(0.6, 1.0);
+                const fade = randomRange(1.5, 3.5);
+                const amplitude = randomRange(0.7, 1.0);
 
 
                 const scenes = getRandomStepsContainerFromGroup(availableScenes);
@@ -875,10 +867,9 @@ export const auCoinDeLaLune = {
                 weight: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
 
-                    const occurences = history.counts[templateName] || 0;
                     const penalty = 8;
 
                     const base = 0;
@@ -993,11 +984,10 @@ export const auCoinDeLaLune = {
                 weight: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
 
                     const penalty = 5;
-                    const occurences = history.counts[templateName] || 0;
 
                     const base = 10;
                     const slope = 15;
@@ -1161,10 +1151,9 @@ export const auCoinDeLaLune = {
                 weight: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
 
-                    const occurences = history.counts[templateName] || 0;
                     const penalty = 50;
 
                     const base = 0;
@@ -1188,7 +1177,7 @@ export const auCoinDeLaLune = {
             const templateName = "pf-bascule-ambient";
             const templateInfo = "Plein Feux - Bascule - Ambient";
 
-            const basculeRange: Range = [15, 30];
+            const basculeRange: Range = [15, 37];
 
             const availableDurations = [
                 auCoinDeLaLune.durations.standard,
@@ -1368,10 +1357,9 @@ export const auCoinDeLaLune = {
                 weight: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
 
-                    const occurences = history.counts[templateName] || 0;
                     const penalty = 10;
 
                     const base = 20;
@@ -1396,7 +1384,7 @@ export const auCoinDeLaLune = {
             const templateName = "pf-bascule-ambient-strobes";
             const templateInfo = "Plein Feux - Bascule - Ambient with strobes";
 
-            const basculeRange: Range = [08, 12];
+            const basculeRange: Range = [8, 12];
 
             const availableDurations = [
                 auCoinDeLaLune.durations.standard,
@@ -1595,10 +1583,8 @@ export const auCoinDeLaLune = {
                 enabled: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
-
-                    const occurences = history.counts[templateName] || 0;
 
                     return progress > 0.55
                         && occurences < 1;
@@ -1606,10 +1592,9 @@ export const auCoinDeLaLune = {
                 weight: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
 
-                    const occurences = history.counts[templateName] || 0;
                     const penalty = 30;
 
                     const base = 25;
@@ -1723,7 +1708,7 @@ export const auCoinDeLaLune = {
                 const strobeKeyFrames: KeyFrame[] = [];
                 const smokeKeyFrames: KeyFrame[] = [];
 
-                let smokeTime = 0;
+                let smokeTime = bascules[0].startTime;
                 const smokeOffsetToEnd = 30.0;
                 while (smokeTime < duration - smokeOffsetToEnd) {
                     smokeKeyFrames.push([smokeTime, 0]);
@@ -1857,10 +1842,8 @@ export const auCoinDeLaLune = {
                 enabled: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
-
-                    const occurences = history.counts[templateName] || 0;
 
                     return progress > 0.65
                         && occurences < 1;
@@ -1868,10 +1851,9 @@ export const auCoinDeLaLune = {
                 weight: (args: CalculateParamValArgs) => {
                     const {
                         progress,
-                        history
+                        occurences
                     } = args;
 
-                    const occurences = history.counts[templateName] || 0;
                     const penalty = 30;
 
                     const base = 25;
@@ -1892,10 +1874,141 @@ export const auCoinDeLaLune = {
                 durationRange
             }
         },
+        "projection-input": function(libraries: LoadedLibraries): AleasSceneTemplate {
+            const templateName = "projection-input";
+            const templateInfo = "Simple scene with a projection input";
+
+            const availableDurations = [
+                auCoinDeLaLune.durations.short,
+                auCoinDeLaLune.durations.standard,
+            ];
+
+            const projectionDuration = 8;
+
+            const durationRange = getWholeRangeAmplitude(...availableDurations);
+            const availableScenes: string[][] = [
+                auCoinDeLaLune.scenes.standardScenes,
+            ];
+
+            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+                const duration = getRandomDuration(...availableDurations);
+        
+                return {
+                    templateName,
+                    duration,
+                    info: templateInfo
+                }
+            }
+        
+            const getLights = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): LightsElementsOrNoLights => {
+        
+                const fadeIn = randomRange(2, 6);
+                const fadeOut = randomRange(2, 6);
+                const amplitude = 0.6;
+
+                const scene = getRandomSceneFromScenes(availableScenes);
+        
+                const valueSegments = getValuesFromScene(libraries.dmxScenes, scene);
+                
+                const level = createStandardLevel({
+                    duration: duration - projectionDuration,
+                    fadeIn,
+                    fadeOut,
+                    offset: projectionDuration,
+                });
+                
+                const normalLightElement: LightsElement = {
+                    scene,
+                    amplitude,
+                    level,
+                    elements: valueSegments
+                }
+
+                const shutterFade = 0.2;
+                const shutterScene = auCoinDeLaLune.scenes.shutter;
+                const shutterLightElement: LightsElement = {
+                    scene: shutterScene,
+                    elements: getValuesFromScene(libraries.dmxScenes, shutterScene),
+                    level: createStandardLevel({
+                        duration: projectionDuration,
+                        fadeIn: shutterFade,
+                        fadeOut: shutterFade
+                    }),
+                    amplitude: 1
+                }
+
+                return {
+                    hasLights: true,
+                    lights: [
+                        normalLightElement,
+                        shutterLightElement
+                    ]
+                }
+            }
+
+            const getProjection = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ProjectionsElementsOrNoProjections => {
+                    
+                const text = getRandomProjectionInput(libraries.inputProjectionLibraries);
+                return {
+                    hasProjections: true,
+                    projections: [
+                        {
+                            type: "text",
+                            text,
+                            startTime: 0,
+                            duration: projectionDuration,
+                            fadeIn: 1.0,
+                            fadeOut: 1.0
+                        }
+                    ]
+                }
+            }
+
+            return {
+                name: templateName,
+                isPriority: false,
+                enabled: (args: CalculateParamValArgs) => {
+                    const {
+                        progress,
+                        occurences
+                    } = args;
+
+                    return progress > 0.40 && occurences < 3;
+                },
+                weight: (args: CalculateParamValArgs) => {
+
+                    const {
+                        progress,
+                        occurences
+                    } = args;
+
+                    const penalty = 15;
+
+                    const base = 50;
+                    const slope = 12;
+
+                    return Math.max(
+                        base + progress * slope - occurences * penalty,
+                        0
+                    );
+                },
+                requiredFeatures: [
+                    "projections"
+                ],
+                value: makeSceneProvider({
+                    getBaseInfo,
+                    getLights,
+                    getProjection
+                }, libraries),
+                durationRange
+            }
+        },
     } satisfies { [key: string]: (libraries: LoadedLibraries) => AleasSceneTemplate },
     scenes: {
         public: "public",
         static: "static",
+        shutter: "shutter",
         introOutro: {
             base: "intro-outro-base",
             elements: [
@@ -1909,7 +2022,8 @@ export const auCoinDeLaLune = {
         standardScenes: [
             "faces",
             "pf-chaud",
-            "pf-froid",
+            "pf-with-blue",
+            "pf-with-green"
         ] satisfies ScenesGroup,
         isolations: [
             "douche-jar",
@@ -1927,36 +2041,10 @@ export const auCoinDeLaLune = {
             "platine",
             "decoupe-diag",
             "platine-decoupe-diag",
-            "lats-jar",
-            "lats-cour",
-            "couloir-av-ch",
+            // "couloir-arr-ch",
             "couloir-av-fr",
         ] satisfies ScenesGroup,
         crudesAlternates: [
-            [
-                "lats-jar",
-                "lats-cour",
-            ],
-            [
-                [
-                    "couloir-av-ch",
-                    "couloir-ar-ch",
-                ],
-                [
-                    "couloir-av-fr",
-                    "couloir-ar-fr",
-                ]
-            ],
-            [
-                [
-                    "couloir-av-ch",
-                    "couloir-ar-fr"
-                ],
-                [
-                    "couloir-av-fr",
-                    "couloir-ar-ch"
-                ],
-            ],
             [
                 "platine",
                 "decoupe-diag",
@@ -2171,7 +2259,7 @@ function generateIntroOutro(args: GenerateAleasIntroOutroArgs, libraries: Loaded
     const durationValue = getValue(duration);
     const fadeValues = getFadeValues(fade);
 
-    const blackoutOffset = 3;
+    const blackoutOffset = 1.5;
     const startOffset = 7.4;
 
     const lightAmplitude = 1;
