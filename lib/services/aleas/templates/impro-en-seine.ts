@@ -1526,6 +1526,10 @@ function generateIntroOutro(durationValue: number, libraries: LoadedLibraries): 
     return {
         templateName: "intro",
         duration: durationValue,
+        blackout: {
+            preScene: startOffset,
+            postScene: blackoutOffset
+        },
         info: "Intro scene",
         hasLights: true,
         lights: lightsElements,

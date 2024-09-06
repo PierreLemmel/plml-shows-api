@@ -450,8 +450,7 @@ const SEFixtureCard = (props: SEFixtureCardProps) => {
                     getColorValue={type => Chans.isColorChannelType(type) ? values[type] as RgbColor : Color.black}
                     onNumberValueChanged={onNumberValueChanged}
                     onColorValueChanged={onColorValueChanged}
-                >
-                </SceneElementPropertyEditor>
+                />
             })}
             <div className="flex flex-row items-center justify-end col-span-3">
                 <AleasButton onClick={onRemove} size="Small">Retirer</AleasButton>
