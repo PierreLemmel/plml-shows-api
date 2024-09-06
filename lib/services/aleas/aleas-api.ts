@@ -1,48 +1,86 @@
-import { getDocument, setDocument } from "../api/firebase";
+import { getDocument, sanitizeNestedArraysForFirestore, setDocument, toFirebaseKey } from "../api/firebase";
 import { pathCombine } from "../core/files";
-import { AleasCodeFile } from "./misc/aleas-code-display";
-import { AleasShowRun } from "./aleas-runtime";
-import { AleasShow } from "./aleas-setup";
+import { AleasAudioLibrariesCollection, AleasInputProjectionLibrariesCollection, AleasInputProjectionLibrary, AleasShow } from "./aleas-generation";
 
-export async function getAleasShow(show: string): Promise<AleasShow> {
+const pathToAudioLibrary = (library: string) => pathCombine(
+    "aleas",
+    "library",
+    "audio",
+    library
+); 
 
-    const path = pathCombine("aleas/shows/public", show).toLowerCase();
-    const result = await getDocument<AleasShow>(path);
-
-    return result;
-}
-
-export async function createAleasShow(show: AleasShow) {
-    const path = pathCombine("aleas/shows/public", show.showName).toLowerCase()
-    await setDocument<AleasShow>(path, show);
-}
-
-export async function updateAleasShow(show: AleasShow) {
-    const path = pathCombine("aleas/shows/public", show.showName).toLowerCase();
-    await setDocument<AleasShow>(path, show);
+export async function getAudioLibraryCollection(collection: string) {
+    const path = pathToAudioLibrary(collection);
+    return await getDocument<AleasAudioLibrariesCollection>(path);
 }
 
 
-export async function createAleasRun(run: AleasShowRun) {
-    const path = pathCombine("aleas/runs", run.show.name, run.metadata.created.toDate().toISOString()).toLowerCase();
-    await setDocument<AleasShowRun>(path, run);
+const pathToInputProjectionLibrary = (library: string) => pathCombine(
+    "aleas",
+    "library",
+    "inputs",
+    library
+);
+
+export async function getInputProjectionLibraryCollection(collection: string) {
+    const path = pathToInputProjectionLibrary(collection);
+    return await getDocument<AleasInputProjectionLibrariesCollection>(path);
 }
 
-interface CodeDocument {
-    files: AleasCodeFile[]
+const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+
+    return `${year}${month}${day}-${hours}${minutes}${seconds}`;
 }
 
-export async function getAleasCodeFiles(): Promise<AleasCodeFile[]> {
-    const result = await getDocument<CodeDocument>("aleas/code");
-    return result.files;
-}
+const pathToAleasShow = (lightingPlan: string, showName: string, docName: string) => pathCombine(
+    "aleas",
+    "shows",
+    toFirebaseKey(lightingPlan),
+    "shows",
+    toFirebaseKey(showName),
+    docName
+);
 
-export async function createAleasCodeFile(file: AleasCodeFile) {
+export async function saveAleasShow(show: AleasShow) {
 
-    const oldFiles = await getAleasCodeFiles();
+    const {
+        generationInfo,
+        scenes,
+        preshow,
+        postshow,
+        ...otherShowElements
+    } = show;
 
-    const newCodeDoc = {
-        files: [...oldFiles, file]
+    const {
+        params: {
+            show: {
+                showName,
+                lightingPlan
+            },
+        },
+        generatedAt
+    } = generationInfo;
+
+    const docName = `${showName} - ${formatDate(generatedAt)}`;
+
+    const pathToShowDoc = pathToAleasShow(lightingPlan, showName, docName);
+    const sanitizedScenes = structuredClone(scenes).map(sanitizeNestedArraysForFirestore);
+    const sanitizedPreshow = structuredClone(preshow).map(sanitizeNestedArraysForFirestore);
+    const sanitizedPostshow = structuredClone(postshow).map(sanitizeNestedArraysForFirestore);
+
+    const data = {
+        generationInfo,
+        scenes: sanitizedScenes,
+        preshow: sanitizedPreshow,
+        postshow: sanitizedPostshow,
+        ...otherShowElements
     }
-    await setDocument<CodeDocument>("aleas/code", newCodeDoc);
+
+    await setDocument(pathToShowDoc, data);
 }

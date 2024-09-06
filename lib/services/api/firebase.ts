@@ -126,7 +126,7 @@ export async function renameDocument<T extends WithFieldValue<DocumentData>>(old
 
 export async function renameDocumentIfNeeded<T extends WithFieldValue<DocumentData>>(oldPath: string, newPath: string, deleteOld: boolean = true) {
 
-    if (firebasePathesAreEquivalent(oldPath, newPath)) {
+    if (!firebasePathesAreEquivalent(oldPath, newPath)) {
         await renameDocument<T>(oldPath, newPath, deleteOld)
     }
 }
@@ -235,4 +235,20 @@ export function toFirebaseKey(input: string) {
 
 export function firebasePathesAreEquivalent(lhs: string, rhs: string) {
     return lhs.toLowerCase() === rhs.toLowerCase();
+}
+
+function sanitizeNestedArraysForFirestore_inPlace(obj: any) {
+    for (const key in obj) {
+        if (Array.isArray(obj[key])) {
+            obj[key] = JSON.stringify(obj[key]);
+        } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+            sanitizeNestedArraysForFirestore_inPlace(obj[key]);
+        }
+    }
+}
+export function sanitizeNestedArraysForFirestore(obj: any): any {
+    
+    const clone = structuredClone(obj);
+    sanitizeNestedArraysForFirestore_inPlace(clone);
+    return clone;
 }
