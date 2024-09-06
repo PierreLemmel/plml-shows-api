@@ -1,7 +1,7 @@
 import { progress } from "framer-motion";
 import { flattenArray, shuffleArray } from "../../core/arrays";
 import { randomElement, randomInt, randomRange, sequence } from "../../core/utils";
-import { CalculateParamValArgs, GenerateAleasPreShowArgs, LoadedLibraries, StartAndDuration, Range, makeSceneProvider, AleasSceneTemplate, GenerateAleasPostShowArgs, AleasShowStaticElements, SceneBaseInfo, LightsElementsOrNoLights, AudioElementsOrNoAudio, KeyFrame, LightsElement, SceneData, GenerateAleasShowArgs, getValue, AleasShowScene, GenerateAleasIntroOutroArgs, getFadeValues, ProjectionsElementsOrNoProjections } from "../aleas-generation";
+import { CalculateParamValArgs, GenerateAleasPreShowArgs, LoadedLibraries, StartAndDuration, Range, makeSceneProvider, AleasSceneTemplate, GenerateAleasPostShowArgs, AleasShowStaticElements, SceneBaseInfo, LightsElementsOrNoLights, AudioElementsOrNoAudio, KeyFrame, LightsElement, SceneData, GenerateAleasShowArgs, getValue, AleasShowScene, GenerateAleasIntroOutroArgs, getFadeValues, ProjectionsElementsOrNoProjections, GenerateAleasPresentationArgs, GenerateAleasHasPresentationArgs, AudioElement } from "../aleas-generation";
 import { ScenesGroup, StepsContainerGroup, createStandardLevel, generateAudioElements, generateIntermittentIntervals, generatePeriodicEvent, generateRandomDurations, getRandomDuration, getRandomElementFromAudioLib, getRandomProjectionInput, getRandomSceneFromScenes, getRandomStepsContainerFromGroup, getValuesFromScene, getWholeRangeAmplitude } from "../aleas-generation-utils";
 
 export const auCoinDeLaLune = {
@@ -310,7 +310,7 @@ export const auCoinDeLaLune = {
 
                 const fadeIn = randomRange(2, 5);
                 const fadeOut = randomRange(2, 4);
-                const audioAmplitude = 0.3;
+                const audioAmplitude = auCoinDeLaLune.variables.ambient.audioAmplitude;
 
                 const audioLib = randomElement(audioLibs);
                 const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
@@ -459,7 +459,7 @@ export const auCoinDeLaLune = {
 
                 const fadeIn = randomRange(2, 5);
                 const fadeOut = randomRange(2, 4);
-                const audioAmplitude = 0.3;
+                const audioAmplitude = auCoinDeLaLune.variables.ambient.audioAmplitude;
 
                 const audioLib = randomElement(audioLibs);
                 const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
@@ -753,7 +753,7 @@ export const auCoinDeLaLune = {
         
             const getLights = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): LightsElementsOrNoLights => {
         
-                const fade = randomRange(1.5, 3.5);
+                const fade = randomRange(0.9, 2.1);
                 const amplitude = randomRange(0.7, 1.0);
 
 
@@ -1384,7 +1384,7 @@ export const auCoinDeLaLune = {
             const templateName = "pf-bascule-ambient-strobes";
             const templateInfo = "Plein Feux - Bascule - Ambient with strobes";
 
-            const basculeRange: Range = [8, 12];
+            const basculeRange: Range = [8, 25];
 
             const availableDurations = [
                 auCoinDeLaLune.durations.standard,
@@ -1426,7 +1426,7 @@ export const auCoinDeLaLune = {
                     occurencesCap: 5
                 });
 
-                const fadeToAmbient = randomRange(0.8, 1.6);
+                const fadeToAmbient = randomRange(0.2, 0.8);
                 const fadeToPF = randomRange(1.5, 3);
 
                 return {
@@ -1619,7 +1619,7 @@ export const auCoinDeLaLune = {
             const templateName = "pf-bascule-ambient-strobes-smoke";
             const templateInfo = "Plein Feux - Bascule - Ambient with strobes and smoke";
 
-            const basculeRange: Range = [12, 22];
+            const basculeRange: Range = [12, 28];
 
             const availableDurations = [
                 auCoinDeLaLune.durations.standard,
@@ -1985,8 +1985,8 @@ export const auCoinDeLaLune = {
 
                     const penalty = 15;
 
-                    const base = 50;
-                    const slope = 12;
+                    const base = 60;
+                    const slope = 30;
 
                     return Math.max(
                         base + progress * slope - occurences * penalty,
@@ -2069,6 +2069,7 @@ export const auCoinDeLaLune = {
             "strobes-all",
         ] as ScenesGroup,
         smoke: "smoke",
+        presentation: "presentation"
     },
     durations: {
         ultraShort: [4, 10],
@@ -2077,7 +2078,12 @@ export const auCoinDeLaLune = {
         standardLong: [200, 350],
         long: [350, 500],
         ultraLong: [500, 900],
-    } satisfies { [key: string]: Range }
+    } satisfies { [key: string]: Range },
+    variables: {
+        ambient: {
+            audioAmplitude: 0.45
+        }
+    }
 };
 
 
@@ -2134,6 +2140,10 @@ export function getAuCoinDeLaLunePreshowElements(args: GenerateAleasPreShowArgs,
             info: `Preshow scene - ${i.toString().padStart(2, "0")}`,
             duration: elementDuration,
             templateName: "Preshow",
+            blackout: {
+                preScene: 0,
+                postScene: 0,
+            },
             name,
             displayName: name,
             hasAudio: true,
@@ -2202,6 +2212,10 @@ export function getAuCoinDeLaLunePostshowElements(args: GenerateAleasPostShowArg
             info: `Postshow scene - ${i.toString().padStart(2, "0")}`,
             duration: elementDuration,
             templateName: "Postshow",
+            blackout: {
+                preScene: 0,
+                postScene: 0,
+            },
             name,
             displayName: name,
             hasAudio: true,
@@ -2253,11 +2267,15 @@ function generateIntroOutro(args: GenerateAleasIntroOutroArgs, libraries: Loaded
     const {
         duration,
         fade,
-        volume
+        volume,
+        blackout
     } = args;
 
     const durationValue = getValue(duration);
     const fadeValues = getFadeValues(fade);
+
+    const preSceneBlackout = getValue(blackout.preScene);
+    const postSceneBlackout = getValue(blackout.postScene);
 
     const blackoutOffset = 1.5;
     const startOffset = 7.4;
@@ -2358,7 +2376,6 @@ function generateIntroOutro(args: GenerateAleasIntroOutroArgs, libraries: Loaded
     }
 
     
-
     const finalDuration = durationValue + (postScene?.duration ?? 0);
     const finalAudioDuration = durationValue + (postScene?.musicDuration ?? 0);
     if (postScene) {
@@ -2382,6 +2399,10 @@ function generateIntroOutro(args: GenerateAleasIntroOutroArgs, libraries: Loaded
         templateName: "intro",
         duration: finalDuration,
         info: "Intro scene",
+        blackout: {
+            preScene: preSceneBlackout,
+            postScene: postSceneBlackout,
+        },
         hasLights: true,
         lights: lightsElements,
         hasAudio: true,
@@ -2413,4 +2434,56 @@ export function generateAuCoinDeLaLuneOutroScene(args: GenerateAleasShowArgs, li
 
     const outro = generateIntroOutro(args.outro, libraries, postScene);
     return outro;
+}
+
+export function generateAuCoinDeLaLunePresentationScene(args: GenerateAleasHasPresentationArgs, libraries: LoadedLibraries): SceneData {
+
+    const {
+        fade,
+        duration,
+    } = args;
+
+    const scene = auCoinDeLaLune.scenes.presentation;
+    const audio = "voices-01";
+
+    const lightAmplitude = randomRange(0.3, 0.65);
+
+    const lightElement: LightsElement = {
+        scene,
+        amplitude: lightAmplitude,
+        level: createStandardLevel({
+            duration,
+            fadeIn: fade,
+            fadeOut: fade
+        }),
+        elements: getValuesFromScene(libraries.dmxScenes, scene)
+    }
+
+    const audioFade = 0.1;
+    const audioElement: AudioElement = {
+        track: audio,
+        startTime: 0,
+        duration,
+        amplitude: 1,
+        volume: createStandardLevel({
+            duration,
+            fadeIn: audioFade,
+            fadeOut: audioFade
+        })
+    }
+
+    return {
+        templateName: "Presentation",
+        duration: args.duration,
+        info: "Presentation scene",
+        blackout: {
+            preScene: 0,
+            postScene: 0,
+        },
+        hasLights: true,
+        lights: [ lightElement ],
+        hasAudio: true,
+        audio: [ audioElement ],
+        hasProjections: false
+    }
 }

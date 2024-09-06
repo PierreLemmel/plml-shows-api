@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const result = await generateAleasShow(args);
     
-    if (args.generation.save) { 
+    if (args.generation.save) {
         await saveAleasShow(result);
     }
 	res.status(200).json(result);

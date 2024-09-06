@@ -3,7 +3,7 @@ import { HasId, Named, ShortNamed } from "../core/types/utils";
 import { randomRange } from "../core/utils";
 import { DmxValueSegment, Mappings, SceneInfo, ShowInfo } from "../dmx/showControl";
 import { getAudioLibraryCollection, getInputProjectionLibraryCollection } from "./aleas-api";
-import { generateAuCoinDeLaLuneIntroScene, generateAuCoinDeLaLuneOutroScene, getAuCoinDeLaLunePostshowElements, getAuCoinDeLaLunePreshowElements, getAuCoinDeLaLuneSceneTemplates, getAuCoinDeLaLuneStaticElements } from "./templates/au-coin-de-la-lune";
+import { generateAuCoinDeLaLuneIntroScene, generateAuCoinDeLaLuneOutroScene, generateAuCoinDeLaLunePresentationScene, getAuCoinDeLaLunePostshowElements, getAuCoinDeLaLunePreshowElements, getAuCoinDeLaLuneSceneTemplates, getAuCoinDeLaLuneStaticElements } from "./templates/au-coin-de-la-lune";
 
 export type RangeOrValue = number | Range;
 export type Range = [ number, number ];
@@ -59,12 +59,30 @@ export type GenerateAleasIntroOutroArgs = {
     duration: RangeOrValue;
     fade: Fade;
     volume: number;
+    blackout: {
+        preScene: RangeOrValue;
+        postScene: RangeOrValue;
+    }
 }
+
+export type GenerateAleasNoPresentationArgs = {
+    hasPresentation: false;
+}
+
+export type GenerateAleasHasPresentationArgs = {
+    hasPresentation: true;
+    fade: number;
+    duration: number;
+    volume: number;
+    prePresentationBlackout: number;
+    postPresentationBlackout: number;
+}
+
+export type GenerateAleasPresentationArgs = GenerateAleasNoPresentationArgs
+    | GenerateAleasHasPresentationArgs
 
 export type GenerateAleasIntroArgs = GenerateAleasIntroOutroArgs;
 export type GenerateAleasOutroArgs = GenerateAleasIntroOutroArgs & {
-    preOutroBlackout: number;
-    postOutroBlackout: number;
     depresentation: DepresentationInfo;
 };
 
@@ -80,8 +98,11 @@ export type GenerateAleasShowArgs = {
     },
     blackout: {
         duration: RangeOrValue;
+        minDuration: RangeOrValue;
+        maxDuration: RangeOrValue;
         fade?: Fade;
-    }
+    },
+    presentation: GenerateAleasPresentationArgs,
     preshow: GenerateAleasPreShowArgs,
     postshow: GenerateAleasPostShowArgs,
     intro: GenerateAleasIntroArgs,
@@ -96,6 +117,8 @@ export type GenerateAleasShowArgsValues = {
     },
     blackout: {
         duration: number;
+        minDuration: number;
+        maxDuration: number;
         fadeIn: number;
         fadeOut: number;
     }
@@ -105,19 +128,38 @@ export type GenerateAleasShowArgsValues = {
     postshow: {
         fade: number;
     },
+    presentation: {
+        hasPresentation: false;
+    } | {
+        hasPresentation: true;
+        fade: number;
+        duration: number;
+        volume: number;
+        prePresentationBlackout: number;
+        postPresentationBlackout: number;
+    },
     intro: {
         duration: number;
         fadeIn: number;
         fadeOut: number;
-    },
+    } & BlackoutInfo,
     outro: {
         duration: number;
         fadeIn: number;
         fadeOut: number;
-        depresentation: DepresentationInfo;
-        preOutroBlackout: number;
-        postOutroBlackout: number;
-    },
+        depresentation: {
+            hasDepresentation: false;
+        } | {
+            hasDepresentation: true;
+            scene: string;
+            duration: number;
+            amplitude: number;
+            fade: number;
+            musicDuration: number;
+            musicFade: number;
+            musicVolume: number;
+        };
+    } & BlackoutInfo,
 }
 
 function computeShowArgsValues(args: GenerateAleasShowArgs): GenerateAleasShowArgsValues {
@@ -134,6 +176,8 @@ function computeShowArgsValues(args: GenerateAleasShowArgs): GenerateAleasShowAr
         },
         blackout: {
             duration: getValue(args.blackout.duration),
+            minDuration: getValue(args.blackout.minDuration),
+            maxDuration: getValue(args.blackout.maxDuration),
             fadeIn: blackoutFade.fadeIn,
             fadeOut: blackoutFade.fadeOut
         },
@@ -146,15 +190,29 @@ function computeShowArgsValues(args: GenerateAleasShowArgs): GenerateAleasShowAr
         intro: {
             duration: getValue(args.intro.duration),
             fadeIn: introFade.fadeIn,
-            fadeOut: introFade.fadeOut
+            fadeOut: introFade.fadeOut,
+            blackout: {
+                preScene: getValue(args.intro.blackout.preScene),
+                postScene: getValue(args.intro.blackout.postScene)
+            }
         },
+        presentation: args.presentation.hasPresentation ? {
+            hasPresentation: true,
+            fade: args.presentation.fade,
+            duration: args.presentation.duration,
+            volume: args.presentation.volume,
+            prePresentationBlackout: args.presentation.prePresentationBlackout,
+            postPresentationBlackout: args.presentation.postPresentationBlackout,
+        } : { hasPresentation: false },
         outro: {
             duration: getValue(args.outro.duration),
             fadeIn: outroFade.fadeIn,
             fadeOut: outroFade.fadeOut,
             depresentation: structuredClone(args.outro.depresentation),
-            preOutroBlackout: args.outro.preOutroBlackout,
-            postOutroBlackout: args.outro.postOutroBlackout,
+            blackout: {
+                preScene: getValue(args.intro.blackout.preScene),
+                postScene: getValue(args.intro.blackout.postScene)
+            }
         }
     }
 }
@@ -191,6 +249,13 @@ export type SceneBaseInfo = {
     templateName: string;
     duration: number;
     info: string;
+}
+
+export type BlackoutInfo = {
+    blackout: {
+        preScene: number;
+        postScene: number;
+    }
 }
 
 export type LightsElement = {
@@ -244,6 +309,7 @@ export type ProjectionsElementsOrNoProjections = ({
 } | { hasProjections: false })
 
 export type SceneData = SceneBaseInfo
+    & BlackoutInfo
     & LightsElementsOrNoLights
     & AudioElementsOrNoAudio
     & ProjectionsElementsOrNoProjections;
@@ -401,7 +467,7 @@ async function loadLibraries(showName: string, lightingPlan: string): Promise<Lo
     return libraries;
 }
 
-
+const getWholeDuration = (scene: SceneData): number => scene.blackout.preScene + scene.duration + scene.blackout.postScene;
 
 export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<AleasShow> {
 
@@ -420,6 +486,7 @@ export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<Al
         show: {
             totalDuration,
         },
+        presentation,
         blackout: {
             duration: blackoutDurationValue
         },
@@ -437,10 +504,22 @@ export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<Al
     };
     
     const scenes: AleasShowScene[] = [];
+
+    if (presentation.hasPresentation) {
+
+        const presentationScene = generatePresentationScene(presentation, libraries);
+        scenes.push({
+            ...presentationScene,
+            name: "Presentation",
+            displayName: "Presentation"
+        });
+
+        currentTime += getWholeDuration(presentationScene);
+    }
+
     const intro = generateIntroScene(args, libraries);
 
-    currentTime += intro.duration;
-    currentTime += blackoutDurationValue;
+    currentTime += getWholeDuration(intro);
 
     scenes.push({
         ...intro,
@@ -482,9 +561,7 @@ export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<Al
             ...nextScene
         });
 
-        currentTime += nextScene.duration;
-        currentTime += blackoutDurationValue;
-
+        currentTime += getWholeDuration(nextScene);
         currentScene++;
     }
 
@@ -553,6 +630,10 @@ export async function generateSceneFromTemplate(args: GenerateAleasShowArgs, tem
     const result = calculateParamVal(instantiatedTemplate.value, cpva);
 
     return result;
+}
+
+function generatePresentationScene(args: GenerateAleasHasPresentationArgs, libraries: LoadedLibraries): SceneData {
+    return generateAuCoinDeLaLunePresentationScene(args, libraries);
 }
 
 function generateIntroScene(args: GenerateAleasShowArgs, libraries: LoadedLibraries): SceneData {
@@ -669,6 +750,7 @@ function getNextElementFromTemplates(templates: AleasSceneTemplate[], features: 
 
 export type HardCodedTemplateParts<TArgs> = {
     getBaseInfo: (args: CalculateParamValArgs) => SceneBaseInfo;
+    getBlackoutInfo?: (args: CalculateParamValArgs, minDuration: number, maxDuration: number) => BlackoutInfo;
     getLights: (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries, moreArgs: TArgs) => LightsElementsOrNoLights;
     getAudio?: (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries, moreArgs: TArgs) => AudioElementsOrNoAudio;
     getProjection?: (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries, moreArgs: TArgs) => ProjectionsElementsOrNoProjections;
@@ -680,6 +762,12 @@ export function makeSceneProvider<TArgs = any>(parts: HardCodedTemplateParts<TAr
     const {
         getBaseInfo,
         getLights,
+        getBlackoutInfo = (args: CalculateParamValArgs, minDuration: number, maxDuration: number) => ({
+            blackout: {
+                preScene: 0,
+                postScene: randomRange(minDuration, maxDuration)
+            }
+        }),
         getAudio = () => ({ hasAudio: false }),
         getProjection = () => ({ hasProjections: false }),
         getMoreArgs = () => { return {} as any;}
@@ -687,12 +775,14 @@ export function makeSceneProvider<TArgs = any>(parts: HardCodedTemplateParts<TAr
 
     return (args: CalculateParamValArgs) => {
         const baseInfo = getBaseInfo(args);
+
         const { duration } = baseInfo;
 
         const moreArgs = getMoreArgs(args, duration);
 
         return {
             ...baseInfo,
+            ...getBlackoutInfo(args, 1.8, 4.0),
             ...getLights(args, duration, libraries, moreArgs),
             ...getAudio(args, duration, libraries, moreArgs),
             ...getProjection(args, duration, libraries, moreArgs)
