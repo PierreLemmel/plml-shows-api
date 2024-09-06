@@ -15,7 +15,8 @@ export module Chans {
         "Pan",
         "Pan Fine",
         "Tilt",
-        "Tilt Fine"
+        "Tilt Fine",
+        "Beam",
     ] as const;
     export type NumberChannelType = typeof numberChannelTypes[number];
 
@@ -184,6 +185,10 @@ export module Chans {
         "Tilt Fine": {
             displayName: "Tilt Fin",
             priority: 43
+        },
+        "Beam": {
+            displayName: "Faisceau",
+            priority: 44
         },
         
 

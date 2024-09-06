@@ -15,6 +15,8 @@ const LightingPlanEdit = () => {
     } = useRouterQuery("lp");
 
     useEffectAsync(async () => {
+        if (!lpName) return;
+
         const lp = await getLightingPlan(lpName)
         setLightingPlan(lp);
     }, [lpName]);

@@ -94,10 +94,10 @@ const ShowEditor = (props: ShowEditorProps) => {
         await saveShow(updatedShow);
 
         const newScenePath = sceneEditPath(newSceneName);
+        
         router.push(newScenePath);
         
-        router.push("", "", { })
-    }, [sceneEditPath, show]);
+    }, [sceneEditPath, newSceneName, show]);
 
 
     const deleteBtnEnabled = scene !== undefined;
