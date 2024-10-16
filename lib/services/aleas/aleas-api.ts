@@ -52,8 +52,6 @@ export async function saveAleasShow(show: AleasShow) {
     const {
         generationInfo,
         scenes,
-        preshow,
-        postshow,
         ...otherShowElements
     } = show;
 
@@ -71,14 +69,10 @@ export async function saveAleasShow(show: AleasShow) {
 
     const pathToShowDoc = pathToAleasShow(lightingPlan, showName, docName);
     const sanitizedScenes = structuredClone(scenes).map(sanitizeNestedArraysForFirestore);
-    const sanitizedPreshow = structuredClone(preshow).map(sanitizeNestedArraysForFirestore);
-    const sanitizedPostshow = structuredClone(postshow).map(sanitizeNestedArraysForFirestore);
 
     const data = {
         generationInfo,
         scenes: sanitizedScenes,
-        preshow: sanitizedPreshow,
-        postshow: sanitizedPostshow,
         ...otherShowElements
     }
 

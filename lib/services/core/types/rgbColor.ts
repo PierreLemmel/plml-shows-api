@@ -7,8 +7,13 @@ export interface RgbColor {
 const rgb = (r: number, g: number, b: number): RgbColor => ({ r, g, b})
 
 export interface HsvColor {
+    /** Hue in range [0-1] */
     readonly h: number;
+
+    /** Saturation in range [0-1] */
     readonly s: number;
+
+    /** Value in range [0-1] */
     readonly v: number;
 }
 
@@ -21,11 +26,11 @@ const rgbToHsv = (color: RgbColor): HsvColor => {
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
 
-    const delta = max - min;
+    const delta = (max - min);
 
     let h = 0;
     let s = 0;
-    let v = max;
+    let v = max / 255.0;
 
     if (delta !== 0) {
         if (max === r) {
@@ -36,9 +41,9 @@ const rgbToHsv = (color: RgbColor): HsvColor => {
             h = (r - g) / delta + 4;
         }
     
-        h *= 60;
+        h /= 6.0;
         if (h < 0) {
-            h += 360;
+            h += 1.0;
         }
     
         if (max !== 0) {
@@ -55,34 +60,34 @@ const hsvToRgb = (hsv: HsvColor): RgbColor => {
     const v = hsv.v;
   
     const c = v * s;
-    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const x = c * (1 - Math.abs(((h / (1.0 / 6.0)) % 2) - 1));
     const m = v - c;
   
     let r = 0;
     let g = 0;
     let b = 0;
   
-    if (h >= 0 && h < 60) {
+    if (h >= 0 && h < 1.0 / 6.0) {
         r = c;
         g = x;
     }
-    else if (h >= 60 && h < 120) {
+    else if (h >= 1.0 / 6.0 && h < 2.0 / 6.0) {
         r = x;
         g = c;
     } 
-    else if (h >= 120 && h < 180) {
+    else if (h >= 2.0 / 6.0 && h < 3.0 / 6.0) {
         g = c;
         b = x;
     }
-    else if (h >= 180 && h < 240) {
+    else if (h >= 3.0 / 6.0 && h < 4.0 / 6.0) {
         g = x;
         b = c;
     }
-    else if (h >= 240 && h < 300) {
+    else if (h >= 4.0 / 6.0 && h < 5.0 / 6.0) {
         r = x;
         b = c;
     }
-    else if (h >= 300 && h <= 360) {
+    else if (h >= 5.0 / 6.0 && h <= 1.0) {
         r = c;
         b = x;
     }

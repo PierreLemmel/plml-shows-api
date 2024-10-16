@@ -4,6 +4,10 @@ export function randomInt(min: number, max: number) {
     return Math.floor(randomRange(min, max));
 }
 
+export function random01() {
+    return Math.random();
+}
+
 export function randomRange(min: number, max:number) {
     return min + (max - min) * Math.random();
 }
