@@ -1,6 +1,7 @@
 import { getDocument, sanitizeNestedArraysForFirestore, setDocument, toFirebaseKey } from "../api/firebase";
 import { pathCombine } from "../core/files";
-import { AleasAudioLibrariesCollection, AleasInputProjectionLibrariesCollection, AleasInputProjectionLibrary, AleasShow } from "./aleas-generation";
+import { CompletionsData } from "../generation/text/text-gen";
+import { AleasAudioLibrariesCollection, AleasInputProjectionLibrariesCollection, AleasInputProjectionLibrary, AleasMonologueLibrary, AleasShow } from "./aleas-generation";
 
 const pathToAudioLibrary = (library: string) => pathCombine(
     "aleas",
@@ -27,7 +28,7 @@ export async function getInputProjectionLibraryCollection(collection: string) {
     return await getDocument<AleasInputProjectionLibrariesCollection>(path);
 }
 
-const formatDate = (date: Date): string => {
+export const formatAleasDate = (date: Date): string => {
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
@@ -65,7 +66,7 @@ export async function saveAleasShow(show: AleasShow) {
         generatedAt
     } = generationInfo;
 
-    const docName = `${showName} - ${formatDate(generatedAt)}`;
+    const docName = `${showName} - ${formatAleasDate(generatedAt)}`;
 
     const pathToShowDoc = pathToAleasShow(lightingPlan, showName, docName);
     const sanitizedScenes = structuredClone(scenes).map(sanitizeNestedArraysForFirestore);
@@ -77,4 +78,36 @@ export async function saveAleasShow(show: AleasShow) {
     }
 
     await setDocument(pathToShowDoc, data);
+}
+
+const baseCompletionsPath = "aleas/generation/";
+const pathToMonologueCompletion = (batch: string) => pathCombine(
+    baseCompletionsPath,
+    "monologues",
+    toFirebaseKey(batch)
+)
+
+
+export async function getMonologueCompletionsData(batch: string): Promise<CompletionsData> {
+    const result = await getDocument<CompletionsData>(pathToMonologueCompletion(batch));
+    return result;
+}
+
+
+
+const pathToMonologueLibrary = (library: string) => pathCombine(
+    "aleas",
+    "library",
+    "monologues",
+    toFirebaseKey(library)
+);
+
+export async function saveMonologueLibrary(library: AleasMonologueLibrary) {
+    const path = pathToMonologueLibrary(library.name);
+    await setDocument(path, library);
+}
+
+export async function getMonologueLibrary(library: string): Promise<AleasMonologueLibrary> {
+    const path = pathToMonologueLibrary(library);
+    return await getDocument<AleasMonologueLibrary>(path);
 }

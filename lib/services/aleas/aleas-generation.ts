@@ -1,16 +1,20 @@
+import { type } from "os";
 import { RgbColor } from "../core/types/rgbColor";
 import { HasId, Named, ShortNamed } from "../core/types/utils";
 import { notImplemented, randomRange } from "../core/utils";
-import { getAudioLibraryCollection, getInputProjectionLibraryCollection } from "./aleas-api";
+import { getAudioLibraryCollection, getInputProjectionLibraryCollection, getMonologueLibrary } from "./aleas-api";
 import { getValue } from "./aleas-generation-utils";
-import { generateTheatreDuTempsIntroScene, generateTheatreDuTempsOutroScene, generateTheatreDuTempsPresentationScene, getTheatreDuTempsSceneTemplates } from "./templates/theatre-du-temps";
+import { generateRepetitionIntroScene, generateRepetitionOutroScene, getRepetitionSceneTemplates } from "./templates/repetition-aleas";
 
 export type RangeOrValue = number | Range;
 export type Range = [ number, number ];
 
 export type Fade = RangeOrValue | { fadeIn: RangeOrValue, fadeOut: RangeOrValue };
 
-export type KeyFrame = [ number, number];
+type GenericKeyFrame<T> = [ number, T ];
+export type KeyFrame = GenericKeyFrame<number>;
+export type ColorKeyFrame = GenericKeyFrame<RgbColor>;
+export type StringKeyFrame = GenericKeyFrame<string>;
 
 export type StartAndDuration = {
     startTime: number;
@@ -32,48 +36,14 @@ export type AleasFeaturesMap = {
     [key in AleasFeatures]: boolean;
 };
 
-export type DepresentationInfo = {
-    hasDepresentation: false;
-} | {
-    hasDepresentation: true;
-    scene: string;
-    duration: number;
-    amplitude: number;
-    fade: number;
-    musicDuration: number;
-    musicFade: number;
-    musicVolume: number;
-}
-
 export type GenerateAleasIntroOutroArgs = {
     duration: RangeOrValue;
-    fade: Fade;
     volume: number;
-    blackout: {
-        preScene: RangeOrValue;
-        postScene: RangeOrValue;
-    }
 }
-
-export type GenerateAleasNoPresentationArgs = {
-    hasPresentation: false;
-}
-
-export type GenerateAleasHasPresentationArgs = {
-    hasPresentation: true;
-    fade: number;
-    duration: number;
-    volume: number;
-    prePresentationBlackout: number;
-    postPresentationBlackout: number;
-}
-
-export type GenerateAleasPresentationArgs = GenerateAleasNoPresentationArgs
-    | GenerateAleasHasPresentationArgs
 
 export type GenerateAleasIntroArgs = GenerateAleasIntroOutroArgs;
 export type GenerateAleasOutroArgs = GenerateAleasIntroOutroArgs & {
-    depresentation: DepresentationInfo;
+    depresentationVolume: number;
 };
 
 export type GenerateAleasShowArgs = {
@@ -92,7 +62,6 @@ export type GenerateAleasShowArgs = {
         maxDuration: RangeOrValue;
         fade?: Fade;
     },
-    presentation: GenerateAleasPresentationArgs,
     intro: GenerateAleasIntroArgs,
     outro: GenerateAleasOutroArgs,
     features: Partial<AleasFeaturesMap>,
@@ -110,44 +79,17 @@ export type GenerateAleasShowArgsValues = {
         fadeIn: number;
         fadeOut: number;
     }
-    presentation: {
-        hasPresentation: false;
-    } | {
-        hasPresentation: true;
-        fade: number;
-        duration: number;
-        volume: number;
-        prePresentationBlackout: number;
-        postPresentationBlackout: number;
-    },
     intro: {
         duration: number;
-        fadeIn: number;
-        fadeOut: number;
-    } & BlackoutInfo,
+    },
     outro: {
         duration: number;
-        fadeIn: number;
-        fadeOut: number;
-        depresentation: {
-            hasDepresentation: false;
-        } | {
-            hasDepresentation: true;
-            scene: string;
-            duration: number;
-            amplitude: number;
-            fade: number;
-            musicDuration: number;
-            musicFade: number;
-            musicVolume: number;
-        };
-    } & BlackoutInfo,
+        depresentationVolume: number;
+    },
 }
 
 function computeShowArgsValues(args: GenerateAleasShowArgs): GenerateAleasShowArgsValues {
     const blackoutFade = getFadeValues(args.blackout.fade);
-    const introFade = getFadeValues(args.intro.fade);
-    const outroFade = getFadeValues(args.outro.fade);
 
     return {
         show: {
@@ -163,30 +105,10 @@ function computeShowArgsValues(args: GenerateAleasShowArgs): GenerateAleasShowAr
         },
         intro: {
             duration: getValue(args.intro.duration),
-            fadeIn: introFade.fadeIn,
-            fadeOut: introFade.fadeOut,
-            blackout: {
-                preScene: getValue(args.intro.blackout.preScene),
-                postScene: getValue(args.intro.blackout.postScene)
-            }
         },
-        presentation: args.presentation.hasPresentation ? {
-            hasPresentation: true,
-            fade: args.presentation.fade,
-            duration: args.presentation.duration,
-            volume: args.presentation.volume,
-            prePresentationBlackout: args.presentation.prePresentationBlackout,
-            postPresentationBlackout: args.presentation.postPresentationBlackout,
-        } : { hasPresentation: false },
         outro: {
             duration: getValue(args.outro.duration),
-            fadeIn: outroFade.fadeIn,
-            fadeOut: outroFade.fadeOut,
-            depresentation: structuredClone(args.outro.depresentation),
-            blackout: {
-                preScene: getValue(args.intro.blackout.preScene),
-                postScene: getValue(args.intro.blackout.postScene)
-            }
+            depresentationVolume: args.outro.depresentationVolume,
         }
     }
 }
@@ -208,6 +130,16 @@ export type AleasAudioLibrary = {
 }
 
 
+export type AleasMonologue = {
+    text: string;
+}
+
+export type AleasMonologueLibrary = {
+    model: string;
+    monologues: AleasMonologue[];
+} & Named & ShortNamed & HasId;
+
+
 export type AleasInputProjectionLibrariesCollection = {
     libraries: AleasInputProjectionLibrary[];
 } & Named & ShortNamed & HasId;
@@ -221,11 +153,13 @@ export type AleasInputProjectionLibrary = {
 export type AleasContentLibraryFade = {
     elements?: string[];
     relativeOffset: number;
+    instant?: boolean;
 }
 
 export type AleasContentLibraryParamBase = {
     name: string;
     description?: string;
+    mapAsglobal?: boolean;
 }
 
 export type AleasContentLibraryFloatParam = AleasContentLibraryParamBase & {
@@ -293,6 +227,8 @@ export type AleasContentLibraryStep = {
 export type AleasContentLibraryValue = {
     name: string;
     description?: string;
+    mapAsGlobal?: boolean;
+    type: "float"|"color"|"string";
 }
 
 export type AleasContentScene = {
@@ -328,6 +264,7 @@ export type AudioElement = {
     duration: number;
     amplitude: number;
     volume: KeyFrame[];
+    continueAfterSceneEnd?: boolean;
 }
 export type AudioElementsOrNoAudio = ({
     hasAudio: true,
@@ -344,6 +281,7 @@ export type ContentFadeElement = {
 export type ContentParamElement = {
     name: string;
     description?:string;
+    mapAsGlobal?: boolean;
 } & ({
     type: "float";
     value: number;
@@ -372,8 +310,17 @@ export type ContentStepElement = {
 export type ContentValueElement = {
     name: string;
     description?: string;
+    mapAsGlobal?: boolean;
+} & ({
+    type: "float";
     value: KeyFrame[];
-}
+}|{
+    type: "color";
+    value: ColorKeyFrame[];
+}|{
+    type: "string";
+    value: StringKeyFrame[];
+})
 
 
 export type ContentElement = {
@@ -501,107 +448,33 @@ export type LoadedLibraries = {
     audioLibraries: LoadedLibrary<AleasAudioLibrary>;
     contentLibraries: LoadedLibrary<AleasContentScene>;
     inputProjectionLibraries: LoadedLibrary<AleasInputProjectionLibrary>;
+    monologueLibraries: LoadedLibrary<AleasMonologueLibrary>;
 }
 
 
-const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
-    {
-        name: "preshow",
-        projectIndex: 3,
-        description: "Preshow",
-        tags: [ "preshow"],
-        fades: [
-            {
-                elements: [ "Title" ],
-                relativeOffset: 0.,
-            },
-            {
-                elements: [ "Projections" ],
-                relativeOffset: 0.2,
-            },
-            {
-                elements: [ "Pulses" ],
-                relativeOffset: 0.6
-            },
-            {
-                elements: [ "Alcove" ],
-                relativeOffset: 1.0
-            },
-            {
-                elements: [ "Services" ],
-                relativeOffset: 1.6
-            }
-        ]
-    },
-    {
-        name: "postshow",
-        projectIndex: 4,
-        description: "Postshow",
-        tags: [ "postshow"],
-        fades: [
-            {
-                elements: [ "Title" ],
-                relativeOffset: 0.,
-            },
-            {
-                elements: [ "Projections" ],
-                relativeOffset: 0.2,
-            },
-            {
-                elements: [ "Pulses" ],
-                relativeOffset: 0.6
-            },
-            {
-                elements: [ "Alcove" ],
-                relativeOffset: 1.0
-            },
-            {
-                elements: [ "Services" ],
-                relativeOffset: 1.6
-            }
-        ]
-    },
-    {
-        name: "confessionnal",
-        projectIndex: 5,
-        description: "Confessionnal",
-        tags: [ "confessionnal"],
-        fades: [
-            {
-                elements: [
-                    "Timer projection",
-                ],
-                relativeOffset: 0.,
-            },
-            {
-                elements: [
-                    "Alcove",
-                ],
-                relativeOffset: 0.8
-            }
-        ]
-    },
+const hardCodedImprovidenceLibrary: AleasContentScene[] = [
+    // Intro
     {
         name: "intro",
-        projectIndex: 6,
+        projectIndex: 4,
         description: "Intro",
         tags: [ "intro" ],
         steps: [
             {
                 name: "intro-01",
-                elements: [ "Douche Jar" ]
+                elements: [ "Poursuite" ]
             },
             {
                 name: "Intro-02",
-                elements: [ "Douche Cour" ]
+                elements: [ "Lat Jar" ]
             },
             {
                 name: "Intro-03",
-                elements: [ "Découpe centrale" ]
+                elements: [ "Douche centrale" ]
             },
             {
                 name: "Intro-04",
-                elements: [ "Alcove" ]
+                elements: [ "Lat Cour" ]
             }
         ],
         fades: [
@@ -611,6 +484,66 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             }
         ]
     },
+    // Outro
+    {
+        name: "outro",
+        projectIndex: 5,
+        description: "Outro",
+        tags: [ "outro" ],
+        steps: [
+            {
+                name: "intro-01",
+                elements: [ "Poursuite" ]
+            },
+            {
+                name: "Intro-02",
+                elements: [ "Lat Jar" ]
+            },
+            {
+                name: "Intro-03",
+                elements: [ "Douche centrale" ]
+            },
+            {
+                name: "Intro-04",
+                elements: [ "Lat Cour" ]
+            }
+        ],
+        fades: [
+            {
+                elements: [ "Master" ],
+                relativeOffset: 0.,
+            }
+        ]
+    },
+    // Confessionnal
+    {
+        name: "confessionnal",
+        projectIndex: 6,
+        description: "Confessionnal",
+        tags: [ "confessionnal"],
+        fades: [
+            {
+                elements: [
+                    "Timer projection",
+                    "Shutter"
+                ],
+                relativeOffset: 0,
+            },
+            {
+                elements: [
+                    "Alcove",
+                ],
+                relativeOffset: 0.08,
+            },
+        ],
+        params: [
+            {
+                name: "duration",
+                type: "float"
+            }
+        ]
+    },
+    // PF - Chaud
     {
         name: "pf-chaud",
         projectIndex: 7,
@@ -625,41 +558,19 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
                 relativeOffset: 0.,
             },
             {
-                elements: [ "lats" ],
-                relativeOffset: 0.3,
+                elements: [ "diags" ],
+                relativeOffset: 0.15,
             },
             {
                 elements: [ "faces" ],
-                relativeOffset: 0.7
+                relativeOffset: 0.35
             }
         ]
     },
-    {
-        name: "pf-froid",
-        projectIndex: 8,
-        description: "Pleins feux - Froid",
-        tags: [
-            "standard",
-            "pleins-feux"
-        ],
-        fades: [
-            {
-                elements: [ "contres" ],
-                relativeOffset: 0.,
-            },
-            {
-                elements: [ "lats" ],
-                relativeOffset: 0.3,
-            },
-            {
-                elements: [ "faces" ],
-                relativeOffset: 0.7
-            }
-        ]
-    },
+    // Full Color
     {
         name: "full-color",
-        projectIndex: 9,
+        projectIndex: 8,
         description: "Full Color",
         tags: [
             "color",
@@ -672,21 +583,22 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             },
             {
                 elements: [ "Faces" ],
-                relativeOffset: 0.6,
+                relativeOffset: 0.35,
             }
         ],
         params: [
             {
                 name: "color",
                 type: "color",
-                saturationRange: [ 0.7, 1.0 ],
-                valueRange: [ 0.7, 1.0 ]
+                saturationRange: [ 0.3, 1.0 ],
+                valueRange: [ 0.65, 1.0 ]
             }
         ]
     },
+    // Bicolor
     {
         name: "bicolor",
-        projectIndex: 10,
+        projectIndex: 9,
         description: "Bicolor",
         tags: [
             "color",
@@ -699,15 +611,15 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             },
             {
                 elements: [ "Faces" ],
-                relativeOffset: 0.6,
+                relativeOffset: 0.35,
             }
         ],
         params: [
             {
                 name: "color-contres",
                 type: "color",
-                saturationRange: [ 0.7, 1.0 ],
-                valueRange: [ 0.7, 1.0 ]
+                saturationRange: [ 0.3, 1.0 ],
+                valueRange: [ 0.65, 1.0 ]
             },
             {
                 name: "color-lats",
@@ -719,9 +631,10 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             }
         ]
     },
+    // Tricolor
     {
         name: "tricolor",
-        projectIndex: 11,
+        projectIndex: 10,
         description: "Tricolor",
         tags: [
             "color",
@@ -734,15 +647,15 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             },
             {
                 elements: [ "Faces" ],
-                relativeOffset: 0.6,
+                relativeOffset: 0.35,
             }
         ],
         params: [
             {
                 name: "color-contres",
                 type: "color",
-                saturationRange: [ 0.7, 1.0 ],
-                valueRange: [ 0.7, 1.0 ]
+                saturationRange: [ 0.3, 1.0 ],
+                valueRange: [ 0.65, 1.0 ]
             },
             {
                 name: "color-jar",
@@ -762,10 +675,11 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             },
         ]
     },
+    // Douche
     {
-        name: "douche-jar",
-        projectIndex: 12,
-        description: "Douche - Jardin",
+        name: "douche",
+        projectIndex: 11,
+        description: "Douche",
         tags: [
             "douche",
             "isolation"
@@ -774,69 +688,13 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             {
                 elements: [ "Douche" ],
                 relativeOffset: 0.,
-            },
-            {
-                elements: [ "Face" ],
-                relativeOffset: 0.6,
             }
         ]
     },
-    {
-        name: "douche-cour",
-        projectIndex: 13,
-        description: "Douche - Cour",
-        tags: [
-            "douche",
-            "isolation"
-        ],
-        fades: [
-            {
-                elements: [ "Douche" ],
-                relativeOffset: 0.,
-            },
-            {
-                elements: [ "Face" ],
-                relativeOffset: 0.6,
-            }
-        ]
-    },
-    {
-        name: "double-douches",
-        projectIndex: 14,
-        description: "Double douches",
-        tags: [
-            "douche",
-            "isolation"
-        ],
-        fades: [
-            {
-                elements: [ "Douche" ],
-                relativeOffset: 0.,
-            },
-            {
-                elements: [ "Face" ],
-                relativeOffset: 0.6,
-            }
-        ]
-    },
-    {
-        name: "decoupe-centrale",
-        projectIndex: 15,
-        description: "Découpe centrale",
-        tags: [
-            "decoupe",
-            "isolation"
-        ],
-        fades: [
-            {
-                elements: [ "Découpe" ],
-                relativeOffset: 0.,
-            },
-        ]
-    },
+    // White rotation
     {
         name: "white-rotation",
-        projectIndex: 16,
+        projectIndex: 12,
         description: "White rotation",
         tags: [
             "special",
@@ -876,38 +734,10 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             },
         ]
     },
-    {
-        name: "douches-alternate",
-        projectIndex: 17,
-        description: "Douches alternées",
-        tags: [
-            "douche",
-            "isolation"
-        ],
-        fades: [
-            {
-                elements: [ "Douche" ],
-                relativeOffset: 0.,
-            },
-            {
-                elements: [ "Face" ],
-                relativeOffset: 0.6,
-            }
-        ],
-        steps: [
-            {
-                name: "douche-01",
-                elements: [ "Douche Jar" ]
-            },
-            {
-                name: "douche-02",
-                elements: [ "Douche Cour" ]
-            }
-        ]
-    },
+    // PF Chaud - Bascule Couleur
     {
         name: "pf-ch-basc-col",
-        projectIndex: 18,
+        projectIndex: 13,
         description: "PF Chaud - Bascule Couleur",
         tags: [
             "bascule",
@@ -924,7 +754,7 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             },
             {
                 elements: [ "faces" ],
-                relativeOffset: 0.5,
+                relativeOffset: 0.25,
             },
         ],
         params: [
@@ -950,54 +780,10 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             }
         ]
     },
-    {
-        name: "pf-fr-basc-col",
-        projectIndex: 19,
-        description: "PF Froid - Bascule Couleur",
-        tags: [
-            "bascule",
-            "bascule-pf"
-        ],
-        fades: [
-            {
-                elements: [
-                    "colors",
-                    "contres",
-                    "lats"
-                ],
-                relativeOffset: 0.,
-            },
-            {
-                elements: [ "faces" ],
-                relativeOffset: 0.5,
-            },
-        ],
-        params: [
-            {
-                name: "color",
-                type: "color",
-                saturationRange: [ 0.7, 1.0 ],
-                valueRange: [ 0.7, 1.0 ]
-            }
-        ],
-        steps: [
-            {
-                name: "pf",
-                elements: [
-                    "Faces",
-                    "Contres",
-                    "Lats"
-                ]
-            },
-            {
-                name: "color",
-                elements: [ "Colors" ]
-            }
-        ]
-    },
+    // Color swap x2
     {
         name: "col-swap-2",
-        projectIndex: 20,
+        projectIndex: 14,
         description: "Color swap x2",
         tags: [
             "color",
@@ -1010,15 +796,15 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             },
             {
                 elements: [ "Faces" ],
-                relativeOffset: 0.6,
+                relativeOffset: 0.22,
             }
         ],
         params: [
             {
                 name: "color-1",
                 type: "color",
-                saturationRange: [ 0.7, 1.0 ],
-                valueRange: [ 0.7, 1.0 ]
+                saturationRange: [ 0.3, 1.0 ],
+                valueRange: [ 0.65, 1.0 ]
             },
             {
                 name: "color-2",
@@ -1040,9 +826,10 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             },
         ]
     },
+    // Color swap x3
     {
         name: "col-swap-3",
-        projectIndex: 21,
+        projectIndex: 15,
         description: "Color swap x3",
         tags: [
             "color",
@@ -1055,15 +842,15 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             },
             {
                 elements: [ "Faces" ],
-                relativeOffset: 0.6,
+                relativeOffset: 0.25,
             }
         ],
         params: [
             {
                 name: "color-1",
                 type: "color",
-                saturationRange: [ 0.7, 1.0 ],
-                valueRange: [ 0.7, 1.0 ]
+                saturationRange: [ 0.3, 1.0 ],
+                valueRange: [ 0.65, 1.0 ]
             },
             {
                 name: "color-2",
@@ -1097,10 +884,11 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             }
         ]
     },
+    // Color Bascule Douche
     {
-        name: "col-basc-decoupe",
-        projectIndex: 22,
-        description: "Color Bascule Decoupe",
+        name: "col-basc-douche",
+        projectIndex: 16,
+        description: "Color Bascule Douche",
         tags: [
             "color",
             "bascule",
@@ -1110,21 +898,21 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             {
                 elements: [
                     "Colors",
-                    "Découpe"
+                    "Douche"
                 ],
                 relativeOffset: 0.,
             },
             {
                 elements: [ "Faces" ],
-                relativeOffset: 0.6,
+                relativeOffset: 0.25,
             }
         ],
         params: [
             {
                 name: "color",
                 type: "color",
-                saturationRange: [ 0.7, 1.0 ],
-                valueRange: [ 0.7, 1.0 ]
+                saturationRange: [ 0.3, 1.0 ],
+                valueRange: [ 0.65, 1.0 ]
             },
         ],
         steps: [
@@ -1138,9 +926,10 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             }
         ]
     },
+    // Color wave
     {
         name: "color-wave",
-        projectIndex: 24,
+        projectIndex: 17,
         description: "Color Wave",
         tags: [
             "special",
@@ -1153,7 +942,7 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             },
             {
                 elements: [ "Faces" ],
-                relativeOffset: 0.6,
+                relativeOffset: 0.25,
             }
         ],
         params: [
@@ -1183,9 +972,10 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             }
         ]
     },
+    // PF Chaud - Bascule Stroboscopes
     {
         name: "pf-ch-basc-str",
-        projectIndex: 25,
+        projectIndex: 18,
         description: "PF Chaud - Bascule Stroboscopes",
         tags: [
             "bascule",
@@ -1204,7 +994,7 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             },
             {
                 elements: [ "faces" ],
-                relativeOffset: 0.5,
+                relativeOffset: 0.25,
             }
         ],
         params: [
@@ -1218,11 +1008,22 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
                 name: "strobes-speed",
                 type: "float",
             },
+        ],
+        steps: [
+            {
+                name: "pf",
+                elements: [ "Plein feux" ]
+            },
+            {
+                name: "strobes",
+                elements: [ "strobes" ]
+            }
         ]
     },
+    // Projection - Input
     {
         name: "proj-input",
-        projectIndex: 26,
+        projectIndex: 19,
         tags: [
             "projection",
         ],
@@ -1231,14 +1032,13 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             {
                 elements: [
                     "contres",
-                    "lats",
-                    "lats-led"
+                    "diags",
                 ],
                 relativeOffset: 0.,
             },
             {
                 elements: [ "Faces" ],
-                relativeOffset: 0.4,
+                relativeOffset: 0.25,
             }
         ],
         params: [
@@ -1252,7 +1052,7 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
                 name: "proj-input",
                 elements: [
                     "Projection",
-                    "Lats-Led"
+                    "Shutter"
                 ]
             },
             {
@@ -1265,86 +1065,55 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             }
         ]
     },
+    // Monologue
     {
-        name: "rectangle-doors",
-        projectIndex: 28,
-        description: "Rectangle Doors",
+        name: "monologue",
+        projectIndex: 20,
         tags: [
-            "mapping",
-            "mapping-geometric"
+            "monologue",
         ],
+        description: "Monologue",
         fades: [
             {
-                elements: [ "Doors" ],
+                elements: [
+                    "contres",
+                    "diags",
+                ],
                 relativeOffset: 0.,
             },
             {
-                elements: [ "Background" ],
-                relativeOffset: 0.6,
+                elements: [ "Faces" ],
+                relativeOffset: 0.25,
             }
         ],
-        params: [
+        steps: [
             {
-                name: "background-color",
-                type: "color",
-                saturationRange: [ 0.0, 0.1 ],
-                valueRange: [ 0.0, 0.1 ]
+                name: "projection",
+                elements: [
+                    "Projection",
+                    "Shutter"
+                ]
             },
             {
-                name: "color1",
-                type: "color",
-                saturationRange: [ 0.0, 0.22 ],
-                valueRange: [ 0.85, 1.0 ]
-            },
+                name: "pf chaud",
+                elements: [
+                    "Faces",
+                    "Lats",
+                    "Contres"
+                ]
+            }
+        ],
+        values: [
             {
-                name: "color2",
-                type: "color",
-                link: {
-                    to: "color1",
-                    hueRotation: [0, 1/2]
-                }
-            },
-            {
-                name: "x1",
-                type: "float",
-                range: [0.1, 0.4]
-            },
-            {
-                name: "y1",
-                type: "float",
-                value: 0.0
-            },
-            {
-                name: "w1",
-                type: "float",
-            },
-            {
-                name: "h1",
-                type: "float",
-            },
-            {
-                name: "x2",
-                type: "float",
-                range: [0.6, 0.9]
-            },
-            {
-                name: "y2",
-                type: "float",
-                value: 0.0
-            },
-            {
-                name: "w2",
-                type: "float",
-            },
-            {
-                name: "h2",
-                type: "float",
-            },
+                name: "text",
+                type: "string",
+            }
         ]
     },
+    // Line Swipe
     {
         name: "line-swipe",
-        projectIndex: 29,
+        projectIndex: 21,
         description: "Line Swipe",
         tags: [
             "mapping",
@@ -1352,12 +1121,15 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
         ],
         fades: [
             {
-                elements: [ "Background" ],
+                elements: [
+                    "Background",
+                    "Shutter"
+                ],
                 relativeOffset: 0.,
             },
             {
                 elements: [ "Line" ],
-                relativeOffset: 0.6,
+                relativeOffset: 0.30,
             }
         ],
         params: [
@@ -1399,9 +1171,10 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             }
         ]
     },
+    // Face Line
     {
         name: "face-line",
-        projectIndex: 30,
+        projectIndex: 22,
         description: "Face Line",
         tags: [
             "mapping",
@@ -1409,12 +1182,15 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
         ],
         fades: [
             {
-                elements: [ "Line" ],
+                elements: [
+                    "Line",
+                    "Shutter"
+                ],
                 relativeOffset: 0.,
             },
             {
                 elements: [ "Background" ],
-                relativeOffset: 0.6,
+                relativeOffset: 0.3,
             }
         ],
         params: [
@@ -1427,7 +1203,7 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             {
                 name: "line-color",
                 type: "color",
-                saturationRange: [ 0.0, 0.22 ],
+                saturationRange: [ 0.0, 1.0 ],
                 valueRange: [ 0.85, 1.0 ]
             },
             {
@@ -1452,9 +1228,10 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             }
         ]
     },
+    // Double Face Line
     {
         name: "double-face-line",
-        projectIndex: 31,
+        projectIndex: 23,
         description: "Double Face Line",
         tags: [
             "mapping",
@@ -1462,12 +1239,15 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
         ],
         fades: [
             {
-                elements: [ "Lines" ],
+                elements: [
+                    "Lines",
+                    "Shutter"
+                ],
                 relativeOffset: 0.,
             },
             {
                 elements: [ "Background" ],
-                relativeOffset: 0.6,
+                relativeOffset: 0.3,
             }
         ],
         params: [
@@ -1480,7 +1260,7 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             {
                 name: "color1",
                 type: "color",
-                saturationRange: [ 0.0, 0.22 ],
+                saturationRange: [ 0.0, 1.0 ],
                 valueRange: [ 0.85, 1.0 ]
             },
             {
@@ -1520,66 +1300,349 @@ const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             }
         ]
     },
+    // Clouds
     {
-        name: "circle-pulse",
-        description: "Circle Pulse",
-        projectIndex: 32,
+        name: "clouds",
+        description: "Clouds",
+        projectIndex: 24,
         tags: [
             "mapping",
-            "mapping-geometric"
+            "mapping-wallpaper"
         ],
         fades: [
             {
-                elements: [ "Circle" ],
+                elements: [
+                    "Foreground",
+                    "Shutter"
+                ],
                 relativeOffset: 0.,
             },
             {
                 elements: [ "Background" ],
-                relativeOffset: 0.6,
+                relativeOffset: 0.45,
+            },
+        ],
+        params: [
+            {
+                name: "speed",
+                type: "float",
+            },
+            {
+                name: "scale",
+                type: "float",
+            },
+            {
+                name: "color",
+                type: "color",
+                valueRange: [ 0.95, 1.0 ]
+            },
+            {
+                name: "fg-color",
+                type: "color",
+                link: {
+                    to: "color",
+                    hueRotation: [1/3, 1/2, 2/3, 0],
+                    valueOffset: [-0.25, -0.1]
+                }
+            }
+        ]
+    },
+    // Glowing Dots
+    {
+        name: "glowing-dots",
+        description: "Glowing Dots",
+        projectIndex: 25,
+        tags: [
+            "mapping",
+            "mapping-wallpaper"
+        ],
+        fades: [
+            {
+                elements: [
+                    "Foreground",
+                    "Shutter"
+                ],
+                relativeOffset: 0.,
+            },
+            {
+                elements: [ "Background" ],
+                relativeOffset: 0.45,
+            },
+        ],
+        params: [
+            {
+                name: "speed",
+                type: "float",
+            },
+            {
+                name: "scale",
+                type: "float",
+            },
+            {
+                name: "color",
+                type: "color",
+                saturationRange: [ 0.5, 1.0],
+                valueRange: [ 0.95, 1.0 ]
+            },
+            {
+                name: "fg-color",
+                type: "color",
+                link: {
+                    to: "color",
+                    hueRotation: [1/3, 1/2, 2/3, 0],
+                    valueOffset: [-0.25, -0.1]
+                }
+            }
+        ]
+    },
+    // Moving Grid
+    {
+        name: "moving-grid",
+        description: "Moving Grid",
+        projectIndex: 26,
+        tags: [
+            "mapping",
+            "mapping-wallpaper"
+        ],
+        fades: [
+            {
+                elements: [
+                    "Master",
+                    "Shutter"
+                ],
+                relativeOffset: 0.,
+            },
+        ],
+        params: [
+            {
+                name: "speed",
+                type: "float",
+            },
+            {
+                name: "scale",
+                type: "float",
+            },
+            {
+                name: "color",
+                type: "color",
+                saturationRange: [ 0.5, 1.0],
+                valueRange: [ 0.95, 1.0 ]
+            },
+        ]
+    },
+    // Dots Flow
+    {
+        name: "dots-flow",
+        description: "Dots Flow",
+        projectIndex: 27,
+        tags: [
+            "mapping",
+            "mapping-wallpaper"
+        ],
+        fades: [
+            {
+                elements: [
+                    "Foreground",
+                    "Shutter"
+                ],
+                relativeOffset: 0.,
+            },
+            {
+                elements: [ "Background" ],
+                relativeOffset: 0.45,
+            },
+        ],
+        params: [
+            {
+                name: "speed",
+                type: "float",
+            },
+            {
+                name: "color",
+                type: "color",
+                saturationRange: [ 0.5, 1.0],
+                valueRange: [ 0.95, 1.0 ]
+            },
+            {
+                name: "fg-color",
+                type: "color",
+                link: {
+                    to: "color",
+                    hueRotation: 0,
+                    valueOffset: [-0.25, -0.1]
+                }
+            }
+        ]
+    },
+    // Led Wall
+    {
+        name: "led-wall",
+        description: "Led Wall",
+        projectIndex: 28,
+        tags: [
+            "mapping",
+            "mapping-wallpaper"
+        ],
+        fades: [
+            {
+                elements: [
+                    "Foreground",
+                    "Shutter"
+                ],
+                relativeOffset: 0.,
+            },
+            {
+                elements: [ "Background" ],
+                relativeOffset: 0.45,
+            },
+        ],
+        params: [
+            {
+                name: "speed",
+                type: "float",
+            },
+            {
+                name: "scale",
+                type: "float",
+            },
+            {
+                name: "reverse",
+                type: "bool",
+            },
+        ]
+    },
+    // Lats - Alternate
+    {
+        name: "lats-alternate",
+        projectIndex: 29,
+        description: "Lats - Alternate",
+        tags: [
+            "standard",
+            "lats"
+        ],
+        fades: [
+            {
+                elements: [ "Master" ],
+                relativeOffset: 0.,
+            }
+        ],
+        steps: [
+            {
+                name: "Jardin",
+                elements: [ "lat-jar" ]
+            },
+            {
+                name: "Cour",
+                elements: [ "lat-cour" ]
+            }
+        ]
+    },
+    // Diags - Alternate
+    {
+        name: "diags-alternate",
+        projectIndex: 30,
+        description: "Diags - Alternate",
+        tags: [
+            "standard",
+            "diags"
+        ],
+        fades: [
+            {
+                elements: [ "Master" ],
+                relativeOffset: 0.,
+            }
+        ],
+        steps: [
+            {
+                name: "Jardin",
+                elements: [ "diag-jar" ]
+            },
+            {
+                name: "Cour",
+                elements: [ "diag-cour" ]
+            }
+        ]
+    },
+    // Autos Tracking
+    {
+        name: "autos-tracking",
+        projectIndex: 31,
+        tags: [
+            "autos"
+        ],
+        description: "Autos Tracking",
+        fades: [
+            {
+                relativeOffset: 0.,
+                elements: [ "colors" ]
+            },
+            {
+                relativeOffset: 0.25,
+                elements: [ "faces" ]
             }
         ],
         params: [
             {
-                name: "background-color",
+                name: "color",
                 type: "color",
-                saturationRange: [ 0.0, 0.1 ],
-                valueRange: [ 0.0, 0.1 ]
+                valueRange: [ 0.7, 1.0 ],
+                saturationRange: [ 1.0, 1.0 ]
             },
+        ],
+        values: [
+            "jar1Pan",
+            "jar1Tilt",
+            "jar2Pan",
+            "jar2Tilt",
+            "cour1Pan",
+            "cour1Tilt",
+            "cour2Pan",
+            "cour2Tilt",
+        ].map(name => ({
+            name,
+            type: "float",
+            mapAsGlobal: true
+        }))
+    },
+    // Lat Jar
+    {
+        name: "lat-jar",
+        projectIndex: 32,
+        tags: [
+            "Isolation"
+        ],
+        description: "Lat Jar",
+        fades: [
             {
-                name: "circle-color",
-                type: "color",
-                saturationRange: [ 0.0, 0.22 ],
-                valueRange: [ 0.85, 1.0 ]
-            },
-            {
-                name: "min-radius",
-                type: "float",
-            },
-            {
-                name: "pulse-range",
-                type: "float",
-            },
-            {
-                name: "pulse-speed",
-                type: "float",
-            },
-            {
-                name: "height",
-                type: "float",
-            },
-            {
-                name: "feathering",
-                type: "float",
+                relativeOffset: 0.,
+                elements: [ "master" ]
             }
-        ]
-    }
+        ],
+    },
+    // Diag Cour
+    {
+        name: "diag-cour",
+        projectIndex: 33,
+        tags: [
+            "Isolation"
+        ],
+        description: "Diag Cour",
+        fades: [
+            {
+                relativeOffset: 0.,
+                elements: [ "master" ]
+            }
+        ],
+    },
+    
 ]
 
 async function loadLibraries(): Promise<LoadedLibraries> {
 
-    const contentLibrary = hardCodedTheatreDuTempsLibrary;
+    const contentLibrary = hardCodedImprovidenceLibrary;
     const audioLibrary = await getAudioLibraryCollection("aleas-2024");
     const inputLibrary = await getInputProjectionLibraryCollection("aleas-2024");
+    const monologueLibrary = await getMonologueLibrary("batch-01");
 
     const contentLibraries = contentLibrary.reduce((acc, library) => {
         acc[library.name] = library;
@@ -1596,10 +1659,15 @@ async function loadLibraries(): Promise<LoadedLibraries> {
         return acc;
     }, {} as LoadedLibrary<AleasInputProjectionLibrary>);
 
+    const monologueLibraries = {
+        ["default"]: monologueLibrary
+    } as LoadedLibrary<AleasMonologueLibrary>;
+
     const libraries: LoadedLibraries = {
         contentLibraries,
         audioLibraries,
-        inputProjectionLibraries
+        inputProjectionLibraries,
+        monologueLibraries
     }
 
     return libraries;
@@ -1613,14 +1681,12 @@ export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<Al
         features
     } = args;
 
-
     const argsValues = computeShowArgsValues(args);
 
     const {
         show: {
             totalDuration,
         },
-        presentation,
         blackout: {
             duration: blackoutDurationValue
         },
@@ -1629,7 +1695,7 @@ export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<Al
     
     const libraries = await loadLibraries();
     const templates = await getAleasSceneTemplates(libraries);
-    
+
     let currentTime = 0;
     let currentScene = 0;
     const history: CalculateParamHistory = {
@@ -1638,18 +1704,6 @@ export async function generateAleasShow(args: GenerateAleasShowArgs): Promise<Al
     };
     
     const scenes: AleasShowScene[] = [];
-
-    if (presentation.hasPresentation) {
-
-        const presentationScene = generatePresentationScene(presentation, libraries);
-        scenes.push({
-            ...presentationScene,
-            name: "Presentation",
-            displayName: "Presentation"
-        });
-
-        currentTime += getWholeDuration(presentationScene);
-    }
 
     const intro = generateIntroScene(args, libraries);
 
@@ -1751,16 +1805,12 @@ export async function generateSceneFromTemplate(args: GenerateAleasShowArgs, tem
     return result;
 }
 
-function generatePresentationScene(args: GenerateAleasHasPresentationArgs, libraries: LoadedLibraries): SceneData {
-    return generateTheatreDuTempsPresentationScene(args, libraries);
-}
-
 function generateIntroScene(args: GenerateAleasShowArgs, libraries: LoadedLibraries): SceneData {
-    return generateTheatreDuTempsIntroScene(args, libraries);
+    return generateRepetitionIntroScene(args, libraries);
 }
 
 function generateOutroScene(args: GenerateAleasShowArgs, libraries: LoadedLibraries): SceneData {
-    return generateTheatreDuTempsOutroScene(args, libraries);
+    return generateRepetitionOutroScene(args, libraries);
 }
 
 
@@ -1894,5 +1944,5 @@ export function makeSceneProvider<TArgs = any>(parts: HardCodedTemplateParts<TAr
 }
 
 function getAleasSceneTemplates(libraries: LoadedLibraries): AleasSceneTemplate[] {
-    return getTheatreDuTempsSceneTemplates(libraries);
+    return getRepetitionSceneTemplates(libraries);
 }

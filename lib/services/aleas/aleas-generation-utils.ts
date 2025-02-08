@@ -3,7 +3,7 @@ import { RgbColor } from "react-colorful";
 import { clamp } from "../core/maths";
 import { Color } from "../core/types/rgbColor";
 import { notImplemented, random01, randomBool, randomElement, randomInt, randomRange, sequence } from "../core/utils";
-import { Range, LoadedLibraries, LoadedLibrary, AleasAudioLibrary, AleasInputProjectionLibrary, KeyFrame, StartAndDuration, AudioElement, AleasContentScene, ContentElement, ContentFadeElement, ContentParamElement, ContentStepElement, ContentValueElement, AleasContentLibraryFloatParam, AleasContentLibraryIntParam, AleasContentLibraryStringParam, AleasContentLibraryBoolParam, AleasContentLibraryColorParam, RangeOrValue } from "./aleas-generation"
+import { Range, LoadedLibraries, LoadedLibrary, AleasAudioLibrary, AleasInputProjectionLibrary, KeyFrame, StartAndDuration, AudioElement, AleasContentScene, ContentElement, ContentFadeElement, ContentParamElement, ContentStepElement, ContentValueElement, AleasContentLibraryFloatParam, AleasContentLibraryIntParam, AleasContentLibraryStringParam, AleasContentLibraryBoolParam, AleasContentLibraryColorParam, RangeOrValue, CalculateParamValArgs, ColorKeyFrame, StringKeyFrame, AleasMonologueLibrary, AleasMonologue } from "./aleas-generation"
 
 export const getValue = (value: RangeOrValue): number => (Array.isArray(value)) ? randomRange(value[0], value[1]) : value;
 
@@ -34,6 +34,11 @@ export function getRandomProjectionInput(libraries: LoadedLibrary<AleasInputProj
     return randomElement(lib.elements);
 }
 
+export function getRandomMonologue(libraries: LoadedLibrary<AleasMonologueLibrary>): AleasMonologue {
+    const lib = randomElement(Object.values(libraries));
+    return randomElement(lib.monologues);
+}
+
 export function getRandomDuration(...durations: Range[]): number {
     const range = randomElement(durations);
     const duration = randomRange(range[0], range[1]);
@@ -54,8 +59,8 @@ export function getFade(...fades: Range[]): number {
 
 export type CreateStandardLevelArgs = {
     duration: number;
-    fadeIn: number;
-    fadeOut: number;
+    fadeIn: RangeOrValue;
+    fadeOut: RangeOrValue;
     offset?: number;
     level?: number;
 }
@@ -64,11 +69,14 @@ export function createStandardLevel(args: CreateStandardLevelArgs): KeyFrame[] {
 
     const {
         duration,
-        fadeIn,
-        fadeOut,
+        fadeIn: fadeInRov,
+        fadeOut: fadeOutRov,
         offset = 0,
         level = 1.0
     } = args;
+
+    const fadeIn = getValue(fadeInRov);
+    const fadeOut = getValue(fadeOutRov);
 
     return [
         [offset + 0.0, 0.0],
@@ -372,6 +380,73 @@ export function generateIntermittentIntervals(args: GenerateIntermittentInterval
     return result;
 }
 
+
+export type KeyFramesFromIntervalsArgs = {
+    intervals: StartAndDuration[];
+    duration: number;
+    fadeIn: RangeOrValue;
+    fadeOut: RangeOrValue;
+    intervalValue: number;
+    outsideOfIntervalValue: number;
+    inIntervalOffset?: number;
+    initialValue?: number;
+    finalValue?: number;
+}
+
+export function keyFramesFromIntervals(args: KeyFramesFromIntervalsArgs): KeyFrame[] {
+
+    const {
+        intervals,
+        duration,
+        fadeIn: fadeInRov,
+        fadeOut: fadeOutRov,
+        intervalValue,
+        outsideOfIntervalValue,
+        inIntervalOffset: offset = 0,
+        initialValue,
+        finalValue
+    } = args;
+
+    const fadeIn = getValue(fadeInRov);
+    const fadeOut = getValue(fadeOutRov);
+
+    const result: KeyFrame[] = [];
+
+    if (initialValue !== undefined) {
+        result.push([0.0, initialValue]);
+        result.push([fadeIn, outsideOfIntervalValue]);
+    } 
+    else {
+        result.push([0.0, outsideOfIntervalValue]);
+    }
+
+    for (const interval of intervals) {
+        const {
+            startTime,
+            duration
+        } = interval;
+
+        const correctedStartTime = startTime + offset;
+        const correctedDuration = duration - 2 * offset;
+
+        result.push([correctedStartTime, outsideOfIntervalValue]);
+        result.push([correctedStartTime + fadeIn, intervalValue]);
+
+        result.push([correctedStartTime + correctedDuration - fadeOut, intervalValue]);
+        result.push([correctedStartTime + correctedDuration, outsideOfIntervalValue]);
+    }
+
+    if (finalValue !== undefined) {
+        result.push([duration - fadeOut, outsideOfIntervalValue]);
+        result.push([duration, finalValue]);
+    }
+    else {
+        result.push([duration, outsideOfIntervalValue]);
+    }
+
+    return result;
+}
+
 type ValuesRecord = {
     floats?: Record<string, number>;
     ints?: Record<string, number>;
@@ -379,6 +454,19 @@ type ValuesRecord = {
     bools?: Record<string, boolean>;
     colors?: Record<string, RgbColor>;
 }
+
+export type VKFRecordElement = {
+    type: "float";
+    frames: KeyFrame[];
+} | {
+    type: "color";
+    frames: ColorKeyFrame[];
+} | {
+    type: "string";
+    frames: StringKeyFrame[];
+}
+
+export type VKFRecord = Record<string, VKFRecordElement>;
 
 export type GenerateContentElementArgs = {
     scene: string;
@@ -388,6 +476,7 @@ export type GenerateContentElementArgs = {
 
     stepsKeyFrames?: KeyFrame[][];
     paramValues?: ValuesRecord;
+    valuesKeyFrames?: VKFRecord;
 }
 
 export function generateContentElement(library: LoadedLibrary<AleasContentScene>, args: GenerateContentElementArgs): ContentElement {
@@ -398,7 +487,8 @@ export function generateContentElement(library: LoadedLibrary<AleasContentScene>
         fadeIn: globalFadeInRov,
         fadeOut: globalFadeOutRov,
         stepsKeyFrames,
-        paramValues
+        paramValues,
+        valuesKeyFrames
     } = args;
 
     const sceneContent = library[scene];
@@ -738,6 +828,7 @@ export function generateContentElement(library: LoadedLibrary<AleasContentScene>
             const {
                 name: paramName,
                 description,
+                mapAsglobal,
                 type,
             } = def;
 
@@ -746,6 +837,7 @@ export function generateContentElement(library: LoadedLibrary<AleasContentScene>
                 return {
                     name: paramName,
                     description,
+                    mapAsglobal,
                     type,
                     value
                 }
@@ -755,6 +847,7 @@ export function generateContentElement(library: LoadedLibrary<AleasContentScene>
                 return {
                     name: paramName,
                     description,
+                    mapAsglobal,
                     type,
                     value
                 }
@@ -764,6 +857,7 @@ export function generateContentElement(library: LoadedLibrary<AleasContentScene>
                 return {
                     name: paramName,
                     description,
+                    mapAsglobal,
                     type,
                     value
                 }
@@ -773,6 +867,7 @@ export function generateContentElement(library: LoadedLibrary<AleasContentScene>
                 return {
                     name: paramName,
                     description,
+                    mapAsglobal,
                     type,
                     value
                 }
@@ -829,7 +924,82 @@ export function generateContentElement(library: LoadedLibrary<AleasContentScene>
 
     let values: ContentValueElement[]|undefined = undefined;
     if (valueDefs && valueDefs.length > 0) {
-        throw new Error("Values not supported yet");
+
+        if (!valuesKeyFrames) {
+            throw new Error(`Missing valuesKeyFrames in scene '${scene}'`);
+        }
+
+        values = valueDefs.map(def=> {
+            const {
+                name,
+                description,
+                mapAsGlobal,
+                type,
+            } = def;
+
+            const record = valuesKeyFrames[name];
+            if (!record) {
+                throw new Error(`Missing keyframes for value '${name}'`);
+            }
+
+            if (type === "float") {
+
+                const {
+                    frames,
+                    type: recordType
+                } = record;
+
+                if (recordType !== "float") {
+                    throw new Error("Mismatch between value type and keyframes type");
+                }
+
+                return {
+                    name,
+                    description,
+                    mapAsGlobal,
+                    type,
+                    value: structuredClone(frames)
+                }
+            }
+            else if (type === "color") {
+
+                const {
+                    frames,
+                    type: recordType
+                } = record;
+
+                if (recordType !== "color") {
+                    throw new Error("Mismatch between value type and keyframes type");
+                }
+
+                return {
+                    name,
+                    description,
+                    mapAsGlobal,
+                    type,
+                    value: structuredClone(frames)
+                }
+            }
+            else {
+                const {
+                    frames,
+                    type: recordType
+                } = record;
+
+                if (recordType !== "string") {
+                    throw new Error("Mismatch between value type and keyframes type");
+                }
+
+                return {
+                    name,
+                    description,
+                    mapAsGlobal,
+                    type,
+                    value: structuredClone(frames)
+                }
+            }
+            
+        });
     }
 
     return {
@@ -1011,4 +1181,251 @@ export function generateInitialStep(args: generateInitialStepArgs): KeyFrame[][]
         step1,
         step2
     ];
+}
+
+export type GenerateIntroKeyFramesArgs = {
+    duration: number;
+    steps: number;
+    fade: RangeOrValue;
+    startOffset: number;
+    speechDuration: number;
+    phase1Range: Range;
+    phase2Range: Range;
+}
+
+export function generateIntroKeyFrames(args: GenerateIntroKeyFramesArgs): KeyFrame[][] {
+
+    const {
+        duration: totalDuration,
+        steps,
+        fade: fadeRov,
+        startOffset,
+        speechDuration,
+        phase1Range,
+        phase2Range
+    } = args;
+
+    const fade = getValue(fadeRov);
+    const keyFrames: KeyFrame[][] = sequence(steps).map(() => []);
+
+    let time = startOffset;
+
+    for (let i = 0; i < steps; i++) {
+        keyFrames[i].push([0.0, 0.0]);
+    }
+
+    let currentStep = randomInt(0, steps - 1);
+
+    while (time < totalDuration) {
+
+        const [minStepDuration, maxStepDuration] = time < startOffset + speechDuration ? phase1Range : phase2Range;
+
+        currentStep = (currentStep + randomInt(1, steps)) % steps;
+        const track = keyFrames[currentStep];
+
+        track.push([time - fade, 0.0]);
+        track.push([time, 1.0]);
+
+        const stepDuration = totalDuration - time >= maxStepDuration ?
+        randomRange(minStepDuration, maxStepDuration) :
+        totalDuration - time;
+
+        track.push([time + stepDuration - fade, 1.0]);
+        track.push([time + stepDuration, 0.0]);
+
+        time += stepDuration;
+    }
+
+    for (let i = 0; i < steps; i++) {
+        if (i !== currentStep) {
+            keyFrames[i].push([totalDuration, 0.0]);
+        }
+    }
+
+
+    return keyFrames;
+}
+
+export type GenerateOutroKeyFramesArgs = {
+    duration: number;
+    steps: number;
+    fade: RangeOrValue;
+    startOffset: number;
+    endOffset: number;
+    salutsRange: Range;
+}
+
+export function generateOutroKeyFrames(args: GenerateOutroKeyFramesArgs): KeyFrame[][] {
+
+    const {
+        duration: totalDuration,
+        steps,
+        fade: fadeRov,
+        startOffset,
+        endOffset,
+        salutsRange
+    } = args;
+
+    const fade = getValue(fadeRov);
+
+    const keyFrames: KeyFrame[][] = sequence(steps).map(() => []);
+
+    for (let i = 0; i < steps; i++) {
+        keyFrames[i].push([0.0, 0.0]);
+    }
+
+    let time = startOffset;
+    let currentStep = randomInt(0, steps - 1);
+
+    while (time < totalDuration - endOffset) {
+
+        const [minStepDuration, maxStepDuration] = salutsRange;
+
+        currentStep = (currentStep + randomInt(1, steps)) % steps;
+        const track = keyFrames[currentStep];
+
+        track.push([time - fade, 0.0]);
+        track.push([time, 1.0]);
+
+        const stepDuration = (totalDuration - endOffset) - time >= maxStepDuration ?
+        randomRange(minStepDuration, maxStepDuration) :
+        (totalDuration - endOffset) - time;
+
+        track.push([time + stepDuration - fade, 1.0]);
+        track.push([time + stepDuration, 0.0]);
+
+        time += stepDuration;
+    }
+
+    for (let i = 0; i < steps; i++) {
+        keyFrames[i].push([totalDuration, 0.0]);
+    }
+
+    return keyFrames;
+}
+
+export type CalculateWeightArgs = {
+    base: number;
+    slope?: number;
+    penalty?: number;
+
+    min?: number;
+    max?: number;
+}
+
+export function calculateWeight(args: CalculateWeightArgs): (cpva: CalculateParamValArgs) => number {
+
+    return (cpva: CalculateParamValArgs) => {
+        const {
+            occurences,
+            progress
+        } = cpva;
+        
+        const {
+            base,
+            slope,
+            penalty,
+            min = 0,
+            max
+        } = args;
+
+        let result = base;
+
+        if (slope) {
+            result += slope * progress;
+        }
+
+        if (penalty) {
+            result -= penalty * occurences;
+        }
+
+        if (max) {
+            result = Math.min(max, result);
+        }
+
+        result = Math.max(min, result);
+
+        return result;
+    }
+}
+
+export type CalculateEnabledArgs = {
+    minProgress?: number;
+    maxProgress?: number;
+    maxOccurences?: number;
+}
+
+export function calculateEnabled(args: CalculateEnabledArgs): (cpva: CalculateParamValArgs) => boolean {
+        return (cpva: CalculateParamValArgs) => {
+        const {
+            occurences,
+            progress
+        } = cpva;
+
+        const {
+            minProgress,
+            maxProgress,
+            maxOccurences
+        } = args;
+        
+        if (minProgress && progress < minProgress) {
+            return false;
+        }
+
+        if (maxProgress && progress > maxProgress) {
+            return false;
+        }
+
+        if (maxOccurences && occurences >= maxOccurences) {
+            return false;
+        }
+        
+        return true;
+    }
+}
+
+export type ChunkifyTextArgs = {
+    text: string;
+    maxChunkCount?: number;
+} & ({
+    chunkType: "Random";
+    chunkSize: Range;
+} | {
+    chunkType: "Fixed";
+    chunkSize: number;
+})
+
+export function chunkifyText(args: ChunkifyTextArgs): string[] {
+
+    const {
+        text,
+        chunkType,
+        maxChunkCount = Number.MAX_SAFE_INTEGER
+    } = args;
+
+    const words = text.split(" ");
+
+    let wi = 0;
+    let ci = 0;
+    let result = [];
+
+    while (wi < words.length && ci < maxChunkCount) {
+        let chunkSize: number;
+
+        if (chunkType === "Random") {
+            chunkSize = randomInt(args.chunkSize[0], args.chunkSize[1]);
+        }
+        else {
+            chunkSize = args.chunkSize;
+        }
+
+        const chunk = words.slice(wi, wi + chunkSize).join(" ");
+        result.push(chunk);
+
+        wi += chunkSize;
+        ci++;
+
+    }
+
+    return result;
 }

@@ -1,8 +1,8 @@
-import { notImplemented, random01, randomElement, randomInt, randomRange, sequence } from "../../core/utils";
+import { notImplemented, random01, randomBool, randomElement, randomInt, randomRange, sequence } from "../../core/utils";
 import { CalculateParamValArgs, LoadedLibraries, StartAndDuration, Range, makeSceneProvider, AleasSceneTemplate, SceneBaseInfo, AudioElementsOrNoAudio, KeyFrame, SceneData, GenerateAleasShowArgs, ContentElementOrNoContent, ContentElement, AudioElement } from "../aleas-generation";
-import { calculateEnabled, calculateWeight, createStandardLevel, generateAudioElements, generateComparableStepsKeyFrames, generateContentElement, generateInitialStep, generateIntermittentIntervals, generateIntroKeyFrames, generateOutroKeyFrames, generatePeriodicEvent, generateRandomDurations, getFade, getRandomDuration, getRandomElementFromAudioLib, getRandomProjectionInput, getRandomSceneFromScenes, getStepCount, getValue, getWholeRangeAmplitude, keyFramesFromIntervals, ScenesGroup } from "../aleas-generation-utils";
+import { calculateEnabled, calculateWeight, chunkifyText, createStandardLevel, generateAudioElements, generateComparableStepsKeyFrames, generateContentElement, GenerateContentElementArgs, generateInitialStep, generateIntermittentIntervals, generateIntroKeyFrames, generateOutroKeyFrames, generatePeriodicEvent, generateRandomDurations, getFade, getRandomDuration, getRandomElementFromAudioLib, getRandomMonologue, getRandomProjectionInput, getRandomSceneFromScenes, getStepCount, getValue, getWholeRangeAmplitude, keyFramesFromIntervals, ScenesGroup, VKFRecord, VKFRecordElement } from "../aleas-generation-utils";
 
-export const theatreDuTemps = {
+export const improvidence = {
     templates: {
         "simple-standard-duration": function(libraries: LoadedLibraries): AleasSceneTemplate {
             
@@ -10,13 +10,13 @@ export const theatreDuTemps = {
             const templateInfo = "Simple scene with basic lights and standard duration";
 
             const availableDurations = [
-                theatreDuTemps.durations.short,
-                theatreDuTemps.durations.standard,
+                improvidence.durations.short,
+                improvidence.durations.standard,
             ];
 
             const durationRange = getWholeRangeAmplitude(...availableDurations);
             const availableScenes: string[][] = [
-                theatreDuTemps.sceneContent.standard
+                improvidence.sceneContent.standard
             ];
 
 
@@ -33,8 +33,8 @@ export const theatreDuTemps = {
 
             const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const fadeIn = randomRange(1, 6);
-                const fadeOut = randomRange(1, 6);
+                const fadeIn = improvidence.fades.standard;
+                const fadeOut = improvidence.fades.standard;
 
                 const scene = getRandomSceneFromScenes(availableScenes);
 
@@ -72,16 +72,16 @@ export const theatreDuTemps = {
             const templateInfo = "Simple scene with basic lights, standard duration and music";
 
             const audioLibraries = [
-                theatreDuTemps.audioLibs.general,
+                improvidence.audioLibs.general,
             ]
 
             const availableDurations = [
-                theatreDuTemps.durations.standard,
+                improvidence.durations.standard,
             ];
 
             const durationRange = getWholeRangeAmplitude(...availableDurations);
             const availableScenes: string[][] = [
-                theatreDuTemps.sceneContent.standard,
+                improvidence.sceneContent.standard,
             ];
 
             const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
@@ -97,8 +97,8 @@ export const theatreDuTemps = {
 
             const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const fadeIn = randomRange(1, 6);
-                const fadeOut = randomRange(1, 6);
+                const fadeIn = improvidence.fades.standard;
+                const fadeOut = improvidence.fades.standard;
 
                 const scene = getRandomSceneFromScenes(availableScenes);
 
@@ -155,19 +155,19 @@ export const theatreDuTemps = {
             const templateInfo = "Ambient scene";
 
             const availableDurations = [
-                theatreDuTemps.durations.mediumShort,
-                theatreDuTemps.durations.standard,
-                theatreDuTemps.durations.standardLong,
-                theatreDuTemps.durations.long,
+                improvidence.durations.mediumShort,
+                improvidence.durations.standard,
+                improvidence.durations.standardLong,
+                improvidence.durations.long,
             ];
 
             const durationRange = getWholeRangeAmplitude(...availableDurations);
 
             const ambientScenes = [
-                theatreDuTemps.sceneContent.ambient,
+                improvidence.sceneContent.ambient,
             ];
 
-            const audioProbability = theatreDuTemps.variables.ambient.audioProbability;
+            const audioProbability = improvidence.variables.ambient.audioProbability;
             const audioLibs = [
                 "aleas-ambient",
             ]
@@ -185,7 +185,7 @@ export const theatreDuTemps = {
 
             const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
+                const [fadeMin, fadeMax] = improvidence.fades.standard;
 
                 const fadeIn = randomRange(fadeMin, fadeMax);
                 const fadeOut = randomRange(fadeMin, fadeMax);
@@ -211,7 +211,7 @@ export const theatreDuTemps = {
 
                     const fadeIn = randomRange(2, 5);
                     const fadeOut = randomRange(2, 4);
-                    const audioAmplitude = theatreDuTemps.variables.ambient.audioAmplitude;
+                    const audioAmplitude = improvidence.variables.ambient.audioAmplitude;
 
                     const audioLib = randomElement(audioLibs);
                     const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
@@ -262,19 +262,19 @@ export const theatreDuTemps = {
             const templateInfo = "Ambient scene with color swap";
 
             const availableDurations = [
-                theatreDuTemps.durations.mediumShort,
-                theatreDuTemps.durations.standard,
-                theatreDuTemps.durations.standardLong,
-                theatreDuTemps.durations.long,
+                improvidence.durations.mediumShort,
+                improvidence.durations.standard,
+                improvidence.durations.standardLong,
+                improvidence.durations.long,
             ];
 
             const durationRange = getWholeRangeAmplitude(...availableDurations);
 
             const ambientScenes = [
-                theatreDuTemps.sceneContent.ambientSwap,
+                improvidence.sceneContent.ambientSwap,
             ];
 
-            const audioProbability = theatreDuTemps.variables.ambientSwap.audioProbability;
+            const audioProbability = improvidence.variables.ambientSwap.audioProbability;
             const audioLibs = [
                 "aleas-ambient",
             ]
@@ -292,7 +292,7 @@ export const theatreDuTemps = {
 
             const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
+                const [fadeMin, fadeMax] = improvidence.fades.standard;
 
                 const fadeIn = randomRange(fadeMin, fadeMax);
                 const fadeOut = randomRange(fadeMin, fadeMax);
@@ -304,7 +304,7 @@ export const theatreDuTemps = {
                     steps: steps,
                     totalDuration: duration,
                     fade: [fadeMin, fadeMax],
-                    stepDuration: theatreDuTemps.variables.ambientSwap.stepDuration,
+                    stepDuration: improvidence.variables.ambientSwap.stepDuration,
                     addFinalFade: false,
                     addInitialFade: false,
                 });
@@ -328,7 +328,7 @@ export const theatreDuTemps = {
                 if (Math.random() < audioProbability) {
                     const fadeIn = randomRange(2, 5);
                     const fadeOut = randomRange(2, 4);
-                    const audioAmplitude = theatreDuTemps.variables.ambient.audioAmplitude;
+                    const audioAmplitude = improvidence.variables.ambient.audioAmplitude;
 
                     const audioLib = randomElement(audioLibs);
                     const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
@@ -382,18 +382,18 @@ export const theatreDuTemps = {
             const templateInfo = "Ultra short scene";
 
             const availableDurations = [
-                theatreDuTemps.durations.ultraShort
+                improvidence.durations.ultraShort
             ];
 
             const availableFades: Range[] = [
-                theatreDuTemps.fades.ultraShort
+                improvidence.fades.ultraShort
             ]
 
             const durationRange = getWholeRangeAmplitude(...availableDurations);
             const availableScenes: string[][] = [
-                theatreDuTemps.sceneContent.standard,
-                theatreDuTemps.sceneContent.ambient,
-                theatreDuTemps.sceneContent.isolations
+                improvidence.sceneContent.standard,
+                improvidence.sceneContent.ambient,
+                improvidence.sceneContent.isolations
             ];
 
 
@@ -432,13 +432,13 @@ export const theatreDuTemps = {
                 name: templateName,
                 isPriority: false,
                 enabled: calculateEnabled({
-                    maxOccurences: 3,
+                    maxOccurences: 4,
                     minProgress: 0.1,
                     maxProgress: 0.9
                 }),
                 weight: calculateWeight({
-                    penalty: 20,
-                    base: 12,
+                    penalty: 13,
+                    base: 16,
                     slope: 45
                 }),
                 requiredFeatures: [],
@@ -455,25 +455,25 @@ export const theatreDuTemps = {
             const templateInfo = "Isolation scene";
 
             const availableDurations = [
-                theatreDuTemps.durations.short,
-                theatreDuTemps.durations.standard,
+                improvidence.durations.short,
+                improvidence.durations.standard,
             ];
 
             const availableFades: Range[] = [
-                theatreDuTemps.fades.short,
-                theatreDuTemps.fades.standard
+                improvidence.fades.short,
+                improvidence.fades.standard
             ]
 
             const durationRange = getWholeRangeAmplitude(...availableDurations);
             const availableScenes: string[][] = [
-                theatreDuTemps.sceneContent.isolations
+                improvidence.sceneContent.isolations
             ];
 
             const audioLibs = [
-                theatreDuTemps.audioLibs.general,
+                improvidence.audioLibs.general,
             ];
 
-            const audioProbability = theatreDuTemps.variables.isolations.audioProbability;
+            const audioProbability = improvidence.variables.isolations.audioProbability;
 
             const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
 
@@ -512,7 +512,7 @@ export const theatreDuTemps = {
 
                     const fadeIn = randomRange(2, 5);
                     const fadeOut = randomRange(2, 4);
-                    const audioAmplitude = theatreDuTemps.variables.isolations.audioAmplitude;
+                    const audioAmplitude = improvidence.variables.isolations.audioAmplitude;
 
                     const audioLib = randomElement(audioLibs);
                     const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
@@ -574,17 +574,17 @@ export const theatreDuTemps = {
             const templateInfo = "Isolation scene - Alternate";
 
             const availableDurations = [
-                theatreDuTemps.durations.mediumShort,
-                theatreDuTemps.durations.standard,
+                improvidence.durations.mediumShort,
+                improvidence.durations.standard,
             ];
 
             const availableFades: Range[] = [
-                theatreDuTemps.fades.standard
+                improvidence.fades.standard
             ]
 
             const durationRange = getWholeRangeAmplitude(...availableDurations);
             const availableScenes: string[][] = [
-                theatreDuTemps.sceneContent.isolationsAlternates
+                improvidence.sceneContent.isolationsAlternates
             ];
 
 
@@ -612,7 +612,7 @@ export const theatreDuTemps = {
                     steps: steps,
                     totalDuration: duration,
                     fade: crossFade,
-                    stepDuration: theatreDuTemps.variables.isolationsAlternate.stepDuration,
+                    stepDuration: improvidence.variables.isolationsAlternate.stepDuration,
                     addFinalFade: false,
                     addInitialFade: false,
                 });
@@ -665,18 +665,18 @@ export const theatreDuTemps = {
             const templateInfo = "Special scene with rotating white light";
 
             const availableDurations = [
-                theatreDuTemps.durations.specialAmbiances
+                improvidence.durations.specialAmbiances
             ];
 
             const durationRange = getWholeRangeAmplitude(...availableDurations);
 
             const wrScenes = [
-                theatreDuTemps.sceneContent.whiteRotation,
+                improvidence.sceneContent.whiteRotation,
             ];
 
             const audioLibs = [
-                theatreDuTemps.audioLibs.loud,
-                theatreDuTemps.audioLibs.standalone,
+                improvidence.audioLibs.loud,
+                improvidence.audioLibs.standalone,
             ]
 
             const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
@@ -692,7 +692,7 @@ export const theatreDuTemps = {
 
             const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
+                const [fadeMin, fadeMax] = improvidence.fades.standard;
 
                 const fadeIn = randomRange(fadeMin, fadeMax);
                 const fadeOut = randomRange(fadeMin, fadeMax);
@@ -714,11 +714,11 @@ export const theatreDuTemps = {
 
             const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
 
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.audioStandard;
+                const [fadeMin, fadeMax] = improvidence.fades.audioStandard;
 
                 const fadeIn = randomRange(fadeMin, fadeMax);
                 const fadeOut = randomRange(fadeMin, fadeMax);
-                const audioAmplitude = theatreDuTemps.variables.whiteRotation.audioAmplitude;
+                const audioAmplitude = improvidence.variables.whiteRotation.audioAmplitude;
 
                 const audioLib = randomElement(audioLibs);
                 const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
@@ -775,23 +775,23 @@ export const theatreDuTemps = {
             const templateInfo = "Color Wave";
 
             const availableDurations = [
-                theatreDuTemps.durations.mediumShort,
-                theatreDuTemps.durations.standard,
-                theatreDuTemps.durations.long,
+                improvidence.durations.mediumShort,
+                improvidence.durations.standard,
+                improvidence.durations.long,
             ];
 
             const durationRange = getWholeRangeAmplitude(...availableDurations);
 
             const colorWaveScenes = [
-                theatreDuTemps.sceneContent.colorWave,
+                improvidence.sceneContent.colorWave,
             ];
 
-            const audioProbability = theatreDuTemps.variables.colorWave.audioProbability;
-            const audioAmplitude = theatreDuTemps.variables.colorWave.audioAmplitude;
-            const audioDuration = theatreDuTemps.variables.colorWave.audioDuration;
+            const audioProbability = improvidence.variables.colorWave.audioProbability;
+            const audioAmplitude = improvidence.variables.colorWave.audioAmplitude;
+            const audioDuration = improvidence.variables.colorWave.audioDuration;
             const audioLibraries = [
-                theatreDuTemps.audioLibs.general,
-                theatreDuTemps.audioLibs.instru
+                improvidence.audioLibs.general,
+                improvidence.audioLibs.instru
             ]
 
             const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
@@ -807,7 +807,7 @@ export const theatreDuTemps = {
 
             const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
+                const [fadeMin, fadeMax] = improvidence.fades.standard;
 
                 const fadeIn = randomRange(fadeMin, fadeMax);
                 const fadeOut = randomRange(fadeMin, fadeMax);
@@ -834,7 +834,7 @@ export const theatreDuTemps = {
                     const audio = generateAudioElements(libraries, {
                         sceneDuration: duration,
                         audioDurationRange: audioDuration,
-                        fadeDurationRange: theatreDuTemps.fades.audioStandard,
+                        fadeDurationRange: improvidence.fades.audioStandard,
                         amplitude: audioAmplitude,
                         startEndMargin: 10,
                         minSpaceBetweenAudio: 40,
@@ -884,25 +884,25 @@ export const theatreDuTemps = {
             const templateInfo = "Mapping Geometric";
 
             const availableDurations = [
-                theatreDuTemps.durations.mediumShort,
-                theatreDuTemps.durations.standard,
-                theatreDuTemps.durations.standardLong,
+                improvidence.durations.mediumShort,
+                improvidence.durations.standard,
+                improvidence.durations.standardLong,
             ];
 
             const durationRange = getWholeRangeAmplitude(...availableDurations);
 
             const mappingScenes: ScenesGroup = [
-                theatreDuTemps.sceneContent.mappingGeometric,
+                improvidence.sceneContent.mappingGeometric,
             ];
 
-            const variables = theatreDuTemps.variables.mappingGeometric;
+            const variables = improvidence.variables.mappingGeometric;
             const audioProbability = variables.audioProbability;
             const audioAmplitude = variables.audioAmplitude;
             const audioDuration = variables.audioDuration;
             
             const audioLibraries = [
-                theatreDuTemps.audioLibs.general,
-                theatreDuTemps.audioLibs.instru
+                improvidence.audioLibs.general,
+                improvidence.audioLibs.instru
             ]
 
             const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
@@ -918,7 +918,7 @@ export const theatreDuTemps = {
 
             const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
+                const [fadeMin, fadeMax] = improvidence.fades.standard;
 
                 const fadeIn = randomRange(fadeMin, fadeMax);
                 const fadeOut = randomRange(fadeMin, fadeMax);
@@ -945,7 +945,7 @@ export const theatreDuTemps = {
                     const audio = generateAudioElements(libraries, {
                         sceneDuration: duration,
                         audioDurationRange: audioDuration,
-                        fadeDurationRange: theatreDuTemps.fades.audioStandard,
+                        fadeDurationRange: improvidence.fades.audioStandard,
                         amplitude: audioAmplitude,
                         startEndMargin: 10,
                         minSpaceBetweenAudio: 40,
@@ -971,8 +971,8 @@ export const theatreDuTemps = {
                     minProgress: 0.25
                 }),
                 weight: calculateWeight({
-                    base: 45,
-                    slope: 45,
+                    base: 40,
+                    slope: 40,
                     penalty: 20
                 }),
                 requiredFeatures: [],
@@ -990,18 +990,18 @@ export const theatreDuTemps = {
             const templateInfo = "Mapping Geometric Moving";
 
             const availableDurations = [
-                theatreDuTemps.durations.mediumShort,
-                theatreDuTemps.durations.standard,
-                theatreDuTemps.durations.standardLong,
+                improvidence.durations.mediumShort,
+                improvidence.durations.standard,
+                improvidence.durations.standardLong,
             ];
 
             const durationRange = getWholeRangeAmplitude(...availableDurations);
 
             const mappingScenes: ScenesGroup = [
-                theatreDuTemps.sceneContent.mappingGeometricMoving,
+                improvidence.sceneContent.mappingGeometricMoving,
             ];
 
-            const variables = theatreDuTemps.variables.mappingGeometricMoving;
+            const variables = improvidence.variables.mappingGeometricMoving;
             const {
                 audioStandardProbability,
                 audioStandardAmplitude,
@@ -1011,12 +1011,12 @@ export const theatreDuTemps = {
             } = variables;
             
             const audioStandardLibraries = [
-                theatreDuTemps.audioLibs.general,
-                theatreDuTemps.audioLibs.instru
+                improvidence.audioLibs.general,
+                improvidence.audioLibs.instru
             ]
 
             const audioAmbientLibraries = [
-                theatreDuTemps.audioLibs.ambient,
+                improvidence.audioLibs.ambient,
             ]
 
             const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
@@ -1032,7 +1032,7 @@ export const theatreDuTemps = {
 
             const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
+                const [fadeMin, fadeMax] = improvidence.fades.standard;
 
                 const fadeIn = randomRange(fadeMin, fadeMax);
                 const fadeOut = randomRange(fadeMin, fadeMax);
@@ -1061,7 +1061,7 @@ export const theatreDuTemps = {
                     const audio = generateAudioElements(libraries, {
                         sceneDuration: duration,
                         audioDurationRange: audioStandardDuration,
-                        fadeDurationRange: theatreDuTemps.fades.audioStandard,
+                        fadeDurationRange: improvidence.fades.audioStandard,
                         amplitude: audioStandardAmplitude,
                         startEndMargin: 10,
                         minSpaceBetweenAudio: 40,
@@ -1078,140 +1078,7 @@ export const theatreDuTemps = {
                     const audio = generateAudioElements(libraries, {
                         sceneDuration: duration,
                         audioDurationRange: audioStandardDuration,
-                        fadeDurationRange: theatreDuTemps.fades.audioStandard,
-                        amplitude: audioAmbientAmplitude,
-                        startEndMargin: 10,
-                        minSpaceBetweenAudio: 40,
-                        audioLibraries: audioAmbientLibraries
-                    });
-
-                    return {
-                        hasAudio: true,
-                        audio
-                    }
-                }
-                else {
-                    return {
-                        hasAudio: false
-                    }
-                }
-            }
-
-            return {
-                name: templateName,
-                isPriority: false,
-                enabled: calculateEnabled({
-                    minProgress: 0.25
-                }),
-                weight: calculateWeight({
-                    base: 30,
-                    slope: 30,
-                    penalty: 20
-                }),
-                requiredFeatures: [],
-                value: makeSceneProvider({
-                    getBaseInfo,
-                    getContent,
-                    getAudio
-                }, libraries),
-                durationRange
-            }
-        },
-        "mapping-wallpaper": function(libraries: LoadedLibraries): AleasSceneTemplate {
-
-            const templateName = "mapping-wallpaper";
-            const templateInfo = "Mapping Wallpaper";
-
-            const availableDurations = [
-                theatreDuTemps.durations.mediumShort,
-                theatreDuTemps.durations.standard,
-                theatreDuTemps.durations.standardLong,
-            ];
-
-            const durationRange = getWholeRangeAmplitude(...availableDurations);
-
-            const mappingScenes: ScenesGroup = [
-                theatreDuTemps.sceneContent.mappingWallPaper,
-            ];
-
-            const variables = theatreDuTemps.variables.mappingWallpaper;
-            const {
-                audioStandardProbability,
-                audioStandardAmplitude,
-                audioStandardDuration,
-                audioAmbientProbability,
-                audioAmbientAmplitude,
-            } = variables;
-            
-            const audioStandardLibraries = [
-                theatreDuTemps.audioLibs.general,
-                theatreDuTemps.audioLibs.instru
-            ]
-
-            const audioAmbientLibraries = [
-                theatreDuTemps.audioLibs.ambient,
-            ]
-
-            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
-
-                const duration = getRandomDuration(...availableDurations);
-        
-                return {
-                    templateName,
-                    duration,
-                    info: templateInfo
-                }
-            }
-
-            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
-
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
-
-                const fadeIn = randomRange(fadeMin, fadeMax);
-                const fadeOut = randomRange(fadeMin, fadeMax);
-                
-                const scene = getRandomSceneFromScenes(mappingScenes);
-
-                const content = generateContentElement(libraries.contentLibraries, {
-                    scene,
-                    duration,
-                    fadeIn,
-                    fadeOut,
-                })
-
-                return {
-                    hasContent: true,
-                    content
-                }
-            }
-
-            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
-
-                const result = random01();
-
-                if (result < audioStandardProbability) {
-
-                    const audio = generateAudioElements(libraries, {
-                        sceneDuration: duration,
-                        audioDurationRange: audioStandardDuration,
-                        fadeDurationRange: theatreDuTemps.fades.audioStandard,
-                        amplitude: audioStandardAmplitude,
-                        startEndMargin: 10,
-                        minSpaceBetweenAudio: 40,
-                        audioLibraries: audioStandardLibraries
-                    });
-
-                    return {
-                        hasAudio: true,
-                        audio
-                    }
-                }
-                else if (result < audioStandardProbability + audioAmbientProbability) {
-                        
-                    const audio = generateAudioElements(libraries, {
-                        sceneDuration: duration,
-                        audioDurationRange: audioStandardDuration,
-                        fadeDurationRange: theatreDuTemps.fades.audioStandard,
+                        fadeDurationRange: improvidence.fades.audioStandard,
                         amplitude: audioAmbientAmplitude,
                         startEndMargin: 10,
                         minSpaceBetweenAudio: 40,
@@ -1235,6 +1102,140 @@ export const theatreDuTemps = {
                 isPriority: false,
                 enabled: calculateEnabled({
                     minProgress: 0.25,
+                    maxOccurences: 3
+                }),
+                weight: calculateWeight({
+                    base: 22,
+                    slope: 22,
+                    penalty: 18
+                }),
+                requiredFeatures: [],
+                value: makeSceneProvider({
+                    getBaseInfo,
+                    getContent,
+                    getAudio
+                }, libraries),
+                durationRange
+            }
+        },
+        "mapping-wallpaper": function(libraries: LoadedLibraries): AleasSceneTemplate {
+
+            const templateName = "mapping-wallpaper";
+            const templateInfo = "Mapping Wallpaper";
+
+            const availableDurations = [
+                improvidence.durations.mediumShort,
+                improvidence.durations.standard,
+                improvidence.durations.standardLong,
+            ];
+
+            const durationRange = getWholeRangeAmplitude(...availableDurations);
+
+            const mappingScenes: ScenesGroup = [
+                improvidence.sceneContent.mappingWallPaper,
+            ];
+
+            const variables = improvidence.variables.mappingWallpaper;
+            const {
+                audioStandardProbability,
+                audioStandardAmplitude,
+                audioStandardDuration,
+                audioAmbientProbability,
+                audioAmbientAmplitude,
+            } = variables;
+            
+            const audioStandardLibraries = [
+                improvidence.audioLibs.general,
+                improvidence.audioLibs.instru
+            ]
+
+            const audioAmbientLibraries = [
+                improvidence.audioLibs.ambient,
+            ]
+
+            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+                const duration = getRandomDuration(...availableDurations);
+        
+                return {
+                    templateName,
+                    duration,
+                    info: templateInfo
+                }
+            }
+
+            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
+
+                const [fadeMin, fadeMax] = improvidence.fades.standard;
+
+                const fadeIn = randomRange(fadeMin, fadeMax);
+                const fadeOut = randomRange(fadeMin, fadeMax);
+                
+                const scene = getRandomSceneFromScenes(mappingScenes);
+
+                const content = generateContentElement(libraries.contentLibraries, {
+                    scene,
+                    duration,
+                    fadeIn,
+                    fadeOut,
+                })
+
+                return {
+                    hasContent: true,
+                    content
+                }
+            }
+
+            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+
+                const result = random01();
+
+                if (result < audioStandardProbability) {
+
+                    const audio = generateAudioElements(libraries, {
+                        sceneDuration: duration,
+                        audioDurationRange: audioStandardDuration,
+                        fadeDurationRange: improvidence.fades.audioStandard,
+                        amplitude: audioStandardAmplitude,
+                        startEndMargin: 10,
+                        minSpaceBetweenAudio: 40,
+                        audioLibraries: audioStandardLibraries
+                    });
+
+                    return {
+                        hasAudio: true,
+                        audio
+                    }
+                }
+                else if (result < audioStandardProbability + audioAmbientProbability) {
+                        
+                    const audio = generateAudioElements(libraries, {
+                        sceneDuration: duration,
+                        audioDurationRange: audioStandardDuration,
+                        fadeDurationRange: improvidence.fades.audioStandard,
+                        amplitude: audioAmbientAmplitude,
+                        startEndMargin: 10,
+                        minSpaceBetweenAudio: 40,
+                        audioLibraries: audioAmbientLibraries
+                    });
+
+                    return {
+                        hasAudio: true,
+                        audio
+                    }
+                }
+                else {
+                    return {
+                        hasAudio: false
+                    }
+                }
+            }
+
+            return {
+                name: templateName,
+                isPriority: false,
+                enabled: calculateEnabled({
+                    minProgress: 0.21,
                 }),
                 weight: calculateWeight({
                     base: 40,
@@ -1254,7 +1255,7 @@ export const theatreDuTemps = {
             const templateName = "confessionnal";
             const templateInfo = "Confessionnal";
 
-            const variables = theatreDuTemps.variables.confessionnal;
+            const variables = improvidence.variables.confessionnal;
             const {
                 duration,
                 thresholds,
@@ -1262,7 +1263,7 @@ export const theatreDuTemps = {
 
             const durationRange: Range = [duration, duration];
 
-            const scene = theatreDuTemps.sceneContent.confessionnal;
+            const scene = improvidence.sceneContent.confessionnal;
 
             const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
         
@@ -1275,7 +1276,7 @@ export const theatreDuTemps = {
 
             const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
+                const [fadeMin, fadeMax] = improvidence.fades.standard;
 
                 const fadeIn = randomRange(fadeMin, fadeMax);
                 const fadeOut = randomRange(fadeMin, fadeMax);
@@ -1343,17 +1344,17 @@ export const theatreDuTemps = {
 
             const {
                 projectionDuration
-            } = theatreDuTemps.variables.projInput;
+            } = improvidence.variables.projInput;
 
             const availableDurations = [
-                theatreDuTemps.durations.mediumShort,
-                theatreDuTemps.durations.standard,
-                theatreDuTemps.durations.standardLong,
+                improvidence.durations.mediumShort,
+                improvidence.durations.standard,
+                improvidence.durations.standardLong,
             ];
 
             const durationRange = getWholeRangeAmplitude(...availableDurations);
             const availableScenes: string[][] = [
-                theatreDuTemps.sceneContent.projInput
+                improvidence.sceneContent.projInput
             ];
 
 
@@ -1370,14 +1371,14 @@ export const theatreDuTemps = {
 
             const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const fade = theatreDuTemps.fades.standardShort;
+                const fade = improvidence.fades.standardShort;
 
                 const scene = getRandomSceneFromScenes(availableScenes);
 
                 const stepsKeyFrames: KeyFrame[][] = generateInitialStep({
                     totalDuration: duration,
                     initialStepDuration: projectionDuration,
-                    fade: theatreDuTemps.fades.standard,
+                    fade: improvidence.fades.standard,
                 })
 
                 const content = generateContentElement(libraries.contentLibraries, {
@@ -1404,7 +1405,7 @@ export const theatreDuTemps = {
                 isPriority: false,
                 enabled: calculateEnabled({
                     minProgress: 0.3,
-                    maxOccurences: 2
+                    maxOccurences: 3
                 }),
                 weight: calculateWeight({
                     base: 60,
@@ -1432,23 +1433,23 @@ export const theatreDuTemps = {
                 minSpaceBetweenEvents,
                 occurencesCap,
                 fadeAudioOffset
-            } = theatreDuTemps.variables.basculeLoud;
+            } = improvidence.variables.basculeLoud;
             
             const availableDurations = [
-                theatreDuTemps.durations.standard,
-                theatreDuTemps.durations.standardLong,
-                theatreDuTemps.durations.long,
+                improvidence.durations.standard,
+                improvidence.durations.standardLong,
+                improvidence.durations.long,
             ];
 
             const durationRange = getWholeRangeAmplitude(...availableDurations);
 
             const basculesScenes = [
-                theatreDuTemps.sceneContent.basculePF,
+                improvidence.sceneContent.basculePF,
             ];
 
             const basculeAudioLibs = [
-                theatreDuTemps.audioLibs.loud,
-                theatreDuTemps.audioLibs.standalone,
+                improvidence.audioLibs.loud,
+                improvidence.audioLibs.standalone,
             ]
 
             type BasculeMoreArgs = {
@@ -1467,8 +1468,8 @@ export const theatreDuTemps = {
                     occurencesCap
                 });;
 
-                const fadeToBascule = getValue(theatreDuTemps.fades.ultraShort);
-                const fadeBack = getValue(theatreDuTemps.fades.standardShort);
+                const fadeToBascule = getValue(improvidence.fades.ultraShort);
+                const fadeBack = getValue(improvidence.fades.standardShort);
 
                 return {
                     bascules,
@@ -1497,8 +1498,8 @@ export const theatreDuTemps = {
                 } = moreArgs;
                 
 
-                const fadeIn = theatreDuTemps.fades.standard;
-                const fadeOut = theatreDuTemps.fades.standard;
+                const fadeIn = improvidence.fades.standard;
+                const fadeOut = improvidence.fades.standard;
                 
                 const scene = getRandomSceneFromScenes(basculesScenes);
 
@@ -1573,7 +1574,7 @@ export const theatreDuTemps = {
                 isPriority: false,
                 enabled: calculateEnabled({
                     minProgress: 0.3,
-                    maxOccurences: 2
+                    maxOccurences: 3
                 }),
                 weight: calculateWeight({
                     base: 30,
@@ -1603,22 +1604,22 @@ export const theatreDuTemps = {
                 minSpaceBetweenEvents,
                 occurencesCap,
                 fadeAudioOffset
-            } = theatreDuTemps.variables.basculeAmbient;
+            } = improvidence.variables.basculeAmbient;
             
             const availableDurations = [
-                theatreDuTemps.durations.standard,
-                theatreDuTemps.durations.standardLong,
-                theatreDuTemps.durations.long,
+                improvidence.durations.standard,
+                improvidence.durations.standardLong,
+                improvidence.durations.long,
             ];
 
             const durationRange = getWholeRangeAmplitude(...availableDurations);
 
             const basculesScenes = [
-                theatreDuTemps.sceneContent.basculeAmbient,
+                improvidence.sceneContent.basculeAmbient,
             ];
 
             const basculeAudioLibs = [
-                theatreDuTemps.audioLibs.ambient,
+                improvidence.audioLibs.ambient,
             ]
 
             type BasculeMoreArgs = {
@@ -1637,8 +1638,8 @@ export const theatreDuTemps = {
                     occurencesCap
                 });;
 
-                const fadeToBascule = getValue(theatreDuTemps.fades.standard);
-                const fadeBack = getValue(theatreDuTemps.fades.standard);
+                const fadeToBascule = getValue(improvidence.fades.standard);
+                const fadeBack = getValue(improvidence.fades.standard);
 
                 return {
                     bascules,
@@ -1667,8 +1668,8 @@ export const theatreDuTemps = {
                 } = moreArgs;
                 
 
-                const fadeIn = theatreDuTemps.fades.standard;
-                const fadeOut = theatreDuTemps.fades.standard;
+                const fadeIn = improvidence.fades.standard;
+                const fadeOut = improvidence.fades.standard;
                 
                 const scene = getRandomSceneFromScenes(basculesScenes);
 
@@ -1743,7 +1744,7 @@ export const theatreDuTemps = {
                 isPriority: false,
                 enabled: calculateEnabled({
                     minProgress: 0.3,
-                    maxOccurences: 2
+                    maxOccurences: 3
                 }),
                 weight: calculateWeight({
                     base: 20,
@@ -1759,7 +1760,332 @@ export const theatreDuTemps = {
                 }, libraries),
                 durationRange
             }
-        }
+        },
+        "autos": function(libraries: LoadedLibraries): AleasSceneTemplate {
+
+            const templateName = "autos";
+            const templateInfo = "Autos";
+
+            const {
+                trackingPeriod,
+                trackingPause
+            } = improvidence.variables.autos;
+            
+            const availableDurations = [
+                improvidence.durations.specialAmbiances,
+                improvidence.durations.mediumShort,
+                improvidence.durations.standard,
+            ];
+
+            const audioLibs = [
+                improvidence.audioLibs.ambient,
+            ]
+
+            const durationRange = getWholeRangeAmplitude(...availableDurations);
+
+
+            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+                const duration = getRandomDuration(...availableDurations);
+        
+                return {
+                    templateName,
+                    duration,
+                    info: templateInfo
+                }
+            }
+
+            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
+
+
+                const fadeIn = improvidence.fades.standard;
+                const fadeOut = improvidence.fades.standard;
+                
+                const autosScenes = improvidence.sceneContent.autos;
+                const scene = getRandomSceneFromScenes(autosScenes);
+
+                const [ stopMin, stopMax ] = trackingPause;
+                const [ periodMin, periodMax ] = trackingPeriod;
+                const stopMean = (stopMin + stopMax) / 2;
+                const periodMean = (periodMin + periodMax) / 2;
+
+                const stopRatio = stopMean / (stopMean + periodMean);
+                
+                const generateRecordElement: (() => VKFRecordElement) = () => {
+                    const frames: KeyFrame[] = []
+                    
+                    let time = 0;
+
+                    let goUp = randomBool();
+                    let pause = random01() < stopRatio;
+
+                    let val;
+                    let nextPauseDuration;
+                    let nextPeriodDuration;
+
+                    if (pause) {
+                        val = goUp ? 0 : 1;
+                        nextPauseDuration = random01() * randomRange(stopMin, stopMax);
+                        nextPeriodDuration = randomRange(periodMin, periodMax);
+                    }
+                    else {
+                        nextPauseDuration = randomRange(stopMin, stopMax);
+                        
+                        const alreadyDone = random01();
+
+                        val = goUp ? alreadyDone : 1 - alreadyDone;
+                        nextPeriodDuration = (1 - alreadyDone) * randomRange(periodMin, periodMax);
+                    }
+                    
+                    while (time + (pause ? nextPauseDuration : nextPeriodDuration) < duration) {
+                     
+                        frames.push([time, val]);
+
+                        if (pause) {
+                            time += nextPauseDuration;
+                            nextPauseDuration = randomRange(stopMin, stopMax);
+                        }
+                        else {
+                            time += nextPeriodDuration;
+                            val = goUp ? 1 : 0;
+
+                            nextPeriodDuration = randomRange(periodMin, periodMax);
+                            goUp = !goUp;
+                        }
+
+                        frames.push([time, val]);
+
+                        pause = !pause;
+                    }
+
+                    if (pause) {
+                        
+                    }
+                    else {
+                        const remainToDo = (duration - time) / nextPeriodDuration;
+                        
+                        val = goUp ? remainToDo : 1 - remainToDo;
+                    }
+
+                    time = duration;
+
+                    frames.push([time, val]);
+
+                    return {
+                        type: "float",
+                        frames
+                    };
+                }
+
+                const vkf: VKFRecord = {
+                    "jar1Pan": generateRecordElement(),
+                    "jar1Tilt": generateRecordElement(),
+                    "jar2Pan": generateRecordElement(),
+                    "jar2Tilt": generateRecordElement(),
+                    "cour1Pan": generateRecordElement(),
+                    "cour1Tilt": generateRecordElement(),
+                    "cour2Pan": generateRecordElement(),
+                    "cour2Tilt": generateRecordElement(),
+                }
+
+                const content = generateContentElement(libraries.contentLibraries, {
+                    scene,
+                    duration,
+                    fadeIn,
+                    fadeOut,
+                    valuesKeyFrames: vkf
+                })
+
+                return {
+                    hasContent: true,
+                    content
+                }
+            }
+
+            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+
+                const [fadeMin, fadeMax] = improvidence.fades.audioStandard;
+
+                const fadeIn = randomRange(fadeMin, fadeMax);
+                const fadeOut = randomRange(fadeMin, fadeMax);
+                const audioAmplitude = improvidence.variables.autos.audioAmplitude;
+
+                const audioLib = randomElement(audioLibs);
+                const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
+
+                return {
+                    hasAudio: true,
+                    audio: [{
+                        track,
+                        startTime: 0,
+                        duration,
+                        amplitude: audioAmplitude,
+                        volume: createStandardLevel({
+                            duration,
+                            fadeIn,
+                            fadeOut,
+                        })
+                    }]
+                }
+            }
+
+            return {
+                name: templateName,
+                isPriority: false,
+                enabled: calculateEnabled({
+                    minProgress: 0.3,
+                    maxOccurences: 2
+                }),
+                weight: calculateWeight({
+                    base: 20000,
+                    slope: 45,
+                    penalty: 20
+                }),
+                requiredFeatures: [],
+                value: makeSceneProvider({
+                    getBaseInfo,
+                    getContent,
+                    getAudio
+                }, libraries),
+                durationRange
+            }
+            
+        },
+        "monologue": function(libraries: LoadedLibraries): AleasSceneTemplate {
+            const templateName = "monologue";
+            const templateInfo = "Monologue";
+
+            const {
+                projectionDuration,
+                chunkDuration,
+                chunkSize,
+                audioAmplitude
+            } = improvidence.variables.monologue;
+
+            const availableDurations = [
+                improvidence.durations.monologue
+            ];
+
+            const audioLibs = [
+                improvidence.audioLibs.instru
+            ]
+
+            const durationRange = getWholeRangeAmplitude(...availableDurations);
+            const availableScenes: string[][] = [
+                improvidence.sceneContent.monologue
+            ];
+
+
+            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+                const duration = getRandomDuration(...availableDurations);
+        
+                return {
+                    templateName,
+                    duration,
+                    info: templateInfo
+                }
+            }
+
+            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+
+                const [fadeMin, fadeMax] = improvidence.fades.audioStandard;
+
+                const fadeIn = randomRange(fadeMin, fadeMax);
+                const fadeOut = randomRange(fadeMin, fadeMax);
+
+                const audioLib = randomElement(audioLibs);
+                const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
+
+                return {
+                    hasAudio: true,
+                    audio: [{
+                        track,
+                        startTime: 0,
+                        duration,
+                        amplitude: audioAmplitude,
+                        volume: createStandardLevel({
+                            duration,
+                            fadeIn,
+                            fadeOut,
+                        })
+                    }]
+                }
+            }
+
+            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
+
+                const fade = improvidence.fades.standardShort;
+
+                const scene = getRandomSceneFromScenes(availableScenes);
+
+                const chunkDurVal = randomRange(chunkDuration[0], chunkDuration[1]);
+                const chunkCount = Math.round(randomRange(projectionDuration[0], projectionDuration[1]) / chunkDurVal);
+
+                const step1Duration = chunkCount * chunkDurVal;
+                const stepsKeyFrames: KeyFrame[][] = generateInitialStep({
+                    totalDuration: duration,
+                    initialStepDuration: step1Duration,
+                    fade: improvidence.fades.short,
+                })
+
+                const { text } = getRandomMonologue(libraries.monologueLibraries)
+
+                const chunks = chunkifyText({
+                    text,
+                    maxChunkCount: chunkCount,
+                    chunkType: "Random",
+                    chunkSize: chunkSize,
+                })
+
+                const content = generateContentElement(libraries.contentLibraries, {
+                    scene,
+                    duration,
+                    fadeIn: fade,
+                    fadeOut: fade,
+                    stepsKeyFrames,
+                    valuesKeyFrames: {
+                        "text": {
+                            type: "string",
+                            frames: chunks
+                                .map((str, i) => {
+                                    return [
+                                        i * chunkDurVal,
+                                        str
+                                    ]
+                                })
+                        }
+                    }
+                })
+
+                return {
+                    hasContent: true,
+                    content
+                }
+            }
+
+            return {
+                name: templateName,
+                isPriority: false,
+                enabled: calculateEnabled({
+                    minProgress: 0.3,
+                    maxOccurences: 2,
+                    maxProgress: 0.92
+                }),
+                weight: calculateWeight({
+                    base: 10,
+                    slope: 90,
+                }),
+                requiredFeatures: [],
+                value: makeSceneProvider({
+                    getBaseInfo,
+                    getContent,
+                    getAudio
+                }, libraries),
+                durationRange
+            }
+        },
+
     } satisfies { [key: string]: (libraries: LoadedLibraries) => AleasSceneTemplate },
     tags: {
         preshow: "preshow",
@@ -1782,30 +2108,28 @@ export const theatreDuTemps = {
         strobes: "strobes",
         mapping: "mapping",
         mappingGeometric: "mapping-geometric",
+        autos: "autos"
     },
     sceneContent: {
-        preshow: "preshow",
-        postshow: "postshow",
         intro: "intro",
         outro: "outro",
         confessionnal: "confessionnal",
         standard: [
             "pf-chaud",
-            "pf-froid",
         ],
         ambient: [
             "full-color",
             "bicolor",
-            //"tricolor",
+            "tricolor",
         ],
         isolations: [
-            "douche-jar",
-            "douche-cour",
-            "double-douches",
-            "decoupe-centrale",
+            "douche",
+            "lat-jar",
+            "diag-cour"
         ],
         isolationsAlternates: [
-            "douches-alternate"
+            "lats-alternate",
+            "diags-alternate",
         ],
         ambientSwap: [
             "col-swap-2",
@@ -1813,22 +2137,22 @@ export const theatreDuTemps = {
         ],
         basculePF: [
             "pf-ch-basc-col",
-            "pf-fr-basc-col",
             "pf-ch-basc-str",
         ],
         basculeAmbient: [
-            "col-basc-decoupe",
+            "col-basc-douche",
         ],
         projInput: [
             "proj-input",
         ],
+        monologue: [
+            "monologue",
+        ],
         whiteRotation: "white-rotation",
         colorWave: "color-wave",
         mappingGeometric: [
-            "rectangle-doors",
             "face-line",
             "double-face-line",
-            "circle-pulse",
         ],
         mappingGeometricMoving: [
             "line-swipe",
@@ -1839,6 +2163,9 @@ export const theatreDuTemps = {
             "moving-grid",
             "dots-flow",
             "led-wall"
+        ],
+        autos: [
+            "autos-tracking"
         ]
     },
     variables: {
@@ -1894,6 +2221,12 @@ export const theatreDuTemps = {
         projInput: {
             projectionDuration: 10,
         },
+        monologue: {
+            chunkSize: [4, 7] satisfies Range,
+            chunkDuration: [3, 4.7] satisfies Range,
+            projectionDuration: [30, 50] satisfies Range,
+            audioAmplitude: 0.48,
+        },
         basculeLoud: {
             audioAmplitude: 0.9,
             basculeDuration: [11, 25] satisfies Range,
@@ -1924,6 +2257,11 @@ export const theatreDuTemps = {
             range: [1.5, 8] satisfies Range,
             lightsFade: 0.4,
             interBlackout: 1.5,
+        },
+        autos: {
+            trackingPeriod: [5, 9] satisfies Range,
+            trackingPause: [0, 4.5] satisfies Range,
+            audioAmplitude: 0.45
         }
     },
     fades: {
@@ -1933,7 +2271,6 @@ export const theatreDuTemps = {
         standard: [1.5, 4.5],
         standardLong: [3, 6],
         long: [5, 9],
-
         audioUltraShort: [0.2, 1],
         audioShort: [1, 2.5],
         audioStandard: [2, 4],
@@ -1942,8 +2279,9 @@ export const theatreDuTemps = {
         ultraShort: [4, 8],
         short: [30, 70],
         specialAmbiances: [45, 90],
-        mediumShort: [60, 120],
-        standard: [90, 240],
+        monologue: [70, 120],
+        mediumShort: [50, 110],
+        standard: [80, 220],
         standardLong: [160, 350],
         long: [240, 480],
     } satisfies { [key: string]: Range },
@@ -1961,9 +2299,9 @@ export const theatreDuTemps = {
 }
 
 
-export function getTheatreDuTempsSceneTemplates(libraries: LoadedLibraries): AleasSceneTemplate[] {
+export function getImprovidenceSceneTemplates(libraries: LoadedLibraries): AleasSceneTemplate[] {
 
-    const factories: ((libraries: LoadedLibraries) => AleasSceneTemplate)[] = Object.values(theatreDuTemps.templates);
+    const factories: ((libraries: LoadedLibraries) => AleasSceneTemplate)[] = Object.values(improvidence.templates);
 
     const templates = factories.map(factory => factory(libraries));
 
@@ -1971,9 +2309,9 @@ export function getTheatreDuTempsSceneTemplates(libraries: LoadedLibraries): Ale
 };
 
 
-export function generateTheatreDuTempsIntroScene(args: GenerateAleasShowArgs, libraries: LoadedLibraries): SceneData {
+export function generateImprovidenceIntroScene(args: GenerateAleasShowArgs, libraries: LoadedLibraries): SceneData {
     
-    const audioFade = theatreDuTemps.fades.audioUltraShort;
+    const audioFade = improvidence.fades.audioUltraShort;
     const audioFadeIn = getValue(audioFade);
     const audioFadeOut = getValue(audioFade);
 
@@ -1990,7 +2328,7 @@ export function generateTheatreDuTempsIntroScene(args: GenerateAleasShowArgs, li
         speechDuration,
         phase1Range,
         phase2Range,
-    } = theatreDuTemps.variables.intro;
+    } = improvidence.variables.intro;
 
     const duration = getValue(durationRov);
 
@@ -2019,7 +2357,7 @@ export function generateTheatreDuTempsIntroScene(args: GenerateAleasShowArgs, li
     });
 
     const content: ContentElement = generateContentElement(libraries.contentLibraries, {
-        scene: theatreDuTemps.sceneContent.intro,
+        scene: improvidence.sceneContent.intro,
         duration,
         fadeIn: lightFade,
         fadeOut: lightFade,
@@ -2041,9 +2379,9 @@ export function generateTheatreDuTempsIntroScene(args: GenerateAleasShowArgs, li
     }
 }
 
-export function generateTheatreDuTempsOutroScene(args: GenerateAleasShowArgs, libraries: LoadedLibraries): SceneData {
+export function generateImprovidenceOutroScene(args: GenerateAleasShowArgs, libraries: LoadedLibraries): SceneData {
     
-    const audioFade = theatreDuTemps.fades.audioUltraShort;
+    const audioFade = improvidence.fades.audioUltraShort;
     const audioFadeIn = getValue(audioFade);
     const audioFadeOut = getValue(audioFade);
 
@@ -2060,7 +2398,7 @@ export function generateTheatreDuTempsOutroScene(args: GenerateAleasShowArgs, li
         lightsOffset,
         interBlackout,
         range: salutsRange
-    } = theatreDuTemps.variables.outro;
+    } = improvidence.variables.outro;
 
     const duration = getValue(durationRov);
 
@@ -2090,7 +2428,7 @@ export function generateTheatreDuTempsOutroScene(args: GenerateAleasShowArgs, li
     });
 
     const content: ContentElement = generateContentElement(libraries.contentLibraries, {
-        scene: theatreDuTemps.sceneContent.outro,
+        scene: improvidence.sceneContent.outro,
         duration,
         fadeIn: lightsFade,
         fadeOut: lightsFade,
