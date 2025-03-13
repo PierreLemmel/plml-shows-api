@@ -1,4 +1,3 @@
-import { init } from "next/dist/compiled/webpack/webpack";
 import { RgbColor } from "react-colorful";
 import { clamp } from "../core/maths";
 import { Color } from "../core/types/rgbColor";
@@ -8,11 +7,12 @@ import { Range, LoadedLibraries, LoadedLibrary, AleasAudioLibrary, AleasInputPro
 export const getValue = (value: RangeOrValue): number => (Array.isArray(value)) ? randomRange(value[0], value[1]) : value;
 
 export function getRandomElementFromAudioLib(libraries: LoadedLibrary<AleasAudioLibrary>, ...libs: string[]): string {
+
     const libName = randomElement(libs);
     const lib = libraries[libName];
     const index = randomInt(0, lib.count);
 
-    return `${libName}-${(index + 1).toString().padStart(2, "0")}`;
+    return `${libName} - ${(index + 1).toString().padStart(3, "0")}`;
 }
 
 export type ScenesGroup = (string|ScenesGroup)[];

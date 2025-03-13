@@ -148,9 +148,9 @@ export const repetition = {
     },
     variables: {
         monologue: {
-            chunkSize: [4, 7] satisfies Range,
-            chunkDuration: [3, 4.7] satisfies Range,
-            projectionDuration: [30, 50] satisfies Range,
+            chunkSize: [3, 8] satisfies Range,
+            chunkDuration: [1.9, 3.9] satisfies Range,
+            projectionDuration: [25, 55] satisfies Range,
             audioAmplitude: 0.48,
         },
         intro: {
@@ -182,7 +182,7 @@ export const repetition = {
         ultraShort: [4, 8],
         short: [30, 70],
         specialAmbiances: [45, 90],
-        monologue: [70, 120],
+        monologue: [55, 150],
         mediumShort: [50, 110],
         standard: [80, 220],
         standardLong: [160, 350],

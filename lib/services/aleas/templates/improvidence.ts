@@ -169,7 +169,7 @@ export const improvidence = {
 
             const audioProbability = improvidence.variables.ambient.audioProbability;
             const audioLibs = [
-                "aleas-ambient",
+                "aleas-general",
             ]
 
             const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
@@ -276,7 +276,7 @@ export const improvidence = {
 
             const audioProbability = improvidence.variables.ambientSwap.audioProbability;
             const audioLibs = [
-                "aleas-ambient",
+                "aleas-general",
             ]
 
             const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
@@ -2288,7 +2288,7 @@ export const improvidence = {
     audioLibs: {
         general: "aleas-general",
         loud: "aleas-loud",
-        ambient: "aleas-ambient",
+        ambient: "aleas-general",
         standalone: "aleas-standalone",
         wtf: "aleas-wtf",
         instru: "aleas-instru",

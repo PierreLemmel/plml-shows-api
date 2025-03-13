@@ -1,7 +1,9 @@
 import { AleasButton } from "@/components/aleas-components/aleas-buttons";
 import { AleasMainLayout } from "@/components/aleas-components/aleas-layout"
 import { isDev } from "@/lib/services/api/api";
-import { renameDocument } from "@/lib/services/api/firebase";
+import { deleteDocument, getDocument, renameDocument, setDocument } from "@/lib/services/api/firebase";
+import { sequence } from "@/lib/services/core/utils";
+import { CompletionsData } from "@/lib/services/generation/text/text-gen";
 import { GetStaticProps } from "next";
 import { useEffect, useState } from "react";
 
@@ -29,7 +31,9 @@ const DoStuff = (props: DoStuffProps) => {
     }, [isDev]);
 
     const doStuff = async () => {
-        renameDocument("aleas/library/monologues/batch-01-20241220-143129", "aleas/library/monologues/batch-01", false);
+
+        //...
+        
     };
 
     const [working, setWorking] = useState<boolean>(false);

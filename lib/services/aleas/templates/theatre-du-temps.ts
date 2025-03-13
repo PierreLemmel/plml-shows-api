@@ -1,883 +1,882 @@
 import { notImplemented, random01, randomElement, randomInt, randomRange, sequence } from "../../core/utils";
 import { CalculateParamValArgs, LoadedLibraries, StartAndDuration, Range, makeSceneProvider, AleasSceneTemplate, SceneBaseInfo, AudioElementsOrNoAudio, KeyFrame, SceneData, GenerateAleasShowArgs, ContentElementOrNoContent, ContentElement, AudioElement } from "../aleas-generation";
-import { calculateEnabled, calculateWeight, createStandardLevel, generateAudioElements, generateComparableStepsKeyFrames, generateContentElement, generateInitialStep, generateIntermittentIntervals, generateIntroKeyFrames, generateOutroKeyFrames, generatePeriodicEvent, generateRandomDurations, getFade, getRandomDuration, getRandomElementFromAudioLib, getRandomProjectionInput, getRandomSceneFromScenes, getStepCount, getValue, getWholeRangeAmplitude, keyFramesFromIntervals, ScenesGroup } from "../aleas-generation-utils";
+import { calculateEnabled, calculateWeight, chunkifyText, createStandardLevel, generateAudioElements, generateComparableStepsKeyFrames, generateContentElement, generateInitialStep, generateIntermittentIntervals, generateIntroKeyFrames, generateOutroKeyFrames, generatePeriodicEvent, generateRandomDurations, getFade, getRandomDuration, getRandomElementFromAudioLib, getRandomMonologue, getRandomProjectionInput, getRandomSceneFromScenes, getStepCount, getValue, getWholeRangeAmplitude, keyFramesFromIntervals, ScenesGroup } from "../aleas-generation-utils";
 
 export const theatreDuTemps = {
     templates: {
-        "simple-standard-duration": function(libraries: LoadedLibraries): AleasSceneTemplate {
+        // "simple-standard-duration": function(libraries: LoadedLibraries): AleasSceneTemplate {
             
-            const templateName = "simple-standard-duration";
-            const templateInfo = "Simple scene with basic lights and standard duration";
+        //     const templateName = "simple-standard-duration";
+        //     const templateInfo = "Simple scene with basic lights and standard duration";
 
-            const availableDurations = [
-                theatreDuTemps.durations.short,
-                theatreDuTemps.durations.standard,
-            ];
+        //     const availableDurations = [
+        //         theatreDuTemps.durations.short,
+        //         theatreDuTemps.durations.standard,
+        //     ];
 
-            const durationRange = getWholeRangeAmplitude(...availableDurations);
-            const availableScenes: string[][] = [
-                theatreDuTemps.sceneContent.standard
-            ];
+        //     const durationRange = getWholeRangeAmplitude(...availableDurations);
+        //     const availableScenes: string[][] = [
+        //         theatreDuTemps.sceneContent.standard
+        //     ];
 
 
-            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+        //     const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
 
-                const duration = getRandomDuration(...availableDurations);
+        //         const duration = getRandomDuration(...availableDurations);
         
-                return {
-                    templateName,
-                    duration,
-                    info: templateInfo
-                }
-            }
+        //         return {
+        //             templateName,
+        //             duration,
+        //             info: templateInfo
+        //         }
+        //     }
 
-            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
+        //     const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const fadeIn = randomRange(1, 6);
-                const fadeOut = randomRange(1, 6);
+        //         const fadeIn = randomRange(1, 6);
+        //         const fadeOut = randomRange(1, 6);
 
-                const scene = getRandomSceneFromScenes(availableScenes);
+        //         const scene = getRandomSceneFromScenes(availableScenes);
 
-                const content = generateContentElement(libraries.contentLibraries, {
-                    scene,
-                    duration,
-                    fadeIn,
-                    fadeOut,
-                })
+        //         const content = generateContentElement(libraries.contentLibraries, {
+        //             scene,
+        //             duration,
+        //             fadeIn,
+        //             fadeOut,
+        //         })
 
-                return {
-                    hasContent: true,
-                    content
-                }
-            }
+        //         return {
+        //             hasContent: true,
+        //             content
+        //         }
+        //     }
 
-            return {
-                name: templateName,
-                isPriority: false,
-                enabled: (args) => {
-                    return args.currentScene > 1
-                },
-                weight: 8,
-                requiredFeatures: [],
-                value: makeSceneProvider({
-                    getBaseInfo,
-                    getContent,
-                }, libraries),
-                durationRange
-            }
-        },
-        "simple-with-music": function(libraries: LoadedLibraries): AleasSceneTemplate {
+        //     return {
+        //         name: templateName,
+        //         isPriority: false,
+        //         enabled: (args) => {
+        //             return args.currentScene > 1
+        //         },
+        //         weight: 8,
+        //         requiredFeatures: [],
+        //         value: makeSceneProvider({
+        //             getBaseInfo,
+        //             getContent,
+        //         }, libraries),
+        //         durationRange
+        //     }
+        // },
+        // "simple-with-music": function(libraries: LoadedLibraries): AleasSceneTemplate {
             
-            const templateName = "simple-with-music";
-            const templateInfo = "Simple scene with basic lights, standard duration and music";
+        //     const templateName = "simple-with-music";
+        //     const templateInfo = "Simple scene with basic lights, standard duration and music";
 
-            const audioLibraries = [
-                theatreDuTemps.audioLibs.general,
-            ]
+        //     const audioLibraries = [
+        //         theatreDuTemps.audioLibs.general,
+        //     ]
 
-            const availableDurations = [
-                theatreDuTemps.durations.standard,
-            ];
+        //     const availableDurations = [
+        //         theatreDuTemps.durations.standard,
+        //     ];
 
-            const durationRange = getWholeRangeAmplitude(...availableDurations);
-            const availableScenes: string[][] = [
-                theatreDuTemps.sceneContent.standard,
-            ];
+        //     const durationRange = getWholeRangeAmplitude(...availableDurations);
+        //     const availableScenes: string[][] = [
+        //         theatreDuTemps.sceneContent.standard,
+        //     ];
 
-            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+        //     const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
 
-                const duration = getRandomDuration(...availableDurations);
+        //         const duration = getRandomDuration(...availableDurations);
         
-                return {
-                    templateName,
-                    duration,
-                    info: templateInfo
-                }
-            }
+        //         return {
+        //             templateName,
+        //             duration,
+        //             info: templateInfo
+        //         }
+        //     }
 
-            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
+        //     const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const fadeIn = randomRange(1, 6);
-                const fadeOut = randomRange(1, 6);
+        //         const fadeIn = randomRange(1, 6);
+        //         const fadeOut = randomRange(1, 6);
 
-                const scene = getRandomSceneFromScenes(availableScenes);
+        //         const scene = getRandomSceneFromScenes(availableScenes);
 
-                const content = generateContentElement(libraries.contentLibraries, {
-                    scene,
-                    duration,
-                    fadeIn,
-                    fadeOut,
-                })
+        //         const content = generateContentElement(libraries.contentLibraries, {
+        //             scene,
+        //             duration,
+        //             fadeIn,
+        //             fadeOut,
+        //         })
 
-                return {
-                    hasContent: true,
-                    content
-                }
-            }
+        //         return {
+        //             hasContent: true,
+        //             content
+        //         }
+        //     }
 
-            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+        //     const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
 
-                const audio = generateAudioElements(libraries, {
-                    sceneDuration: duration,
-                    audioDurationRange: [20, 60],
-                    fadeDurationRange: [1.5, 3.0],
-                    amplitude: 0.5,
-                    startEndMargin: 10,
-                    minSpaceBetweenAudio: 40,
-                    audioLibraries
-                });
+        //         const audio = generateAudioElements(libraries, {
+        //             sceneDuration: duration,
+        //             audioDurationRange: [20, 60],
+        //             fadeDurationRange: [1.5, 3.0],
+        //             amplitude: 0.5,
+        //             startEndMargin: 10,
+        //             minSpaceBetweenAudio: 40,
+        //             audioLibraries
+        //         });
 
-                return {
-                    hasAudio: true,
-                    audio
-                }
-            }
+        //         return {
+        //             hasAudio: true,
+        //             audio
+        //         }
+        //     }
 
-            return {
-                name: templateName,
-                isPriority: false,
-                enabled: (args) => {
-                    return args.currentScene > 1
-                },
-                weight: 9,
-                requiredFeatures: [],
-                value: makeSceneProvider({
-                    getBaseInfo,
-                    getContent,
-                    getAudio
-                }, libraries),
-                durationRange
-            }
-        },
-        "ambient": function(libraries: LoadedLibraries): AleasSceneTemplate {
+        //     return {
+        //         name: templateName,
+        //         isPriority: false,
+        //         enabled: (args) => {
+        //             return args.currentScene > 1
+        //         },
+        //         weight: 9,
+        //         requiredFeatures: [],
+        //         value: makeSceneProvider({
+        //             getBaseInfo,
+        //             getContent,
+        //             getAudio
+        //         }, libraries),
+        //         durationRange
+        //     }
+        // },
+        // "ambient": function(libraries: LoadedLibraries): AleasSceneTemplate {
 
-            const templateName = "ambient";
-            const templateInfo = "Ambient scene";
+        //     const templateName = "ambient";
+        //     const templateInfo = "Ambient scene";
 
-            const availableDurations = [
-                theatreDuTemps.durations.mediumShort,
-                theatreDuTemps.durations.standard,
-                theatreDuTemps.durations.standardLong,
-                theatreDuTemps.durations.long,
-            ];
+        //     const availableDurations = [
+        //         theatreDuTemps.durations.mediumShort,
+        //         theatreDuTemps.durations.standard,
+        //         theatreDuTemps.durations.standardLong,
+        //         theatreDuTemps.durations.long,
+        //     ];
 
-            const durationRange = getWholeRangeAmplitude(...availableDurations);
+        //     const durationRange = getWholeRangeAmplitude(...availableDurations);
 
-            const ambientScenes = [
-                theatreDuTemps.sceneContent.ambient,
-            ];
+        //     const ambientScenes = [
+        //         theatreDuTemps.sceneContent.ambient,
+        //     ];
 
-            const audioProbability = theatreDuTemps.variables.ambient.audioProbability;
-            const audioLibs = [
-                "aleas-ambient",
-            ]
+        //     const audioProbability = theatreDuTemps.variables.ambient.audioProbability;
+        //     const audioLibs = [
+        //         theatreDuTemps.audioLibs.ambient,
+        //     ]
 
-            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+        //     const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
 
-                const duration = getRandomDuration(...availableDurations);
+        //         const duration = getRandomDuration(...availableDurations);
         
-                return {
-                    templateName,
-                    duration,
-                    info: templateInfo
-                }
-            }
+        //         return {
+        //             templateName,
+        //             duration,
+        //             info: templateInfo
+        //         }
+        //     }
 
-            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
+        //     const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
+        //         const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
 
-                const fadeIn = randomRange(fadeMin, fadeMax);
-                const fadeOut = randomRange(fadeMin, fadeMax);
+        //         const fadeIn = randomRange(fadeMin, fadeMax);
+        //         const fadeOut = randomRange(fadeMin, fadeMax);
                 
-                const scene = getRandomSceneFromScenes(ambientScenes);
+        //         const scene = getRandomSceneFromScenes(ambientScenes);
 
-                const content = generateContentElement(libraries.contentLibraries, {
-                    scene,
-                    duration,
-                    fadeIn,
-                    fadeOut,
-                })
+        //         const content = generateContentElement(libraries.contentLibraries, {
+        //             scene,
+        //             duration,
+        //             fadeIn,
+        //             fadeOut,
+        //         })
 
-                return {
-                    hasContent: true,
-                    content
-                }
-            }
+        //         return {
+        //             hasContent: true,
+        //             content
+        //         }
+        //     }
 
-            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+        //     const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
 
-                if (Math.random() < audioProbability) {
+        //         if (Math.random() < audioProbability) {
 
-                    const fadeIn = randomRange(2, 5);
-                    const fadeOut = randomRange(2, 4);
-                    const audioAmplitude = theatreDuTemps.variables.ambient.audioAmplitude;
+        //             const fadeIn = randomRange(2, 5);
+        //             const fadeOut = randomRange(2, 4);
+        //             const audioAmplitude = theatreDuTemps.variables.ambient.audioAmplitude;
 
-                    const audioLib = randomElement(audioLibs);
-                    const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
+        //             const audioLib = randomElement(audioLibs);
+        //             const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
 
-                    return {
-                        hasAudio: true,
-                        audio: [{
-                            track,
-                            startTime: 0,
-                            duration,
-                            amplitude: audioAmplitude,
-                            volume: createStandardLevel({
-                                duration,
-                                fadeIn,
-                                fadeOut,
-                            })
-                        }]
-                    }
-                }
-                else {
-                    return {
-                        hasAudio: false
-                    }
-                }
-            }
+        //             return {
+        //                 hasAudio: true,
+        //                 audio: [{
+        //                     track,
+        //                     startTime: 0,
+        //                     duration,
+        //                     amplitude: audioAmplitude,
+        //                     volume: createStandardLevel({
+        //                         duration,
+        //                         fadeIn,
+        //                         fadeOut,
+        //                     })
+        //                 }]
+        //             }
+        //         }
+        //         else {
+        //             return {
+        //                 hasAudio: false
+        //             }
+        //         }
+        //     }
 
-            return {
-                name: templateName,
-                isPriority: false,
-                enabled: true,
-                weight: calculateWeight({
-                    penalty: 5,
-                    base: 18,
-                    slope: 10
-                }),
-                requiredFeatures: [],
-                value: makeSceneProvider({
-                    getBaseInfo,
-                    getContent,
-                    getAudio
-                }, libraries),
-                durationRange
-            }
-        },
-        "ambient-swap": function(libraries: LoadedLibraries): AleasSceneTemplate {
+        //     return {
+        //         name: templateName,
+        //         isPriority: false,
+        //         enabled: true,
+        //         weight: calculateWeight({
+        //             penalty: 5,
+        //             base: 18,
+        //             slope: 10
+        //         }),
+        //         requiredFeatures: [],
+        //         value: makeSceneProvider({
+        //             getBaseInfo,
+        //             getContent,
+        //             getAudio
+        //         }, libraries),
+        //         durationRange
+        //     }
+        // },
+        // "ambient-swap": function(libraries: LoadedLibraries): AleasSceneTemplate {
 
-            const templateName = "ambient-swap";
-            const templateInfo = "Ambient scene with color swap";
+        //     const templateName = "ambient-swap";
+        //     const templateInfo = "Ambient scene with color swap";
 
-            const availableDurations = [
-                theatreDuTemps.durations.mediumShort,
-                theatreDuTemps.durations.standard,
-                theatreDuTemps.durations.standardLong,
-                theatreDuTemps.durations.long,
-            ];
+        //     const availableDurations = [
+        //         theatreDuTemps.durations.mediumShort,
+        //         theatreDuTemps.durations.standard,
+        //         theatreDuTemps.durations.standardLong,
+        //         theatreDuTemps.durations.long,
+        //     ];
 
-            const durationRange = getWholeRangeAmplitude(...availableDurations);
+        //     const durationRange = getWholeRangeAmplitude(...availableDurations);
 
-            const ambientScenes = [
-                theatreDuTemps.sceneContent.ambientSwap,
-            ];
+        //     const ambientScenes = [
+        //         theatreDuTemps.sceneContent.ambientSwap,
+        //     ];
 
-            const audioProbability = theatreDuTemps.variables.ambientSwap.audioProbability;
-            const audioLibs = [
-                "aleas-ambient",
-            ]
+        //     const audioProbability = theatreDuTemps.variables.ambientSwap.audioProbability;
+        //     const audioLibs = [
+        //         theatreDuTemps.audioLibs.ambient,
+        //     ]
 
-            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+        //     const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
 
-                const duration = getRandomDuration(...availableDurations);
+        //         const duration = getRandomDuration(...availableDurations);
         
-                return {
-                    templateName,
-                    duration,
-                    info: templateInfo
-                }
-            }
+        //         return {
+        //             templateName,
+        //             duration,
+        //             info: templateInfo
+        //         }
+        //     }
 
-            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
+        //     const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
+        //         const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
 
-                const fadeIn = randomRange(fadeMin, fadeMax);
-                const fadeOut = randomRange(fadeMin, fadeMax);
+        //         const fadeIn = randomRange(fadeMin, fadeMax);
+        //         const fadeOut = randomRange(fadeMin, fadeMax);
                 
-                const scene = getRandomSceneFromScenes(ambientScenes);
-                const steps = getStepCount(libraries.contentLibraries, scene);
+        //         const scene = getRandomSceneFromScenes(ambientScenes);
+        //         const steps = getStepCount(libraries.contentLibraries, scene);
 
-                const stepsKeyFrames: KeyFrame[][] = generateComparableStepsKeyFrames({
-                    steps: steps,
-                    totalDuration: duration,
-                    fade: [fadeMin, fadeMax],
-                    stepDuration: theatreDuTemps.variables.ambientSwap.stepDuration,
-                    addFinalFade: false,
-                    addInitialFade: false,
-                });
+        //         const stepsKeyFrames: KeyFrame[][] = generateComparableStepsKeyFrames({
+        //             steps: steps,
+        //             totalDuration: duration,
+        //             fade: [fadeMin, fadeMax],
+        //             stepDuration: theatreDuTemps.variables.ambientSwap.stepDuration,
+        //             addFinalFade: false,
+        //             addInitialFade: false,
+        //         });
 
-                const content = generateContentElement(libraries.contentLibraries, {
-                    scene,
-                    duration,
-                    fadeIn,
-                    fadeOut,
-                    stepsKeyFrames
-                })
+        //         const content = generateContentElement(libraries.contentLibraries, {
+        //             scene,
+        //             duration,
+        //             fadeIn,
+        //             fadeOut,
+        //             stepsKeyFrames
+        //         })
 
-                return {
-                    hasContent: true,
-                    content
-                }
-            }
+        //         return {
+        //             hasContent: true,
+        //             content
+        //         }
+        //     }
 
-            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+        //     const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
 
-                if (Math.random() < audioProbability) {
-                    const fadeIn = randomRange(2, 5);
-                    const fadeOut = randomRange(2, 4);
-                    const audioAmplitude = theatreDuTemps.variables.ambient.audioAmplitude;
+        //         if (Math.random() < audioProbability) {
+        //             const fadeIn = randomRange(2, 5);
+        //             const fadeOut = randomRange(2, 4);
+        //             const audioAmplitude = theatreDuTemps.variables.ambient.audioAmplitude;
 
-                    const audioLib = randomElement(audioLibs);
-                    const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
+        //             const audioLib = randomElement(audioLibs);
+        //             const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
 
-                    return {
-                        hasAudio: true,
-                        audio: [{
-                            track,
-                            startTime: 0,
-                            duration,
-                            amplitude: audioAmplitude,
-                            volume: createStandardLevel({
-                                duration,
-                                fadeIn,
-                                fadeOut,
-                            })
-                        }]
-                    }
-                }
-                else {
-                    return {
-                        hasAudio: false
-                    }
-                }
-            }
+        //             return {
+        //                 hasAudio: true,
+        //                 audio: [{
+        //                     track,
+        //                     startTime: 0,
+        //                     duration,
+        //                     amplitude: audioAmplitude,
+        //                     volume: createStandardLevel({
+        //                         duration,
+        //                         fadeIn,
+        //                         fadeOut,
+        //                     })
+        //                 }]
+        //             }
+        //         }
+        //         else {
+        //             return {
+        //                 hasAudio: false
+        //             }
+        //         }
+        //     }
 
-            return {
-                name: templateName,
-                isPriority: false,
-                enabled: calculateEnabled({
-                    minProgress: 0.25,
-                    maxOccurences: 2
-                }),
-                weight: calculateWeight({
-                    penalty: 25,
-                    base: 15,
-                    slope: 32
-                }),
-                requiredFeatures: [],
-                value: makeSceneProvider({
-                    getBaseInfo,
-                    getContent,
-                    getAudio
-                }, libraries),
-                durationRange
-            }
-        },
-        "ultra-short": function(libraries: LoadedLibraries): AleasSceneTemplate {
+        //     return {
+        //         name: templateName,
+        //         isPriority: false,
+        //         enabled: calculateEnabled({
+        //             minProgress: 0.25,
+        //             maxOccurences: 2
+        //         }),
+        //         weight: calculateWeight({
+        //             penalty: 25,
+        //             base: 15,
+        //             slope: 32
+        //         }),
+        //         requiredFeatures: [],
+        //         value: makeSceneProvider({
+        //             getBaseInfo,
+        //             getContent,
+        //             getAudio
+        //         }, libraries),
+        //         durationRange
+        //     }
+        // },
+        // "ultra-short": function(libraries: LoadedLibraries): AleasSceneTemplate {
             
-            const templateName = "ultra-short";
-            const templateInfo = "Ultra short scene";
+        //     const templateName = "ultra-short";
+        //     const templateInfo = "Ultra short scene";
 
-            const availableDurations = [
-                theatreDuTemps.durations.ultraShort
-            ];
+        //     const availableDurations = [
+        //         theatreDuTemps.durations.ultraShort
+        //     ];
 
-            const availableFades: Range[] = [
-                theatreDuTemps.fades.ultraShort
-            ]
+        //     const availableFades: Range[] = [
+        //         theatreDuTemps.fades.ultraShort
+        //     ]
 
-            const durationRange = getWholeRangeAmplitude(...availableDurations);
-            const availableScenes: string[][] = [
-                theatreDuTemps.sceneContent.standard,
-                theatreDuTemps.sceneContent.ambient,
-                theatreDuTemps.sceneContent.isolations
-            ];
+        //     const durationRange = getWholeRangeAmplitude(...availableDurations);
+        //     const availableScenes: string[][] = [
+        //         theatreDuTemps.sceneContent.standard,
+        //         theatreDuTemps.sceneContent.ambient,
+        //         theatreDuTemps.sceneContent.isolations
+        //     ];
 
 
-            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+        //     const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
 
-                const duration = getRandomDuration(...availableDurations);
+        //         const duration = getRandomDuration(...availableDurations);
         
-                return {
-                    templateName,
-                    duration,
-                    info: templateInfo
-                }
-            }
+        //         return {
+        //             templateName,
+        //             duration,
+        //             info: templateInfo
+        //         }
+        //     }
 
-            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
+        //     const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const fadeIn = getFade(...availableFades);
-                const fadeOut = getFade(...availableFades);
+        //         const fadeIn = getFade(...availableFades);
+        //         const fadeOut = getFade(...availableFades);
 
-                const scene = getRandomSceneFromScenes(availableScenes);
+        //         const scene = getRandomSceneFromScenes(availableScenes);
 
-                const content = generateContentElement(libraries.contentLibraries, {
-                    scene,
-                    duration,
-                    fadeIn,
-                    fadeOut,
-                })
+        //         const content = generateContentElement(libraries.contentLibraries, {
+        //             scene,
+        //             duration,
+        //             fadeIn,
+        //             fadeOut,
+        //         })
 
-                return {
-                    hasContent: true,
-                    content
-                }
-            }
+        //         return {
+        //             hasContent: true,
+        //             content
+        //         }
+        //     }
 
-            return {
-                name: templateName,
-                isPriority: false,
-                enabled: calculateEnabled({
-                    maxOccurences: 3,
-                    minProgress: 0.1,
-                    maxProgress: 0.9
-                }),
-                weight: calculateWeight({
-                    penalty: 20,
-                    base: 12,
-                    slope: 45
-                }),
-                requiredFeatures: [],
-                value: makeSceneProvider({
-                    getBaseInfo,
-                    getContent,
-                }, libraries),
-                durationRange
-            }
-        },
-        "isolation": function(libraries: LoadedLibraries): AleasSceneTemplate {
+        //     return {
+        //         name: templateName,
+        //         isPriority: false,
+        //         enabled: calculateEnabled({
+        //             maxOccurences: 3,
+        //             minProgress: 0.1,
+        //             maxProgress: 0.9
+        //         }),
+        //         weight: calculateWeight({
+        //             penalty: 20,
+        //             base: 12,
+        //             slope: 45
+        //         }),
+        //         requiredFeatures: [],
+        //         value: makeSceneProvider({
+        //             getBaseInfo,
+        //             getContent,
+        //         }, libraries),
+        //         durationRange
+        //     }
+        // },
+        // "isolation": function(libraries: LoadedLibraries): AleasSceneTemplate {
             
-            const templateName = "isolation";
-            const templateInfo = "Isolation scene";
+        //     const templateName = "isolation";
+        //     const templateInfo = "Isolation scene";
 
-            const availableDurations = [
-                theatreDuTemps.durations.short,
-                theatreDuTemps.durations.standard,
-            ];
+        //     const availableDurations = [
+        //         theatreDuTemps.durations.short,
+        //         theatreDuTemps.durations.standard,
+        //     ];
 
-            const availableFades: Range[] = [
-                theatreDuTemps.fades.short,
-                theatreDuTemps.fades.standard
-            ]
+        //     const availableFades: Range[] = [
+        //         theatreDuTemps.fades.short,
+        //         theatreDuTemps.fades.standard
+        //     ]
 
-            const durationRange = getWholeRangeAmplitude(...availableDurations);
-            const availableScenes: string[][] = [
-                theatreDuTemps.sceneContent.isolations
-            ];
+        //     const durationRange = getWholeRangeAmplitude(...availableDurations);
+        //     const availableScenes: string[][] = [
+        //         theatreDuTemps.sceneContent.isolations
+        //     ];
 
-            const audioLibs = [
-                theatreDuTemps.audioLibs.general,
-            ];
+        //     const audioLibs = [
+        //         theatreDuTemps.audioLibs.general,
+        //     ];
 
-            const audioProbability = theatreDuTemps.variables.isolations.audioProbability;
+        //     const audioProbability = theatreDuTemps.variables.isolations.audioProbability;
 
-            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+        //     const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
 
-                const duration = getRandomDuration(...availableDurations);
+        //         const duration = getRandomDuration(...availableDurations);
         
-                return {
-                    templateName,
-                    duration,
-                    info: templateInfo
-                }
-            }
+        //         return {
+        //             templateName,
+        //             duration,
+        //             info: templateInfo
+        //         }
+        //     }
 
-            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
+        //     const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const fadeIn = getFade(...availableFades);
-                const fadeOut = getFade(...availableFades);
+        //         const fadeIn = getFade(...availableFades);
+        //         const fadeOut = getFade(...availableFades);
 
-                const scene = getRandomSceneFromScenes(availableScenes);
+        //         const scene = getRandomSceneFromScenes(availableScenes);
 
-                const content = generateContentElement(libraries.contentLibraries, {
-                    scene,
-                    duration,
-                    fadeIn,
-                    fadeOut,
-                })
+        //         const content = generateContentElement(libraries.contentLibraries, {
+        //             scene,
+        //             duration,
+        //             fadeIn,
+        //             fadeOut,
+        //         })
 
-                return {
-                    hasContent: true,
-                    content
-                }
-            }
+        //         return {
+        //             hasContent: true,
+        //             content
+        //         }
+        //     }
 
-            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+        //     const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
 
-                if (Math.random() < audioProbability) {
+        //         if (Math.random() < audioProbability) {
 
-                    const fadeIn = randomRange(2, 5);
-                    const fadeOut = randomRange(2, 4);
-                    const audioAmplitude = theatreDuTemps.variables.isolations.audioAmplitude;
+        //             const fadeIn = randomRange(2, 5);
+        //             const fadeOut = randomRange(2, 4);
+        //             const audioAmplitude = theatreDuTemps.variables.isolations.audioAmplitude;
 
-                    const audioLib = randomElement(audioLibs);
-                    const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
+        //             const audioLib = randomElement(audioLibs);
+        //             const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
 
-                    return {
-                        hasAudio: true,
-                        audio: [{
-                            track,
-                            startTime: 0,
-                            duration,
-                            amplitude: audioAmplitude,
-                            volume: createStandardLevel({
-                                duration,
-                                fadeIn,
-                                fadeOut,
-                            })
-                        }]
-                    }
-                }
-                else {
-                    return {
-                        hasAudio: false
-                    }
-                }
-            }
+        //             return {
+        //                 hasAudio: true,
+        //                 audio: [{
+        //                     track,
+        //                     startTime: 0,
+        //                     duration,
+        //                     amplitude: audioAmplitude,
+        //                     volume: createStandardLevel({
+        //                         duration,
+        //                         fadeIn,
+        //                         fadeOut,
+        //                     })
+        //                 }]
+        //             }
+        //         }
+        //         else {
+        //             return {
+        //                 hasAudio: false
+        //             }
+        //         }
+        //     }
 
-            return {
-                name: templateName,
-                isPriority: false,
-                enabled: true,
-                weight: (args) => {
-                    const {
-                        progress,
-                        occurences
-                    } = args;
+        //     return {
+        //         name: templateName,
+        //         isPriority: false,
+        //         enabled: true,
+        //         weight: (args) => {
+        //             const {
+        //                 progress,
+        //                 occurences
+        //             } = args;
 
-                    const penalty = 7;
+        //             const penalty = 7;
 
-                    const base = 15;
-                    const slope = 18;
+        //             const base = 15;
+        //             const slope = 18;
 
-                    return Math.max(
-                        base + progress * slope - occurences * penalty,
-                        0
-                    );
-                },
-                requiredFeatures: [],
-                value: makeSceneProvider({
-                    getBaseInfo,
-                    getContent,
-                    getAudio,
-                }, libraries),
-                durationRange
-            }
-        },
-        "isolations-alternate": function(libraries: LoadedLibraries): AleasSceneTemplate {
+        //             return Math.max(
+        //                 base + progress * slope - occurences * penalty,
+        //                 0
+        //             );
+        //         },
+        //         requiredFeatures: [],
+        //         value: makeSceneProvider({
+        //             getBaseInfo,
+        //             getContent,
+        //             getAudio,
+        //         }, libraries),
+        //         durationRange
+        //     }
+        // },
+        // "isolations-alternate": function(libraries: LoadedLibraries): AleasSceneTemplate {
             
-            const templateName = "isolations-alternate";
-            const templateInfo = "Isolation scene - Alternate";
+        //     const templateName = "isolations-alternate";
+        //     const templateInfo = "Isolation scene - Alternate";
 
-            const availableDurations = [
-                theatreDuTemps.durations.mediumShort,
-                theatreDuTemps.durations.standard,
-            ];
+        //     const availableDurations = [
+        //         theatreDuTemps.durations.mediumShort,
+        //         theatreDuTemps.durations.standard,
+        //     ];
 
-            const availableFades: Range[] = [
-                theatreDuTemps.fades.standard
-            ]
+        //     const availableFades: Range[] = [
+        //         theatreDuTemps.fades.standard
+        //     ]
 
-            const durationRange = getWholeRangeAmplitude(...availableDurations);
-            const availableScenes: string[][] = [
-                theatreDuTemps.sceneContent.isolationsAlternates
-            ];
+        //     const durationRange = getWholeRangeAmplitude(...availableDurations);
+        //     const availableScenes: string[][] = [
+        //         theatreDuTemps.sceneContent.isolationsAlternates
+        //     ];
 
 
-            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+        //     const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
 
-                const duration = getRandomDuration(...availableDurations);
+        //         const duration = getRandomDuration(...availableDurations);
         
-                return {
-                    templateName,
-                    duration,
-                    info: templateInfo
-                }
-            }
+        //         return {
+        //             templateName,
+        //             duration,
+        //             info: templateInfo
+        //         }
+        //     }
 
-            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
+        //     const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const fadeIn = getFade(...availableFades);
-                const fadeOut = getFade(...availableFades);
-                const crossFade = getFade(...availableFades);
+        //         const fadeIn = getFade(...availableFades);
+        //         const fadeOut = getFade(...availableFades);
+        //         const crossFade = getFade(...availableFades);
 
-                const scene = getRandomSceneFromScenes(availableScenes);
-                const steps = getStepCount(libraries.contentLibraries, scene);
+        //         const scene = getRandomSceneFromScenes(availableScenes);
+        //         const steps = getStepCount(libraries.contentLibraries, scene);
 
-                const stepsKeyFrames: KeyFrame[][] = generateComparableStepsKeyFrames({
-                    steps: steps,
-                    totalDuration: duration,
-                    fade: crossFade,
-                    stepDuration: theatreDuTemps.variables.isolationsAlternate.stepDuration,
-                    addFinalFade: false,
-                    addInitialFade: false,
-                });
+        //         const stepsKeyFrames: KeyFrame[][] = generateComparableStepsKeyFrames({
+        //             steps: steps,
+        //             totalDuration: duration,
+        //             fade: crossFade,
+        //             stepDuration: theatreDuTemps.variables.isolationsAlternate.stepDuration,
+        //             addFinalFade: false,
+        //             addInitialFade: false,
+        //         });
 
-                const content = generateContentElement(libraries.contentLibraries, {
-                    scene,
-                    duration,
-                    fadeIn,
-                    fadeOut,
-                    stepsKeyFrames
-                })
+        //         const content = generateContentElement(libraries.contentLibraries, {
+        //             scene,
+        //             duration,
+        //             fadeIn,
+        //             fadeOut,
+        //             stepsKeyFrames
+        //         })
 
-                return {
-                    hasContent: true,
-                    content
-                }
-            }
+        //         return {
+        //             hasContent: true,
+        //             content
+        //         }
+        //     }
 
-            return {
-                name: templateName,
-                isPriority: false,
-                enabled: (args) => args.progress > 0.1,
-                weight: (args) => {
-                    const {
-                        progress,
-                        occurences
-                    } = args;
+        //     return {
+        //         name: templateName,
+        //         isPriority: false,
+        //         enabled: (args) => args.progress > 0.1,
+        //         weight: (args) => {
+        //             const {
+        //                 progress,
+        //                 occurences
+        //             } = args;
 
-                    const penalty = 20;
+        //             const penalty = 20;
 
-                    const base = 4;
-                    const slope = 40;
+        //             const base = 4;
+        //             const slope = 40;
 
-                    return Math.max(
-                        base + progress * slope - occurences * penalty,
-                        0
-                    )
-                },
-                requiredFeatures: [],
-                value: makeSceneProvider({
-                    getBaseInfo,
-                    getContent,
-                }, libraries),
-                durationRange
-            }
-        },
-        "white-rotation": function(libraries: LoadedLibraries): AleasSceneTemplate {
+        //             return Math.max(
+        //                 base + progress * slope - occurences * penalty,
+        //                 0
+        //             )
+        //         },
+        //         requiredFeatures: [],
+        //         value: makeSceneProvider({
+        //             getBaseInfo,
+        //             getContent,
+        //         }, libraries),
+        //         durationRange
+        //     }
+        // },
+        // "white-rotation": function(libraries: LoadedLibraries): AleasSceneTemplate {
 
-            const templateName = "white-rotation";
-            const templateInfo = "Special scene with rotating white light";
+        //     const templateName = "white-rotation";
+        //     const templateInfo = "Special scene with rotating white light";
 
-            const availableDurations = [
-                theatreDuTemps.durations.specialAmbiances
-            ];
+        //     const availableDurations = [
+        //         theatreDuTemps.durations.specialAmbiances
+        //     ];
 
-            const durationRange = getWholeRangeAmplitude(...availableDurations);
+        //     const durationRange = getWholeRangeAmplitude(...availableDurations);
 
-            const wrScenes = [
-                theatreDuTemps.sceneContent.whiteRotation,
-            ];
+        //     const wrScenes = [
+        //         theatreDuTemps.sceneContent.whiteRotation,
+        //     ];
 
-            const audioLibs = [
-                theatreDuTemps.audioLibs.loud,
-                theatreDuTemps.audioLibs.standalone,
-            ]
+        //     const audioLibs = [
+        //         theatreDuTemps.audioLibs.intense,
+        //     ]
 
-            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+        //     const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
 
-                const duration = getRandomDuration(...availableDurations);
+        //         const duration = getRandomDuration(...availableDurations);
         
-                return {
-                    templateName,
-                    duration,
-                    info: templateInfo
-                }
-            }
+        //         return {
+        //             templateName,
+        //             duration,
+        //             info: templateInfo
+        //         }
+        //     }
 
-            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
+        //     const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
+        //         const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
 
-                const fadeIn = randomRange(fadeMin, fadeMax);
-                const fadeOut = randomRange(fadeMin, fadeMax);
+        //         const fadeIn = randomRange(fadeMin, fadeMax);
+        //         const fadeOut = randomRange(fadeMin, fadeMax);
                 
-                const scene = getRandomSceneFromScenes(wrScenes);
+        //         const scene = getRandomSceneFromScenes(wrScenes);
 
-                const content = generateContentElement(libraries.contentLibraries, {
-                    scene,
-                    duration,
-                    fadeIn,
-                    fadeOut,
-                })
+        //         const content = generateContentElement(libraries.contentLibraries, {
+        //             scene,
+        //             duration,
+        //             fadeIn,
+        //             fadeOut,
+        //         })
 
-                return {
-                    hasContent: true,
-                    content
-                }
-            }
+        //         return {
+        //             hasContent: true,
+        //             content
+        //         }
+        //     }
 
-            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+        //     const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
 
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.audioStandard;
+        //         const [fadeMin, fadeMax] = theatreDuTemps.fades.audioStandard;
 
-                const fadeIn = randomRange(fadeMin, fadeMax);
-                const fadeOut = randomRange(fadeMin, fadeMax);
-                const audioAmplitude = theatreDuTemps.variables.whiteRotation.audioAmplitude;
+        //         const fadeIn = randomRange(fadeMin, fadeMax);
+        //         const fadeOut = randomRange(fadeMin, fadeMax);
+        //         const audioAmplitude = theatreDuTemps.variables.whiteRotation.audioAmplitude;
 
-                const audioLib = randomElement(audioLibs);
-                const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
+        //         const audioLib = randomElement(audioLibs);
+        //         const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
 
-                return {
-                    hasAudio: true,
-                    audio: [{
-                        track,
-                        startTime: 0,
-                        duration,
-                        amplitude: audioAmplitude,
-                        volume: createStandardLevel({
-                            duration,
-                            fadeIn,
-                            fadeOut,
-                        })
-                    }]
-                }
-            }
+        //         return {
+        //             hasAudio: true,
+        //             audio: [{
+        //                 track,
+        //                 startTime: 0,
+        //                 duration,
+        //                 amplitude: audioAmplitude,
+        //                 volume: createStandardLevel({
+        //                     duration,
+        //                     fadeIn,
+        //                     fadeOut,
+        //                 })
+        //             }]
+        //         }
+        //     }
 
-            return {
-                name: templateName,
-                isPriority: false,
-                enabled: (args) => {
-                    const {
-                        progress,
-                        occurences
-                    } = args;
+        //     return {
+        //         name: templateName,
+        //         isPriority: false,
+        //         enabled: (args) => {
+        //             const {
+        //                 progress,
+        //                 occurences
+        //             } = args;
 
-                    return progress > 0.45 && occurences < 1;
-                },
-                weight: (args) => {
-                    const {
-                        progress
-                    } = args;
+        //             return progress > 0.45 && occurences < 1;
+        //         },
+        //         weight: (args) => {
+        //             const {
+        //                 progress
+        //             } = args;
 
-                    const base = 60;
-                    const slope = 40;
+        //             const base = 60;
+        //             const slope = 40;
 
-                    return base + progress * slope;
-                },
-                requiredFeatures: [],
-                value: makeSceneProvider({
-                    getBaseInfo,
-                    getContent,
-                    getAudio
-                }, libraries),
-                durationRange
-            }
-        },
-        "color-wave": function(libraries: LoadedLibraries): AleasSceneTemplate {
+        //             return base + progress * slope;
+        //         },
+        //         requiredFeatures: [],
+        //         value: makeSceneProvider({
+        //             getBaseInfo,
+        //             getContent,
+        //             getAudio
+        //         }, libraries),
+        //         durationRange
+        //     }
+        // },
+        // "color-wave": function(libraries: LoadedLibraries): AleasSceneTemplate {
 
-            const templateName = "color-wave";
-            const templateInfo = "Color Wave";
+        //     const templateName = "color-wave";
+        //     const templateInfo = "Color Wave";
 
-            const availableDurations = [
-                theatreDuTemps.durations.mediumShort,
-                theatreDuTemps.durations.standard,
-                theatreDuTemps.durations.long,
-            ];
+        //     const availableDurations = [
+        //         theatreDuTemps.durations.mediumShort,
+        //         theatreDuTemps.durations.standard,
+        //         theatreDuTemps.durations.long,
+        //     ];
 
-            const durationRange = getWholeRangeAmplitude(...availableDurations);
+        //     const durationRange = getWholeRangeAmplitude(...availableDurations);
 
-            const colorWaveScenes = [
-                theatreDuTemps.sceneContent.colorWave,
-            ];
+        //     const colorWaveScenes = [
+        //         theatreDuTemps.sceneContent.colorWave,
+        //     ];
 
-            const audioProbability = theatreDuTemps.variables.colorWave.audioProbability;
-            const audioAmplitude = theatreDuTemps.variables.colorWave.audioAmplitude;
-            const audioDuration = theatreDuTemps.variables.colorWave.audioDuration;
-            const audioLibraries = [
-                theatreDuTemps.audioLibs.general,
-                theatreDuTemps.audioLibs.instru
-            ]
+        //     const audioProbability = theatreDuTemps.variables.colorWave.audioProbability;
+        //     const audioAmplitude = theatreDuTemps.variables.colorWave.audioAmplitude;
+        //     const audioDuration = theatreDuTemps.variables.colorWave.audioDuration;
+        //     const audioLibraries = [
+        //         theatreDuTemps.audioLibs.general,
+        //         theatreDuTemps.audioLibs.instru
+        //     ]
 
-            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+        //     const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
 
-                const duration = getRandomDuration(...availableDurations);
+        //         const duration = getRandomDuration(...availableDurations);
         
-                return {
-                    templateName,
-                    duration,
-                    info: templateInfo
-                }
-            }
+        //         return {
+        //             templateName,
+        //             duration,
+        //             info: templateInfo
+        //         }
+        //     }
 
-            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
+        //     const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
+        //         const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
 
-                const fadeIn = randomRange(fadeMin, fadeMax);
-                const fadeOut = randomRange(fadeMin, fadeMax);
+        //         const fadeIn = randomRange(fadeMin, fadeMax);
+        //         const fadeOut = randomRange(fadeMin, fadeMax);
                 
-                const scene = getRandomSceneFromScenes(colorWaveScenes);
+        //         const scene = getRandomSceneFromScenes(colorWaveScenes);
 
-                const content = generateContentElement(libraries.contentLibraries, {
-                    scene,
-                    duration,
-                    fadeIn,
-                    fadeOut,
-                })
+        //         const content = generateContentElement(libraries.contentLibraries, {
+        //             scene,
+        //             duration,
+        //             fadeIn,
+        //             fadeOut,
+        //         })
 
-                return {
-                    hasContent: true,
-                    content
-                }
-            }
+        //         return {
+        //             hasContent: true,
+        //             content
+        //         }
+        //     }
 
-            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+        //     const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
 
-                if (Math.random() < audioProbability) {
+        //         if (Math.random() < audioProbability) {
 
-                    const audio = generateAudioElements(libraries, {
-                        sceneDuration: duration,
-                        audioDurationRange: audioDuration,
-                        fadeDurationRange: theatreDuTemps.fades.audioStandard,
-                        amplitude: audioAmplitude,
-                        startEndMargin: 10,
-                        minSpaceBetweenAudio: 40,
-                        audioLibraries,
-                    });
+        //             const audio = generateAudioElements(libraries, {
+        //                 sceneDuration: duration,
+        //                 audioDurationRange: audioDuration,
+        //                 fadeDurationRange: theatreDuTemps.fades.audioStandard,
+        //                 amplitude: audioAmplitude,
+        //                 startEndMargin: 10,
+        //                 minSpaceBetweenAudio: 40,
+        //                 audioLibraries,
+        //             });
 
-                    return {
-                        hasAudio: true,
-                        audio
-                    }
-                }
-                else {
-                    return {
-                        hasAudio: false
-                    }
-                }
-            }
+        //             return {
+        //                 hasAudio: true,
+        //                 audio
+        //             }
+        //         }
+        //         else {
+        //             return {
+        //                 hasAudio: false
+        //             }
+        //         }
+        //     }
 
-            return {
-                name: templateName,
-                isPriority: false,
-                enabled: (args) => {
-                    const {
-                        progress,
-                        occurences
-                    } = args;
+        //     return {
+        //         name: templateName,
+        //         isPriority: false,
+        //         enabled: (args) => {
+        //             const {
+        //                 progress,
+        //                 occurences
+        //             } = args;
 
-                    return progress > 0.3 && occurences < 2;
-                },
-                weight: calculateWeight({
-                   base: 40,
-                   slope: 40,
-                   penalty: 30 
-                }),
-                requiredFeatures: [],
-                value: makeSceneProvider({
-                    getBaseInfo,
-                    getContent,
-                    getAudio
-                }, libraries),
-                durationRange
-            }
-        },
+        //             return progress > 0.3 && occurences < 2;
+        //         },
+        //         weight: calculateWeight({
+        //            base: 40,
+        //            slope: 40,
+        //            penalty: 30 
+        //         }),
+        //         requiredFeatures: [],
+        //         value: makeSceneProvider({
+        //             getBaseInfo,
+        //             getContent,
+        //             getAudio
+        //         }, libraries),
+        //         durationRange
+        //     }
+        // },
         "mapping-geometric": function(libraries: LoadedLibraries): AleasSceneTemplate {
 
             const templateName = "mapping-geometric";
@@ -1250,93 +1249,93 @@ export const theatreDuTemps = {
                 durationRange
             }
         },
-        "confessionnal": function(libraries: LoadedLibraries): AleasSceneTemplate {
-            const templateName = "confessionnal";
-            const templateInfo = "Confessionnal";
+        // "confessionnal": function(libraries: LoadedLibraries): AleasSceneTemplate {
+        //     const templateName = "confessionnal";
+        //     const templateInfo = "Confessionnal";
 
-            const variables = theatreDuTemps.variables.confessionnal;
-            const {
-                duration,
-                thresholds,
-            } = variables;
+        //     const variables = theatreDuTemps.variables.confessionnal;
+        //     const {
+        //         duration,
+        //         thresholds,
+        //     } = variables;
 
-            const durationRange: Range = [duration, duration];
+        //     const durationRange: Range = [duration, duration];
 
-            const scene = theatreDuTemps.sceneContent.confessionnal;
+        //     const scene = theatreDuTemps.sceneContent.confessionnal;
 
-            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+        //     const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
         
-                return {
-                    templateName,
-                    duration,
-                    info: templateInfo
-                }
-            }
+        //         return {
+        //             templateName,
+        //             duration,
+        //             info: templateInfo
+        //         }
+        //     }
 
-            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
+        //     const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
 
-                const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
+        //         const [fadeMin, fadeMax] = theatreDuTemps.fades.standard;
 
-                const fadeIn = randomRange(fadeMin, fadeMax);
-                const fadeOut = randomRange(fadeMin, fadeMax);
+        //         const fadeIn = randomRange(fadeMin, fadeMax);
+        //         const fadeOut = randomRange(fadeMin, fadeMax);
 
-                const durationMadmapperMin = 60;
-                const durationMadmapperMax = 180;
+        //         const durationMadmapperMin = 60;
+        //         const durationMadmapperMax = 180;
 
-                const duration01 = (duration - durationMadmapperMin) / (durationMadmapperMax - durationMadmapperMin);
+        //         const duration01 = (duration - durationMadmapperMin) / (durationMadmapperMax - durationMadmapperMin);
 
-                const content = generateContentElement(libraries.contentLibraries, {
-                    scene,
-                    duration,
-                    fadeIn,
-                    fadeOut,
-                    paramValues: {
-                        floats: {
-                            "duration": duration01
-                        }
-                    }
-                })
+        //         const content = generateContentElement(libraries.contentLibraries, {
+        //             scene,
+        //             duration,
+        //             fadeIn,
+        //             fadeOut,
+        //             paramValues: {
+        //                 floats: {
+        //                     "duration": duration01
+        //                 }
+        //             }
+        //         })
 
-                return {
-                    hasContent: true,
-                    content
-                }
-            }
+        //         return {
+        //             hasContent: true,
+        //             content
+        //         }
+        //     }
 
-            return {
-                name: templateName,
-                isPriority: (args: CalculateParamValArgs) => {
-                    const {
-                        progress,
-                        occurences
-                    } = args;
+        //     return {
+        //         name: templateName,
+        //         isPriority: (args: CalculateParamValArgs) => {
+        //             const {
+        //                 progress,
+        //                 occurences
+        //             } = args;
 
-                    return (progress > thresholds[0] && occurences < 1)
-                        || (progress > thresholds[1] && occurences < 2);
-                },
-                enabled: (args: CalculateParamValArgs) => {
-                    const {
-                        progress,
-                        occurences
-                    } = args;
+        //             return (progress > thresholds[0] && occurences < 1)
+        //                 || (progress > thresholds[1] && occurences < 2);
+        //         },
+        //         enabled: (args: CalculateParamValArgs) => {
+        //             const {
+        //                 progress,
+        //                 occurences
+        //             } = args;
 
 
-                    return occurences < thresholds.length && (
-                        (progress > thresholds[0] && occurences < 1) ||
-                        (progress > thresholds[1] && occurences < 2)
-                    )
-                },
-                weight: 0,
-                requiredFeatures: [
-                    "confessionnal",
-                ],
-                value: makeSceneProvider({
-                    getBaseInfo,
-                    getContent,
-                }, libraries),
-                durationRange
-            }
-        },
+        //             return occurences < thresholds.length && (
+        //                 (progress > thresholds[0] && occurences < 1) ||
+        //                 (progress > thresholds[1] && occurences < 2)
+        //             )
+        //         },
+        //         weight: 0,
+        //         requiredFeatures: [
+        //             "confessionnal",
+        //         ],
+        //         value: makeSceneProvider({
+        //             getBaseInfo,
+        //             getContent,
+        //         }, libraries),
+        //         durationRange
+        //     }
+        // },
         "projection-input": function(libraries: LoadedLibraries): AleasSceneTemplate {
             const templateName = "projection-input";
             const templateInfo = "Projection Input";
@@ -1447,8 +1446,7 @@ export const theatreDuTemps = {
             ];
 
             const basculeAudioLibs = [
-                theatreDuTemps.audioLibs.loud,
-                theatreDuTemps.audioLibs.standalone,
+                theatreDuTemps.audioLibs.intense,
             ]
 
             type BasculeMoreArgs = {
@@ -1759,7 +1757,141 @@ export const theatreDuTemps = {
                 }, libraries),
                 durationRange
             }
-        }
+        },
+        "monologue": function(libraries: LoadedLibraries): AleasSceneTemplate {
+            const templateName = "monologue";
+            const templateInfo = "Monologue";
+
+            const {
+                projectionDuration,
+                chunkDuration,
+                chunkSize,
+                audioAmplitude
+            } = theatreDuTemps.variables.monologue;
+
+            const availableDurations = [
+                theatreDuTemps.durations.monologue
+            ];
+
+            const audioLibs = [
+                theatreDuTemps.audioLibs.instru
+            ]
+
+            const durationRange = getWholeRangeAmplitude(...availableDurations);
+            const availableScenes: string[][] = [
+                theatreDuTemps.sceneContent.monologue
+            ];
+
+
+            const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
+
+                const duration = getRandomDuration(...availableDurations);
+        
+                return {
+                    templateName,
+                    duration,
+                    info: templateInfo
+                }
+            }
+
+            const getAudio = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): AudioElementsOrNoAudio => {
+
+                const [fadeMin, fadeMax] = theatreDuTemps.fades.audioStandard;
+
+                const fadeIn = randomRange(fadeMin, fadeMax);
+                const fadeOut = randomRange(fadeMin, fadeMax);
+
+                const audioLib = randomElement(audioLibs);
+                const track = getRandomElementFromAudioLib(libraries.audioLibraries, audioLib);
+
+                return {
+                    hasAudio: true,
+                    audio: [{
+                        track,
+                        startTime: 0,
+                        duration,
+                        amplitude: audioAmplitude,
+                        volume: createStandardLevel({
+                            duration,
+                            fadeIn,
+                            fadeOut,
+                        })
+                    }]
+                }
+            }
+
+            const getContent = (args: CalculateParamValArgs, duration: number, libraries: LoadedLibraries): ContentElementOrNoContent => {
+
+                const fade = theatreDuTemps.fades.standardShort;
+
+                const scene = getRandomSceneFromScenes(availableScenes);
+
+                const chunkDurVal = randomRange(chunkDuration[0], chunkDuration[1]);
+                const chunkCount = Math.round(randomRange(projectionDuration[0], projectionDuration[1]) / chunkDurVal);
+
+                const step1Duration = chunkCount * chunkDurVal;
+                const stepsKeyFrames: KeyFrame[][] = generateInitialStep({
+                    totalDuration: duration,
+                    initialStepDuration: step1Duration,
+                    fade: theatreDuTemps.fades.short,
+                })
+
+                const { text } = getRandomMonologue(libraries.monologueLibraries)
+
+                const chunks = chunkifyText({
+                    text,
+                    maxChunkCount: chunkCount,
+                    chunkType: "Random",
+                    chunkSize: chunkSize,
+                })
+
+                const content = generateContentElement(libraries.contentLibraries, {
+                    scene,
+                    duration,
+                    fadeIn: fade,
+                    fadeOut: fade,
+                    stepsKeyFrames,
+                    valuesKeyFrames: {
+                        "text": {
+                            type: "string",
+                            frames: chunks
+                                .map((str, i) => {
+                                    return [
+                                        i * chunkDurVal,
+                                        str
+                                    ]
+                                })
+                        }
+                    }
+                })
+
+                return {
+                    hasContent: true,
+                    content
+                }
+            }
+
+            return {
+                name: templateName,
+                isPriority: true,
+                // enabled: calculateEnabled({
+                //     minProgress: 0.3,
+                //     maxOccurences: 2,
+                //     maxProgress: 0.92
+                // }),
+                weight: calculateWeight({
+                    base: 10,
+                    slope: 90,
+                }),
+                requiredFeatures: [],
+                value: makeSceneProvider({
+                    getBaseInfo,
+                    getContent,
+                    getAudio
+                }, libraries),
+                durationRange
+            }
+        },
     } satisfies { [key: string]: (libraries: LoadedLibraries) => AleasSceneTemplate },
     tags: {
         preshow: "preshow",
@@ -1839,9 +1971,18 @@ export const theatreDuTemps = {
             "moving-grid",
             "dots-flow",
             "led-wall"
-        ]
+        ],
+        monologue: [
+            "monologue",
+        ],
     },
     variables: {
+        monologue: {
+            chunkSize: [4, 7] satisfies Range,
+            chunkDuration: [3, 4.7] satisfies Range,
+            projectionDuration: [30, 50] satisfies Range,
+            audioAmplitude: 0.48,
+        },
         ambient: {
             audioAmplitude: 0.45,
             audioProbability: 0.65,
@@ -1939,6 +2080,7 @@ export const theatreDuTemps = {
         audioStandard: [2, 4],
     } satisfies { [key: string]: Range },
     durations: {
+        monologue: [70, 120],
         ultraShort: [4, 8],
         short: [30, 70],
         specialAmbiances: [45, 90],
@@ -1948,13 +2090,10 @@ export const theatreDuTemps = {
         long: [240, 480],
     } satisfies { [key: string]: Range },
     audioLibs: {
+        ambient: "aleas-general",
         general: "aleas-general",
-        loud: "aleas-loud",
-        ambient: "aleas-ambient",
-        standalone: "aleas-standalone",
-        wtf: "aleas-wtf",
+        intense: "aleas-intense",
         instru: "aleas-instru",
-        text: "aleas-text",
         billetreduc: "aleas-billetreduc",
         voices: "voices",
     } satisfies { [key: string]: string },
@@ -1996,7 +2135,7 @@ export function generateTheatreDuTempsIntroScene(args: GenerateAleasShowArgs, li
 
     const audio: AudioElement[] = [
         {
-            track: "intro-01",
+            track: "intro - 001",
             startTime: 0,
             duration,
             amplitude: volume,
@@ -2066,7 +2205,7 @@ export function generateTheatreDuTempsOutroScene(args: GenerateAleasShowArgs, li
 
     const audio: AudioElement[] = [
         {
-            track: "intro-01",
+            track: "intro - 001",
             startTime: 0,
             duration,
             amplitude: 1,

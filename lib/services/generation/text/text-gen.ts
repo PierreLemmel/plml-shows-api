@@ -16,6 +16,7 @@ export type CompletionData = {
     system?: string,
     n?: number,
     repetitions?: number,
+    category?: string,
     enabled: boolean
 }
 
