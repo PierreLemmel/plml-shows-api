@@ -29,9 +29,17 @@ export function getRandomSceneFromScenes(libraries: ScenesGroup): string {
     }
 }
 
-export function getRandomProjectionInput(libraries: LoadedLibrary<AleasInputProjectionLibrary>): string {
+export function getRandomProjectionInput(libraries: LoadedLibrary<AleasInputProjectionLibrary>): {
+    key: string;
+    value: string;
+} {
     const lib = randomElement(Object.values(libraries));
-    return randomElement(lib.elements);
+    const index = randomInt(0, lib.elements.length);
+
+    return {
+        key: `${lib.key}-${(index).toString().padStart(2, "0")}`,
+        value: lib.elements[index]
+    }
 }
 
 export function getRandomMonologue(libraries: LoadedLibrary<AleasMonologueLibrary>): AleasMonologue {
@@ -1429,3 +1437,7 @@ export function chunkifyText(args: ChunkifyTextArgs): string[] {
 
     return result;
 }
+
+export const aleasVoiceCount = 4;
+
+export const randomVoiceIndex = () => randomInt(0, aleasVoiceCount - 1);

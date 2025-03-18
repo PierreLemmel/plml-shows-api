@@ -4,7 +4,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Preshow
     {
         name: "preshow",
-        projectIndex: 2,
+        projectIndex: 3,
         description: "Preshow",
         tags: [ "preshow"],
         fades: [
@@ -33,7 +33,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Postshow
     {
         name: "postshow",
-        projectIndex: 3,
+        projectIndex: 4,
         description: "Postshow",
         tags: [ "postshow"],
         fades: [
@@ -62,7 +62,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Intro
     {
         name: "intro",
-        projectIndex: 4,
+        projectIndex: 5,
         description: "Intro",
         tags: [ "intro" ],
         steps: [
@@ -93,7 +93,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Outro
     {
         name: "outro",
-        projectIndex: 5,
+        projectIndex: 6,
         description: "Outro",
         tags: [ "outr" ],
         steps: [
@@ -124,7 +124,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Confessionnal
     {
         name: "confessionnal",
-        projectIndex: 6,
+        projectIndex: 7,
         description: "Confessionnal",
         tags: [ "confessionnal"],
         fades: [
@@ -151,7 +151,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // PF - Chaud
     {
         name: "pf-chaud",
-        projectIndex: 7,
+        projectIndex: 8,
         description: "Pleins feux - Chaud",
         tags: [
             "standard",
@@ -175,7 +175,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // PF - Froid
     {
         name: "pf-froid",
-        projectIndex: 8,
+        projectIndex: 9,
         description: "Pleins feux - Froid",
         tags: [
             "standard",
@@ -199,7 +199,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Full Color
     {
         name: "full-color",
-        projectIndex: 9,
+        projectIndex: 10,
         description: "Full Color",
         tags: [
             "color",
@@ -227,7 +227,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Bicolor
     {
         name: "bicolor",
-        projectIndex: 10,
+        projectIndex: 11,
         description: "Bicolor",
         tags: [
             "color",
@@ -263,7 +263,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Tricolor
     {
         name: "tricolor",
-        projectIndex: 11,
+        projectIndex: 12,
         description: "Tricolor",
         tags: [
             "color",
@@ -307,7 +307,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Douche Jar
     {
         name: "douche-jar",
-        projectIndex: 12,
+        projectIndex: 13,
         description: "Douche - Jardin",
         tags: [
             "douche",
@@ -327,7 +327,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Douche Cour
     {
         name: "douche-cour",
-        projectIndex: 13,
+        projectIndex: 14,
         description: "Douche - Cour",
         tags: [
             "douche",
@@ -347,7 +347,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Doubles Douches
     {
         name: "double-douches",
-        projectIndex: 14,
+        projectIndex: 15,
         description: "Double douches",
         tags: [
             "douche",
@@ -367,7 +367,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Decoupe centrale
     {
         name: "decoupe-centrale",
-        projectIndex: 15,
+        projectIndex: 16,
         description: "Découpe centrale",
         tags: [
             "decoupe",
@@ -383,7 +383,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // White rotation
     {
         name: "white-rotation",
-        projectIndex: 16,
+        projectIndex: 17,
         description: "White rotation",
         tags: [
             "special",
@@ -426,7 +426,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Douches Alternates
     {
         name: "douches-alternate",
-        projectIndex: 17,
+        projectIndex: 18,
         description: "Douches alternées",
         tags: [
             "douche",
@@ -456,7 +456,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // PF Chaud - Bascule Couleur
     {
         name: "pf-ch-basc-col",
-        projectIndex: 18,
+        projectIndex: 19,
         description: "PF Chaud - Bascule Couleur",
         tags: [
             "bascule",
@@ -502,7 +502,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // PF Froid - Bascule Couleur
     {
         name: "pf-fr-basc-col",
-        projectIndex: 19,
+        projectIndex: 20,
         description: "PF Froid - Bascule Couleur",
         tags: [
             "bascule",
@@ -548,7 +548,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Color swap x2
     {
         name: "col-swap-2",
-        projectIndex: 20,
+        projectIndex: 21,
         description: "Color swap x2",
         tags: [
             "color",
@@ -594,7 +594,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Color swap x3
     {
         name: "col-swap-3",
-        projectIndex: 21,
+        projectIndex: 22,
         description: "Color swap x3",
         tags: [
             "color",
@@ -652,7 +652,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Color Bascule Decoupe
     {
         name: "col-basc-decoupe",
-        projectIndex: 22,
+        projectIndex: 23,
         description: "Color Bascule Decoupe",
         tags: [
             "color",
@@ -807,29 +807,6 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
                 relativeOffset: 0.25,
             }
         ],
-        params: [
-            {
-                name: "input",
-                type: "string",
-            },
-        ],
-        steps: [
-            {
-                name: "proj-input",
-                elements: [
-                    "Projection",
-                    "Lats-Led"
-                ]
-            },
-            {
-                name: "pf chaud",
-                elements: [
-                    "Faces",
-                    "Lats",
-                    "Contres"
-                ]
-            }
-        ]
     },
     // Rectangle Doors
     {
