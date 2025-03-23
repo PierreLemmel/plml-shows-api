@@ -208,7 +208,6 @@ export type AudioElement = {
     duration: number;
     amplitude: number;
     volume: KeyFrame[];
-    continueAfterSceneEnd?: boolean;
 }
 export type AudioElementsOrNoAudio = ({
     hasAudio: true,
@@ -271,11 +270,12 @@ export type ContentElement = {
     scene: {
         name: string;
         projectIndex: number;
-    },
-    fades: ContentFadeElement[],
-    params?: ContentParamElement[],
-    steps?: ContentStepElement[],
-    values?: ContentValueElement[]
+    };
+    fades: ContentFadeElement[];
+    params?: ContentParamElement[];
+    steps?: ContentStepElement[];
+    values?: ContentValueElement[];
+    hasShutter?: boolean;
 }
 
 export type ContentElementOrNoContent = ({

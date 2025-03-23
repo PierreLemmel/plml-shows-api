@@ -1,4 +1,3 @@
-import { get } from "http";
 import { notImplemented, random01, randomElement, randomInt, randomRange, sequence } from "../../core/utils";
 import { CalculateParamValArgs, LoadedLibraries, StartAndDuration, Range, makeSceneProvider, AleasSceneTemplate, SceneBaseInfo, AudioElementsOrNoAudio, KeyFrame, SceneData, GenerateAleasShowArgs, ContentElementOrNoContent, ContentElement, AudioElement, PreSceneElementOrNoPreScene } from "../aleas-generation";
 import { calculateEnabled, calculateWeight, chunkifyText, createStandardLevel, generateAudioElements, generateComparableStepsKeyFrames, generateContentElement, generateInitialStep, generateIntermittentIntervals, generateIntroKeyFrames, generateOutroKeyFrames, generatePeriodicEvent, generateRandomDurations, getFade, getRandomDuration, getRandomElementFromAudioLib, getRandomMonologue, getRandomProjectionInput, getRandomSceneFromScenes, getStepCount, getValue, getWholeRangeAmplitude, keyFramesFromIntervals, randomVoiceIndex, ScenesGroup } from "../aleas-generation-utils";
@@ -976,6 +975,7 @@ export const theatreDuTemps = {
                 const scene = getRandomSceneFromScenes(mappingScenes);
 
                 const content = generateContentElement(libraries.contentLibraries, {
+                    hasShutter: true,
                     scene,
                     duration,
                     fadeIn,
@@ -1095,6 +1095,7 @@ export const theatreDuTemps = {
                 const scene = getRandomSceneFromScenes(mappingScenes);
 
                 const content = generateContentElement(libraries.contentLibraries, {
+                    hasShutter: true,
                     scene,
                     duration,
                     fadeIn,
@@ -1233,6 +1234,7 @@ export const theatreDuTemps = {
                 const scene = getRandomSceneFromScenes(mappingScenes);
 
                 const content = generateContentElement(libraries.contentLibraries, {
+                    hasShutter: true,
                     scene,
                     duration,
                     fadeIn,
@@ -1346,6 +1348,7 @@ export const theatreDuTemps = {
                 const duration01 = (duration - durationMadmapperMin) / (durationMadmapperMax - durationMadmapperMin);
 
                 const content = generateContentElement(libraries.contentLibraries, {
+                    hasShutter: true,
                     scene,
                     duration,
                     fadeIn,
@@ -1399,7 +1402,8 @@ export const theatreDuTemps = {
             const templateInfo = "Projection Input";
 
             const {
-                projectionDuration
+                projectionDuration,
+                gapDuration
             } = theatreDuTemps.variables.projInput;
 
             const availableDurations = [
@@ -1472,7 +1476,7 @@ export const theatreDuTemps = {
                             volume,
                             track: `${key}-${voiceIndex.toString().padStart(2, "0")}`,
                         },
-                        gapDuration: 0.5,
+                        gapDuration,
                         text: [
                             [0, "Et maintenant,"],
                             [etMaintenantDuration, value],
@@ -1486,12 +1490,12 @@ export const theatreDuTemps = {
                 isPriority: false,
                 enabled: calculateEnabled({
                     minProgress: 0.3,
-                    maxOccurences: 2
+                    maxOccurences: 3
                 }),
                 weight: calculateWeight({
-                    base: 90,
+                    base: 120,
                     slope: 30,
-                    penalty: 25
+                    penalty: 50
                 }),
                 value: makeSceneProvider({
                     getBaseInfo,
@@ -1859,7 +1863,9 @@ export const theatreDuTemps = {
                 projectionDuration,
                 chunkDuration,
                 chunkSize,
-                audioAmplitude
+                audioAmplitude,
+                preSceneDuration,
+                gapDuration
             } = theatreDuTemps.variables.monologue;
 
             const availableDurations = [
@@ -1879,6 +1885,7 @@ export const theatreDuTemps = {
                 theatreDuTemps.sceneContent.monologue
             ];
 
+            const voiceIndex = randomVoiceIndex();
 
             const getBaseInfo = (args: CalculateParamValArgs): SceneBaseInfo => {
 
@@ -1950,6 +1957,7 @@ export const theatreDuTemps = {
                     fadeIn: fade,
                     fadeOut: fade,
                     stepsKeyFrames,
+                    hasShutter: true,
                     valuesKeyFrames: {
                         "text": {
                             type: "string",
@@ -1961,7 +1969,7 @@ export const theatreDuTemps = {
                                     ]
                                 })
                         }
-                    }
+                    },
                 })
 
                 return {
@@ -1970,21 +1978,46 @@ export const theatreDuTemps = {
                 }
             }
 
+            const getPreSceneInfo = (args: CalculateParamValArgs): PreSceneElementOrNoPreScene => {
+
+                const {
+                    volume,
+                    etMaintenantDuration,
+                } = theatreDuTemps.variables.voices;
+
+                return {
+                    hasPreScene: true,
+                    preScene: {
+                        duration: preSceneDuration,
+                        audio: {
+                            volume,
+                            track: `monologue-${voiceIndex.toString().padStart(2, "0")}`,
+                        },
+                        gapDuration,
+                        text: [
+                            [0, "Et maintenant,"],
+                            [etMaintenantDuration, "un monologue"],
+                        ]
+                    }
+                }
+            }
+
             return {
                 name: templateName,
                 enabled: calculateEnabled({
-                    minProgress: 0.3,
+                    minProgress: 0.55,
                     maxOccurences: 2,
-                    maxProgress: 0.92
                 }),
                 weight: calculateWeight({
-                    base: 10,
+                    base: 180,
                     slope: 90,
+                    penalty: 90
                 }),
                 value: makeSceneProvider({
                     getBaseInfo,
                     getContent,
-                    getAudio
+                    getAudio,
+                    getPreSceneInfo
                 }, libraries),
                 durationRange
             }
@@ -2049,7 +2082,10 @@ export const theatreDuTemps = {
             "col-basc-decoupe",
         ],
         projInput: [
-            "proj-input",
+            "pf-chaud",
+            "pf-froid",
+            "full-color",
+            "bicolor",
         ],
         whiteRotation: "white-rotation",
         colorWave: "color-wave",
@@ -2058,6 +2094,8 @@ export const theatreDuTemps = {
             "face-line",
             "double-face-line",
             "circle-pulse",
+            "small-circle",
+            "small-rect"
         ],
         mappingGeometricMoving: [
             "line-swipe",
@@ -2075,14 +2113,16 @@ export const theatreDuTemps = {
     },
     variables: {
         voices: {
-            volume: 0.7,
+            volume: 1.0,
             etMaintenantDuration: 1.25
         },
         monologue: {
-            chunkSize: [4, 7] satisfies Range,
-            chunkDuration: [3, 4.7] satisfies Range,
+            preSceneDuration: 6,
+            chunkSize: [4, 9] satisfies Range,
+            chunkDuration: [2.8, 4.4] satisfies Range,
             projectionDuration: [30, 50] satisfies Range,
-            audioAmplitude: 0.48,
+            audioAmplitude: 0.25,
+            gapDuration: 0.5,
         },
         ambient: {
             audioAmplitude: 0.45,
@@ -2135,7 +2175,7 @@ export const theatreDuTemps = {
         },
         projInput: {
             projectionDuration: 6.1,
-            gapDuration: 0.8,
+            gapDuration: 0.5,
         },
         basculeLoud: {
             audioAmplitude: 0.9,
@@ -2167,9 +2207,11 @@ export const theatreDuTemps = {
             lightsOffset: 7.5,
             range: [1.5, 8] satisfies Range,
             lightsFade: 0.4,
-            interBlackout: 1.5,
+            preSceneDuration: 4.2,
+            interBlackout: 1.,
             volume: 0.722,
-            depresentationVolume: 0.488
+            depresentationVolume: 0.488,
+            endBlackout: 4.5,
         }
     },
     fades: {
@@ -2197,7 +2239,7 @@ export const theatreDuTemps = {
         long: [240, 480],
     } satisfies { [key: string]: Range },
     blackouts: {
-        intro: 5,
+        intro: 0.5,
         outro: 5,
         confessionnal: 4,
         standard: [2.5, 4.5],
@@ -2297,24 +2339,27 @@ export function generateTheatreDuTempsOutroScene(args: GenerateAleasShowArgs, li
         interBlackout,
         range: salutsRange,
         volume,
-        depresentationVolume
+        depresentationVolume,
+        endBlackout
     } = theatreDuTemps.variables.outro;
 
     const duration = getValue(theatreDuTemps.durations.outro);
+
+    const voiceIndex = randomVoiceIndex();
 
     const audio: AudioElement[] = [
         {
             track: "intro - 001",
             startTime: 0,
-            duration,
+            duration: duration + endBlackout,
             amplitude: 1,
             volume: [
                 [0, 0],
                 [audioFadeIn, volume],
                 [duration - audioFadeOut, volume],
-                [duration, depresentationVolume]
-            ],
-            continueAfterSceneEnd: true
+                [duration, depresentationVolume],
+                [duration + endBlackout, 0]
+            ]
         }
     ]
 
@@ -2339,11 +2384,23 @@ export function generateTheatreDuTempsOutroScene(args: GenerateAleasShowArgs, li
         templateName: "outro",
         duration,
         info: "Outro scene",
-        hasPreScene: false,
         blackout: theatreDuTemps.blackouts.outro,
         hasAudio: true,
         audio,
         hasContent: true,
         content,
+        hasPreScene: true,
+        preScene: {
+            duration: theatreDuTemps.variables.outro.preSceneDuration,
+            audio: {
+                volume: theatreDuTemps.variables.voices.volume,
+                track: `salutation-${voiceIndex.toString().padStart(2, "0")}`,
+            },
+            text: [
+                [0, "Et maintenant"],
+                [theatreDuTemps.variables.voices.etMaintenantDuration, "nous allons saluer"]
+            ],
+            gapDuration: theatreDuTemps.variables.outro.interBlackout
+        }
     }
 }

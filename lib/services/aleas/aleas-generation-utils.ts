@@ -479,6 +479,7 @@ export type VKFRecord = Record<string, VKFRecordElement>;
 export type GenerateContentElementArgs = {
     scene: string;
     duration: number;
+    hasShutter?: boolean;
     fadeIn: RangeOrValue;
     fadeOut: RangeOrValue;
 
@@ -492,6 +493,7 @@ export function generateContentElement(library: LoadedLibrary<AleasContentScene>
     const {
         scene,
         duration,
+        hasShutter,
         fadeIn: globalFadeInRov,
         fadeOut: globalFadeOutRov,
         stepsKeyFrames,
@@ -1018,7 +1020,8 @@ export function generateContentElement(library: LoadedLibrary<AleasContentScene>
         fades,
         params,
         steps,
-        values
+        values,
+        hasShutter
     }
 }
 

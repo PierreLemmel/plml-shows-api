@@ -785,20 +785,18 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             }
         ]
     },
-    // Projection - Input
+    // Monologue
     {
-        name: "proj-input",
+        name: "monologue",
         projectIndex: 26,
         tags: [
-            "projection",
+            "monologue",
         ],
-        description: "Projection - Input",
+        description: "Monologue",
         fades: [
             {
                 elements: [
-                    "contres",
-                    "lats",
-                    "lats-led"
+                    "Douche Jar",
                 ],
                 relativeOffset: 0.,
             },
@@ -807,11 +805,33 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
                 relativeOffset: 0.25,
             }
         ],
+        steps: [
+            {
+                name: "projection",
+                elements: [
+                    "Projection",
+                    "Douche Jar"
+                ]
+            },
+            {
+                name: "douche",
+                elements: [
+                    "Douche Jar",
+                    "Face Jar"
+                ]
+            }
+        ],
+        values: [
+            {
+                name: "text",
+                type: "string",
+            }
+        ]
     },
     // Rectangle Doors
     {
         name: "rectangle-doors",
-        projectIndex: 28,
+        projectIndex: 27,
         description: "Rectangle Doors",
         tags: [
             "mapping",
@@ -889,7 +909,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Line Swipe
     {
         name: "line-swipe",
-        projectIndex: 29,
+        projectIndex: 28,
         description: "Line Swipe",
         tags: [
             "mapping",
@@ -947,7 +967,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Face Line
     {
         name: "face-line",
-        projectIndex: 30,
+        projectIndex: 29,
         description: "Face Line",
         tags: [
             "mapping",
@@ -1001,7 +1021,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     // Double Face Line
     {
         name: "double-face-line",
-        projectIndex: 31,
+        projectIndex: 30,
         description: "Double Face Line",
         tags: [
             "mapping",
@@ -1071,7 +1091,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     {
         name: "circle-pulse",
         description: "Circle Pulse",
-        projectIndex: 32,
+        projectIndex: 31,
         tags: [
             "mapping",
             "mapping-geometric"
@@ -1125,7 +1145,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     {
         name: "clouds",
         description: "Clouds",
-        projectIndex: 33,
+        projectIndex: 32,
         tags: [
             "mapping",
             "mapping-wallpaper"
@@ -1156,7 +1176,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     {
         name: "glowing-dots",
         description: "Glowing Dots",
-        projectIndex: 34,
+        projectIndex: 33,
         tags: [
             "mapping",
             "mapping-wallpaper"
@@ -1188,7 +1208,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     {
         name: "moving-grid",
         description: "Moving Grid",
-        projectIndex: 35,
+        projectIndex: 34,
         tags: [
             "mapping",
             "mapping-wallpaper"
@@ -1220,7 +1240,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     {
         name: "dots-flow",
         description: "Dots Flow",
-        projectIndex: 36,
+        projectIndex: 35,
         tags: [
             "mapping",
             "mapping-wallpaper"
@@ -1248,7 +1268,7 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
     {
         name: "led-wall",
         description: "Led Wall",
-        projectIndex: 37,
+        projectIndex: 36,
         tags: [
             "mapping",
             "mapping-wallpaper"
@@ -1274,49 +1294,110 @@ export const hardCodedTheatreDuTempsLibrary: AleasContentScene[] = [
             },
         ]
     },
-    // Monologue
+    // Small Rect
     {
-        name: "monologue",
-        projectIndex: 20,
+        name: "small-rect",
+        description: "Small Rect",
+        projectIndex: 37,
         tags: [
-            "monologue",
+            "mapping",
+            "mapping-geometric",
+            "mapping-small",
         ],
-        description: "Monologue",
         fades: [
             {
-                elements: [
-                    "contres",
-                    "diags",
-                ],
+                elements: [ "Shape" ],
                 relativeOffset: 0.,
             },
             {
-                elements: [ "Faces" ],
-                relativeOffset: 0.25,
+                elements: [ "Background" ],
+                relativeOffset: 0.3,
             }
         ],
-        steps: [
+        params: [
             {
-                name: "projection",
-                elements: [
-                    "Projection",
-                    "Shutter"
-                ]
+                name: "x0",
+                type: "float",
             },
             {
-                name: "pf chaud",
-                elements: [
-                    "Faces",
-                    "Lats",
-                    "Contres"
-                ]
-            }
-        ],
-        values: [
+                name: "y0",
+                type: "float",
+            },
             {
-                name: "text",
-                type: "string",
-            }
+                name: "width",
+                type: "float",
+            },
+            {
+                name: "height",
+                type: "float",
+            },
+            {
+                name: "feathering",
+                type: "float",
+            },
+            {
+                name: "bg-color",
+                type: "color",
+                saturationRange: [ 0.0, 0.5],
+                valueRange: [ 0, 0.1 ]
+            },
+            {
+                name: "shape-color",
+                type: "color",
+                saturationRange: [ 0.0, 0.1],
+                valueRange: [ 0.9, 1.0 ]
+            },
         ]
     },
+    // Small Circle
+    {
+        name: "small-circle",
+        description: "Small Circle",
+        projectIndex: 38,
+        tags: [
+            "mapping",
+            "mapping-geometric",
+            "mapping-small",
+        ],
+        fades: [
+            {
+                elements: [ "Shape" ],
+                relativeOffset: 0.,
+            },
+            {
+                elements: [ "Background" ],
+                relativeOffset: 0.3,
+            }
+        ],
+        params: [
+            {
+                name: "x0",
+                type: "float",
+            },
+            {
+                name: "y0",
+                type: "float",
+            },
+            {
+                name: "radius",
+                type: "float",
+            },
+            {
+                name: "feathering",
+                type: "float",
+            },
+            {
+                name: "bg-color",
+                type: "color",
+                saturationRange: [ 0.0, 0.5],
+                valueRange: [ 0, 0.1 ]
+            },
+            {
+                name: "shape-color",
+                type: "color",
+                saturationRange: [ 0.0, 0.1],
+                valueRange: [ 0.9, 1.0 ]
+            },
+        ]
+    }
 ]
